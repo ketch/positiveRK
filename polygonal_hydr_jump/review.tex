@@ -1,0 +1,236 @@
+\documentclass[english,11pt]{article}
+
+\usepackage{amsthm}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage[hmargin=0.9in]{geometry}
+
+%\usepackage{subfigure}
+\usepackage{subfig}
+\usepackage{graphicx}
+\usepackage[colorlinks=true,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[numbers]{natbib}
+%\usepackage{cite}
+\let\cite=\citet
+
+\usepackage{float}
+\usepackage{url}
+\usepackage{bm}
+
+\usepackage{amsmath}
+\usepackage{amssymb,amsfonts}
+\usepackage{upgreek}
+\usepackage[textsize=footnotesize]{todonotes}
+\usepackage{stmaryrd}
+%\newcommand{\todo}[1]{{\bf \color{red} #1}\vskip 10pt}
+
+\newtheorem{remark}{Remark}
+\numberwithin{remark}{subsection}
+
+\makeatletter
+\providecommand{\tabularnewline}{\\}
+\makeatother
+
+\graphicspath{{./figures/}}
+
+% Macros -- use them
+\newcommand{\bfu}{\mathbf{u}}
+\newcommand{\bfv}{\mathbf{v}}
+\newcommand{\bff}{\mathbf{f}}
+\newcommand{\bfn}{\mathbf{n}}
+\newcommand{\bfx}{\mathbf{x}}
+\newcommand{\order}{{\mathcal O}}
+\newcommand{\yhat}{\hat{y}}
+\newcommand{\Khat}{\hat{K}}
+\newcommand{\rhohat}{\hat{\rho}}
+\newcommand{\etanot}{\eta_0}
+\def\avg[#1]{\left\langle #1 \right\rangle}
+\def\intavg[#1]{\llbracket #1 \rrbracket}
+\def\ceff{c_\text{eff}}
+\def\bk{\bf k}
+\newcommand{\bx}{{\bf x}}
+
+\begin{document}
+\title{Polygonal hydraulic jumps: 3D free-surface flow simulations}
+%\author{
+%  Manuel Quezada de Luna \thanks{KAUST CEMSE, manuel.quezada@kaust.edu.sa.} \and
+%  David I. Ketcheson \thanks{KAUST CEMSE, david.ketcheson@kaust.edu.sa.}}
+\maketitle
+
+%\begin{abstract}
+%\end{abstract}
+
+%\keywords{}
+
+\section{Literature review}
+
+\subsection{General remarks}
+\begin{itemize}
+\item The hydraulic jump and different theoretical and experimental aspects of it have been studied by many
+  authors. For instance, \cite{rayleigh1914theory} studied the inviscid hydraulic jump and proposed an
+  estimation of the radius of the jump. 
+  \cite{watson1964radial}, used momentum balanced theory and consider inviscid and viscous flows to also propose estimates
+  for the radius of the jump. These studies didn't include surface tension effects. 
+  Later, \cite{bush2003influence} proposed a correction to the results by Watson to include the effects of surface
+  tension on the radius of the jump. Many more models and corrections have been proposed to estimate the radius of the
+  jump in different regimes and using different tools. 
+  
+\item According to \cite{labousse2013hydraulic}, \cite{bohr1996hydraulic} and \cite{watanabe2003integral}
+  distinguised between hydraulic jumps of type I and II.
+  \begin{itemize}
+  \item[*] In type I there is only one vortex leading to the standard hydraulic jump.
+  \item[*] In type II, a secondary vortex forms leading to the polygonal jump.
+    Within type II, type IIa and IIb refer to polygonal jumps with one and two jumps respectively.
+  \end{itemize}
+
+\item The most up-to-date model for type II hydraulic jumps is given by \cite{martens2012model}.
+\end{itemize}
+
+\subsection{About the observation of instability}
+\begin{itemize}
+\item \cite{craik1981circular} was one of the first to observe the instability that leads to type II jumps.
+  However, he used water and didn't observe the creation of polygons.
+  He triggered the instability by increasing the downstream depth.
+
+\item \cite{ishigai1977heat} observed and controlled the formation of the instability via the Froude number upstream.
+  
+\item According to \cite{liu1993hydraulic}, \cite{errico1986study} observed the formation of the instability
+  by increasing the volume flow.
+
+\item In \cite{liu1993hydraulic} the authors present more observations of the instability and remark that
+  surface tension plays an important role. In particular, the authors describe the surface tension as a
+  mechanism to stabilize the turbulent behavior of the instability. 
+  They conclude that the height of the jump and the radius of the roller are critical for surface tension to act as
+  a stabilization process. For exmple, in a hydraulic jump in a channel, the height of the jump and the radius of the roller
+  are very large making the surface tension effects negligible. 
+
+\item \cite{kasimov2008stationary} proposed a theory based on a shallow water model to determine the radius of the jump
+  based on far-field and jump conditions including surface tension effects. The author showed that the steady circular
+  jump can't exist if the surface tension is larger than a critical value.
+  The author also remarked that the critical surface tension decreases as the viscosity increases.
+  Furthermore, he suggests this might explain why the polygonal jumps appear only in highly viscous fluids. 
+\end{itemize}
+
+
+\subsection{Experimental observation of hydraulic jump of type IIa}
+\begin{itemize}
+\item In \cite{ellegaard1998creating}, the authors present and explain the phenomenon.
+  Given a fluid (ethylene glycol) they can control the shape of the jump by adjusting the height of the external wall
+  (which increases the height of the jump).
+  At some point (as the height of the external wall increases), the polygonal shape turns into a circular shape again and eventually the jumps closes.
+  If the height of the external wall is too small then a circular hydraulic jump (of type I) is formed.
+  The authors provide the simple dimensionless parameter $\phi=\nu Q/g(h_\text{ext}^2-h_\text{int}^2)$, where $\nu$ is the viscosity
+  and $Q$ is the flow rate. They observe that as $\phi$ increases, the number of corners increase.
+  %
+  The authors present details about the derivation of $\phi$ in \cite{ellegaard1999cover} and details about the experiment in
+  \cite{ellegaard1996experimental}.
+
+\item In \cite{bohr1996hydraulic}, the authors explain further the experimental results and start to attempt a numerical simulation.
+  The model to be numerically solved is based on the steady state incompressible 2D-NS.
+  The free surface is modeled by a linear and rigid boundary close to one observed in experiments.
+  They neglect the effects of surface tension in this model. Even with this simplified model, the authors are able
+  to produce the vortex in the type II jumps.
+  Here it is important to remark that even without surface tension they observed (numerically) the formation of the
+  roller (the second vortex in the type II jumps). Therefore, the apperance of the roller might not depend entirely upon the
+  surface tension. 
+  The authors also work out in this paper a simplified model to start to develop a theory.
+
+\item In \cite{bush2006experimental}, experiments were performed to produce the polygonal hydraulic
+  (type II) jump with many different shapes.
+  The goal of the authors was to identify important dimensionless parameters that characterize type IIa jumps. They
+  also present experimental results of type IIb jumps.
+  %
+  In this work, the authors demonstrated experimentally the importance of surface tension by adding a surfactant to the flow.
+  A type IIa jump transformed to a type I when a surfactant was added (see figure 6).
+  %
+  In section 6, the authors explain a (potential) reason for which surface tension is important to create type II jumps.
+  The idea is that with high surface tension, the instability (a pinch-off) is triggered by a lower surface energy configuration
+  given by the polygonal shape.
+  This process is characterized by the Ohnesorge number $Oh=\sigma R/(\mu\nu)$
+  At high $Oh$ the pinch-off is resisted by fluid intertia and at low $Oh$ the pinch off is resisted by viscosity.
+  %
+  This work gives some results related to Ohnesorge number and frequency in the jump.
+  This and other quantitative results in this work are something we might be able to validate.
+
+\item \cite{andersen2010separation} remarks about the importance of the separation to create the roller in the type II jumps.
+  
+\end{itemize}
+
+\subsection{About hydraulic jumps of type IIb}
+\begin{itemize}
+\item \cite{craik1981circular} observed the second jump using water right before the jump becomes unstable.
+  It is important to remark that in this work the authors used water. It is believed that the viscosity and surface tension
+  of water is not strong enough to create the polygonal shapes. Indeed, the authors in this work didn't observe those shapes.
+  However, they observed the instability and, moreover, the formation of the second jump in the type IIb hydraulic jump
+  (see figure 2b). 
+  
+\item \cite{bush2006experimental} has a good number of experiments with type IIb jumps with different shapes.
+
+\item In \cite{liu1993hydraulic} the second jump was also observed (see figure 5).
+  
+\end{itemize}
+
+\subsection{Other types of circular hydraulic jumps}
+\begin{itemize}
+\item{\bf Crown shape hydraulic jumps.} See figure 14 in \cite{bush2006experimental}.
+  I have simulations of the SWEs with viscosity that seem to show a similar behavior.
+
+\item
+  {\bf Hydraulic bump.} In \cite{labousse2013hydraulic}, the authors introduce the idea of hydraulic bump,
+  which happens below the hydraulic jump threshold. In this case the jet impinges a deep steady water and only 
+  weakly perturbes the free surface creating a circular bump that can evolve into polygonal shapes
+  (presumably due to the same reasons than with hydraulic jumps).
+
+\end{itemize}
+
+\subsection{Numerical simulations}
+
+\begin{itemize}
+\item In \cite{bohr1996hydraulic}, the authors assumed a fixed profile for the free surface based on experimental data.
+  Then they solved the steady state 2D-NS equations and observed the two vortices.
+
+\item In \cite{yokoi2002mechanism}, numerical simulations of the compressible NS equations are performed.
+  They use axisymmetrical simulations (i.e. 2D) and consider type I and type II jumps.
+  They concluded that the transition between type I to II jumps is heavily affected by surface tension.
+  %
+  It is important to remark that the authors marked a jump as type II if the roller is observed.
+  Off course with 2D simulations it is not possible to observe the polygonal shapes. 
+  %
+  The numerical methods are based on a (non conservative) level-set approach.
+  The results in this paper have been presented with more physics oriented details in
+  \cite{yokoi2000relationships,yokoi1999numerical}.
+  At this point (in time) the authors claimed that there is no model for polygonal hydraulic jumps.
+
+\item In \cite{passandideh2011numerical} the authors solved the incompressible Navier-Stokes equations for two immiscible
+  viscous flows coupled with a volume-of-fluid approach to track the free surface.
+  The authors considered type I and II jumps.
+  %
+  It appears to me that only two-dimensional simulations are performed; however, the authors extruded
+  the solution in the angular direction to obtain a three-dimensional visualization. Off course this is
+  only valid if the jump is axisymmetric. Therefore, the authors didn't obtain polygonal jumps.
+\end{itemize}
+
+\section{Objectives}
+\begin{itemize}
+\item Simulate for the first time the 3D hydraulic jump of type II to observe the polygonal shapes.
+\item If possible try to obtain other type of jumps like type IIb, crown hydraulic jumps and hydraulic bumps (of type I and II). 
+\item After proper validation against experimental data, extend the experiments to other regimes that might be difficult
+  to achieve in a laboratory. For example, highly viscous but without surface tension or vice versa,
+  see the effect of slip BCs on the bottom of the tank (is friction necessary to have polygonal shapes?).
+\item Confirm the role and importance on surface tension in the creation the polygonal shapes.
+\item Test Kasimov's hypothesis that higher viscous effects might reduce the importance of surface tension in the
+  creation of the polygonal jump.
+\item As byproduct simulate (for the first time) the 3D hydraulic jump of type I.
+\end{itemize}
+
+\section{Two-dimensional simulations}
+
+\section{Three-dimensional simulations}
+
+%\bibliographystyle{plain}
+\bibliographystyle{unsrtnat}
+%\bibliographystyle{abbrvnat}
+\bibliography{ref}
+
+\end{document}
+
