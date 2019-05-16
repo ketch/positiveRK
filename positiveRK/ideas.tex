@@ -59,12 +59,12 @@ matrix powers mean matrix multiplication.  The matrix $C$ is the
 diagonal matrix of the abscissas $c_i$ and
 $\tau_k$ are the stage order residual vectors:
 $$
-    \tau_k - \frac{1}{k!} c^k - \frac{1}{(k-1)!}Ac^{k-1}.
+    \tau_k = \frac{1}{k!} c^k - \frac{1}{(k-1)!}Ac^{k-1}.
 $$
 Since they only appear in equations where the right-hand-side is zero,
 it's okay to multiply by $k!$ and use instead the vectors
 $$
-    \hat{\tau}_k - c^k - kAc^{k-1}.
+    \hat{\tau}_k = c^k - kAc^{k-1}.
 $$
 
 
