@@ -1,0 +1,73 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+
+\title{Ideas for using Runge--Kutta methods to preserve positivity and similar properties}
+
+
+\begin{document}
+\maketitle
+
+\section{Basic relaxation approach}
+
+\section{Linear programming approach}
+Given a Runge--Kutta method with coefficients $(A,b)$, after we have computed
+the stages
+$$
+    y_j = u^n + h \sum_i a_{ij} f(y_i),
+$$
+the idea is to adaptively choose the weight $b_j$ in order to enforce positivity.
+This leads to a linear program with the linear inequality constraints
+$$
+u^{n+1}_i = u^n_i + h \sum_j b_j f(y_j) \ge 0
+$$
+and the linear equality constraints that come from the order conditions.  The idea is
+to enforce as many of these as possible.  For first order:
+\begin{align}
+\sum_j b_j = 1.
+\end{align}
+For second order:
+\begin{align}
+\sum_j c_j b_j = 1/2.
+\end{align}
+For third order:
+\begin{align}
+\sum_j c_j^2 b_j & = 1/3 \\
+\sum_j \tau_{2j} b_j & = 0.
+\end{align}
+For fourth order:
+\begin{align}
+\sum_j c_j^3 b_j & = 1/4 \\
+\sum_j \tau_{2j} c_j b_j & = 0 \\
+\tau_{2}^T A^T b & = 0 \\
+\tau_{3}^T b & = 0.
+\end{align}
+For fifth order:
+\begin{align}
+\tau_2^T A^T C b & = 0 \\
+\tau_2^T C A^T b & = 0 \\
+\tau_2^T (A^T)^2 b & = 0 \\
+\tau_2^T C^2 b & = 0 \\
+\tau_2^2 b & = 0 \\
+\tau_3^T A^T b & = 0 \\
+\tau_3^T C b & = 0 \\
+(\tau_2^T)^2 b & = 0 \\
+\tau_4^T b & = 0.
+\end{align}
+Here vector powers mean componentwise multiplication while
+matrix powers mean matrix multiplication.  The matrix $C$ is the
+diagonal matrix of the abscissas $c_i$ and
+$\tau_k$ are the stage order residual vectors:
+$$
+    \tau_k = \frac{1}{k!} c^k - \frac{1}{(k-1)!}Ac^{k-1}.
+$$
+Since they only appear in equations where the right-hand-side is zero,
+it's okay to multiply by $k!$ and use instead the vectors
+$$
+    \hat{\tau}_k = c^k - kAc^{k-1}.
+$$
+
+
+
+
+\end{document}
