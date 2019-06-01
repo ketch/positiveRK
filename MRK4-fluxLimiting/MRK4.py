@@ -4,11 +4,11 @@ from matplotlib import pyplot as plt
 # These functions are designed for a 1D periodic domain from [0,1] #
 
 def compute_matrices(U,N):
-    h=1/(N-1)
+    h=1.0/(N-1)
     D1=np.diag(np.ones(N-1),-1)-np.diag(np.ones(N-1),1)
     D1[0,-1]=1.    
     D1[-1,0]=-1.
-    D1*=U/2/h
+    D1*=U/2.0/h
 
     # MPP artificial viscosity operator #
     DL=D1*0

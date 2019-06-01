@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from MRK4 import *
 
-global_bounds=False
+global_bounds=True
 
 ## ************************ ##
 ## ***** STANDARD FCT ***** ##
@@ -17,7 +17,7 @@ def run_FCT(N,name,smooth=False):
     x=np.linspace(0,1,N)
 
     # Numerical parameters #
-    h=1./(N-1);
+    h=1.0/(N-1);
     C=0.75
     dt=C*h*U
     
@@ -83,10 +83,10 @@ def run_MRK4(N,name,smooth=False):
     x=np.linspace(0,1,N)
 
     # Numerical parameters #
-    h=1./(N-1);
+    h=1.0/(N-1);
     C=0.8
     dt=C*h*U
-    dt/=1
+    dt/=1.0
 
     # Initial conditions #
     u0 = (0.5*(np.sin(2*np.pi*x)+1)) if smooth==True else (1.0*(x>0.45)*(x<0.55))
@@ -110,7 +110,7 @@ def run_MRK4(N,name,smooth=False):
         f3,_,_,_,_=sdisc(un_RK4+0.5*dt*f2,D1,DL)
         f4,_,_,_,_=sdisc(un_RK4+dt*f3,D1,DL)
         unp1_RK4 = un_RK4 + dt/6.0*(f1+2*f2+2*f3+f4)
-        
+
         # MRK4: stabilization in space with limiters
         f1,f1G,f1B,f1ijG,f1ijB=sdisc(un_MRK4,D1,DL)
         f2,f2G,f2B,f2ijG,f2ijB=sdisc(un_MRK4+0.5*dt*f1,D1,DL)
@@ -137,8 +137,8 @@ def run_MRK4(N,name,smooth=False):
     loss_RK4 = (initial_mass - h*np.sum(unp1_RK4))/initial_mass
     loss_MRK4 = (initial_mass - h*np.sum(unp1_MRK4))/initial_mass
 
-    # print('(min, max) value of RK4=',np.min(uu_RK4),np.max(uu_RK4))
-    # print('(min, max) value of MRK4=',np.min(uu_MRK4),np.max(uu_MRK4))
+    #print('(min, max) value of RK4=',np.min(uu_RK4),np.max(uu_RK4))
+    #print('(min, max) value of MRK4=',np.min(uu_MRK4),np.max(uu_MRK4))
     print('(min, max) value of RK4 at final time t=T=',np.min(unp1_RK4),np.max(unp1_RK4))
     print('(min, max) value of MRK4 at final time t=T=',np.min(unp1_MRK4),np.max(unp1_MRK4))
 
