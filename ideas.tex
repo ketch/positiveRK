@@ -122,7 +122,10 @@ are the transport and artificial dissipative matrices respectively.
   the Kronecker delta function. Note that by construction
   $K_{ij}+D^L_{ij}\leq 0, \forall i\neq j\implies R_{ij}\geq 0, \forall i\neq j$.
   The diagonal entries of $R$ are positive provided $\Delta t$ is small
-  enough such that $1-\Delta t m_i^{-1}(K_{ii}+D_{ii}^L)>0, \forall i$. 
+  enough such that
+  \begin{align}\label{CFL_low_order_scheme}
+    1-\Delta t m_i^{-1}(K_{ii}+D_{ii}^L)>0,\quad \forall i.
+  \end{align}
   Note also that, due to partition of unity and by construction of the dissipative operator $D^L$,
   $\sum_j K_{ij}+D^L_{ij}=0\implies \sum_j R_{ij}=1$. Therefore,
   \begin{align*}
@@ -318,6 +321,61 @@ where
 \subsection{Modified RK methods with flux limiting on all stages}
 \subsection{Hierarchical modified RK methods with flux limiting}
 
+\clearpage
+\section{Numerical experiments}
+
+{\it Advection with smooth initial data.} Consider the domain $\Omega=(0,1)$
+with periodic boundary conditions. The velocity is given by $\bfv=1$ and the initial
+condition by
+\begin{align}\label{smooth_initial_data}
+  u(\bfx,t=0)=\frac{1}{2}(\sin(2\pi x)+1), 
+\end{align}
+which is clearly bounded between $[0,1]$.
+
+\subsection{Modified RK methods with flux limiting on last stage}
+
+{\it Advection with smooth initial data.}
+We consider the one-dimensional problem with initial data given by \eqref{smooth_initial_data}
+and perform a convergence study with different methods.
+The spatial discretization is given by second order central finite differences.
+%
+In all cases, we solve the problem up to $t=1$ and report the minimum and maximum values
+and the error and convergence in the $L^1$-norm given by
+\begin{align}
+  E=h\sum_i |U_i-u_i^{\text{exact}}|.
+\end{align}
+
+%
+As a reference, we solve the problem using the standard 4th order Runge-Kutta method.
+We consider \eqref{MRK_last_stage} with global bounds given by $(u_i^{\min}, u_i^{\max})=(0,1), ~\forall i$
+and local bounds given by \eqref{local-bounds}.
+In all cases the time step is given by $\Delta t=C h/U$ with $C=0.8, U=1$ and $h=\frac{1}{N-1}$ where $N$ is the number of DOFs
+reported in the results. The results are shown in table \ref{table:MRK4_limiting_last_stage}.
+
+{\color{red} NOTE: The time step should be chosen via \eqref{CFL_low_order_scheme}.
+  However, I think $\Delta t=C h/U$ is enough for 1D with uniform meshes. I will make the change in the code and run again the tests.}
+
+\begin{table}[h]\scriptsize
+\begin{center}
+\begin{tabular}{|c||c|c|c|c||c|c|c|c||c|c|c|c||} \cline{1-13}
+\multicolumn{1}{|c||}{} &
+\multicolumn{4}{|c||}{Standard RK4} &
+\multicolumn{4}{|c||}{Modified RK4 with global bounds} &
+\multicolumn{4}{|c||}{Modified RK4 with local bounds} \\ \hline
+$N$ & $ \min$ &  $1-\max$ & $ E $ &  & $\min$ &  $\max$ & $E$ &   & $\min$ & $\max$ & $E$ &  \\ \hline
+21  & 3.52E-2 & -1.46E-2 & 1.26E-2 & --   & 3.79E-2 & 0.9996 & 1.17E-2 & --   & 4.30E-2 & 0.9745 & 1.04E-2 & --    \\ \hline
+41  & -1.58E-2 & -7.66E-3 & 2.90E-3 & 2.12 & 0       & 0.9986 & 2.64E-3 & 2.14 & 1.13E-2 & 0.9905 & 2.58E-3 & 2.01 \\ \hline
+81  & -2.61E-3 & -2.88E-3 & 6.74E-4 & 2.10 & 7.03E-4 & 1      & 6.44E-4 & 2.03 & 5.38E-3 & 0.9966 & 6.42E-4 & 2.00 \\ \hline
+161 & -7.78E-4 & -7.89E-4 & 1.61E-4 & 2.05 & 0       & 1      & 1.59E-4 & 2.01 & 2.02E-3 & 0.9987 & 1.59E-4 & 2.00 \\ \hline
+321 & -3.39E-4 & -2.87E-4 & 3.98E-5 & 2.02 & 0       & 1      & 3.95E-5 & 2.01 & 7.82E-4 & 0.9995 & 3.96E-5 & 2.01 \\ \hline
+641 & -1.30E-4 & -3.56E-5 & 9.85E-6 & 2.01 & 0       & 1      & 9.83E-6 & 2.00 & 3.11E-4 & 0.9998 & 9.85E-6 & 2.00 \\ \hline
+\end{tabular}
+\caption{Grid convergence with second order central finite differences in space.
+  The time discretization is done via the standard RK4
+  and the modified RK4 \eqref{MRK_last_stage} using global and local bounds.}
+\label{table:MRK4_limiting_last_stage}
+\end{center}
+\end{table}
 
 \bibliographystyle{plain}
 %\bibliographystyle{abbrvnat}
