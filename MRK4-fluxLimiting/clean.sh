@@ -1,1 +1,1 @@
-rm -r *~ *pyc *__* *png
+rm -r *~ *pyc *__* *png *csv
