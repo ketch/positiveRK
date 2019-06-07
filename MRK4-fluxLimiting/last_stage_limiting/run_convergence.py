@@ -146,19 +146,19 @@ gmax=0.99932929973906703
 #############################
 if True:
     print ("* Standard RK4 with smooth initial data *")
-    for N in [21, 41, 81, 161, 321, 641]:
+    for N in [21, 41, 81, 161, 321, 641, 1281]:
         run_MRK4(N=N,name=None, #'solN='+str(N)+'.png',
                  smooth=2,modify_RK=False,verbose=1)
     #
 
     print ("* Modified RK4 with global bounds and smooth initial data *")
-    for N in [21, 41, 81, 161, 321, 641]:
+    for N in [21, 41, 81, 161, 321, 641, 1281]:
         run_MRK4(N=N,name=None, #'solN='+str(N)+'.png',
                  smooth=2,modify_RK=True,global_bounds=True,verbose=1,num_iter=num_iter,gmin=gmin,gmax=gmax)
     #
 
     print ("* Modified RK4 with local bounds and smooth initial data *")
-    for N in [21, 41, 81, 161, 321, 641]:
+    for N in [21, 41, 81, 161, 321, 641, 1281]:
         run_MRK4(N=N,name=None, #'solN='+str(N)+'.png',
                  smooth=2,modify_RK=True,global_bounds=False,verbose=1,num_iter=num_iter)
     #
