@@ -1,6 +1,21 @@
 \documentclass{article}
 
 \usepackage{amsmath}
+\usepackage{amssymb,amsfonts}
+\usepackage[hmargin=0.9in]{geometry}
+
+\usepackage{subfig}
+\usepackage{graphicx}
+\usepackage[colorlinks=true,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{cite}
+
+
+\newtheorem{remark}{Remark}
+\numberwithin{remark}{subsection}
+
+\newcommand{\bfv}{{\bf v}}
+\newcommand{\bfn}{{\bf n}}
+\newcommand{\bfx}{{\bf x}}
 
 \title{Ideas for using Runge--Kutta methods to preserve positivity and similar properties}
 
@@ -67,7 +82,304 @@ $$
     \hat{\tau}_k = c^k - kAc^{k-1}.
 $$
 
+\clearpage
+\section{Runge-Kutta methods with flux limiting}
+Consider the transport equation
+\begin{align}\label{transport_equation}
+  \partial_t u + \bfv\cdot \nabla u = 0
+\end{align}
 
+\subsection{Forward Euler with low-order discrete upwinding}\label{sec:FE_discUpwind}
+
+Let $m_i=\int_\Omega \phi_i dx$ be the $i$-th entry in the diagonal lumped mass matrix
+and assume $m_i>0$.
+Then, following \cite{kuzmin2012flux},
+the full discretization with discrete upwinding is given by
+\begin{align}\label{low-order}
+  m_i\left(\frac{U_i^L-U_i^n}{\Delta t}\right)+\sum_j\left(K_{ij}+D_{ij}^L\right)U_j^n=0,
+\end{align}
+where $U^L$ is (the vector of DOFs of) the low-order solution at time $t^{n+1}$,
+$U^n$ is the solution at time $t^n$ and 
+\begin{align}\label{transport_and_discUpwinding_matrices}
+  K_{ij} = \int_\Omega (\bfv\cdot\nabla \phi_j) \phi_i dx,
+  & &
+  D^L_{ij} =
+  \begin{cases}
+    -\max(K_{ij},0,K_{ji}), & \text{ if } i\neq j, \\
+    -\sum_{j\neq i} D_{ij}^L, & \text{ if } i=j
+  \end{cases}
+\end{align}
+are the transport and artificial dissipative matrices respectively.
+
+\begin{remark}[About the discrete maximum principle (DMP).]
+  The solution $U^L$ satisfies the following local bounds:
+  \begin{align}\label{local-bounds}
+    U_i^{\min}:= \min_{j\in N_i} U_j^n \leq U_i^L \leq \max_{j\in N_i} U_j^n=:U_i^{\max},
+  \end{align}
+  where $N_i$ is the set of DOFs that define the stencil of the discretization at the $i$-th node.
+  Rewrite equation \eqref{low-order} as $U_i^L=\sum_j R_{ij}U_j^n$ with
+  $R_{ij}:=\delta_{ij}-\Delta t m_i^{-1} (K_{ij}+D_{ij}^L)$, where $\delta_{ij}$ is
+  the Kronecker delta function. Note that by construction
+  $K_{ij}+D^L_{ij}\leq 0, \forall i\neq j\implies R_{ij}\geq 0, \forall i\neq j$.
+  The diagonal entries of $R$ are positive provided $\Delta t$ is small
+  enough such that
+  \begin{align}\label{CFL_low_order_scheme}
+    1-\Delta t m_i^{-1}(K_{ii}+D_{ii}^L)>0,\quad \forall i.
+  \end{align}
+  Note also that, due to partition of unity and by construction of the dissipative operator $D^L$,
+  $\sum_j K_{ij}+D^L_{ij}=0\implies \sum_j R_{ij}=1$. Therefore,
+  \begin{align*}
+    U_i^L=\sum_j R_{ij}U_j^n\leq U_j^{\max}\sum_j R_{ij} = U_j^{\max},
+  \end{align*}
+  and similarly for the lower bound.
+\end{remark}
+
+\begin{remark}[About mass conservation.]\label{remark:conservation_low-order}
+  Let $\bfn$ denote the unit normal vector to the boundary $\partial\Omega$.
+  Assume the velocity field is divergence free $\nabla\cdot \bfv=0$ and that $\bfv\cdot \bfn=0$,
+  then \eqref{low-order} is conservative in the sense that
+  $\sum_i m_i U_i^L=\sum_i m_i U_i^n$. Since $\bfv\cdot \bfn=0$, via integration by parts,
+  $K_{ij}=\int_\Omega (\bfv\cdot\nabla \phi_j)\phi_i d\bfx = -\int_\Omega\nabla\cdot(\bfv\phi_i)\phi_jd\bfx$. Therefore $\sum_j K_{ji}=-\sum_j\int_\Omega \nabla\cdot(\bfv\phi_j)\phi_i=0$
+  (where we use the partition of unity property and
+  the assumption that the velocity is divergence free).
+  By construction $\sum_jD_{ij}^L=0\implies \sum_j D_{ij}^L U_j^n=\sum_jD_{ij}^L (U_j^n-U_i^n)$.
+  Therefore,
+  \begin{align*}
+    \sum_j (K_{ij}+D_{ij}^L)U_j^n =
+    \sum_j \left[(K_{ij}U_j^n - K_{ji}U_i^n) + D_{ij}^L(U_j^n-U_j^n)\right].
+  \end{align*}
+  Let $f_{ij}^L:=(K_{ij}U_j^n - K_{ji}U_i^n) + D_{ij}^L(U_j^n-U_j^n)$
+  and note that (since $D^L_{ij}=D_{ji}^L$)
+  $f_{ij}^L=-f_{ji}^L$; i.e., $f_{ij}^L$ forms a skew-symmetric matrix.
+  Therefore, $\sum_i\sum_j f_{ij}^L=0\implies\sum_i m_i U_i^L=\sum_i m_i U_i^n$.
+\end{remark}
+
+\subsection{Modified RK methods with flux limiting on last stage}
+Let $F_i(t)=\sum_j f_{ij}(t)$ be some high-order spatial discretization of
+\eqref{transport_equation}
+that doesn't necessarily satisfies positivity, local bounds or other monotonicity constraint
+(like the one given by \eqref{local-bounds}).
+%
+We are interested on solving the semi-discretization
+\begin{align}
+  \frac{d}{dt} U_i(t)=:F_i(t) %-m_i^{-1}\sum_j(K_{ij}+D_{ij}^L)U_j(t)=:F_i(t)
+\end{align}
+via high-order Runge-Kutta methods. Moreover, we aim to modify the Runge-Kutta method
+to impose the local bounds \eqref{local-bounds}.
+
+\begin{remark}[About the spatial discretization.]
+  In the following we consider a high-order discretization to be given by the pure
+  continuous Galerkin scheme. This is off course highly oscillatory when the time discretization
+  is given by a Runge-Kutta method and even unconditionally unstable for forward Euler.
+  To remedy this problem, it is common in the literature of flux corrected transport
+  for continuous Galerkin finite elements to pre-stabilize the high-order spatial discretization.
+  See for example \cite{lohmann2017flux,guermond2014second}.
+  %
+  In addition, in this section we lump the mass matrix, 
+  which introduces dispersive errors \cite{guermond2017effect}
+  We remedy these two problems later.
+  %
+  Therefore, for now the high-order semi discretization of \eqref{transport_equation} is given by
+  \begin{align}\label{high-order_semi-discretization}
+    \frac{d}{dt}U_i^H(t)=F_i(t)=-m_i^{-1}\sum_j K_{ij}(t) U_j(t),
+  \end{align}
+  where $U^H$ denotes the high-order solution. See more details in \S\ref{sec:FE_discUpwind}.
+\end{remark}
+
+We apply a standard Runge-Kutta scheme to \eqref{high-order_semi-discretization} to get
+\begin{align}\label{high-order_RK}
+  U_i^H=U_i^n+\Delta t\sum_{m=1}^M b_k k_{m,i}.
+\end{align}
+Here we abuse the notation and let $U^H$ denote the high-order solution at time $t^{n+1}$.
+The idea is to extract the forward Euler component from \eqref{high-order_RK}.
+Since $k_{1,i} = F_i(t^n,U^n)=:F_i^n$, we get 
+\begin{align}\label{last_stage_RK_aux1}
+  U_i^H=U_i^n+\Delta t F^n_i + \Delta t (b_1-1)F^n_i + \Delta t \sum_{m=2}^M b_k k_{m,i}.
+\end{align}
+Moreover, we split the forward Euler flux as
+\begin{align*}
+  F_i^n=-m_i^{-1}\sum_j K^n_{ij}U_j^n = -m_i^{-1}\sum_j \left[(K^n_{ij}+D_{ij}^{L,n})U_j^n - D_{ij}^{L,n}U_j^n\right],
+\end{align*}
+where $D_{ij}^{L,n}$ is the discrete upwinding matrix
+(given by \eqref{transport_and_discUpwinding_matrices}) at time $t^n$. 
+Using the definition of the low-order method \eqref{low-order},
+equation \eqref{last_stage_RK_aux1} becomes
+\begin{align}\label{last_stage_RK_aux2}
+  m_i(U_i^H-U_i^L) = \Delta t \sum_j D_{ij}^{L,n} U_j^n +
+  \Delta t m_i (b_1-1)F^n_i + \Delta t m_i\sum_{m=2}^M b_k k_{m,i}.
+\end{align}
+
+Since $U^L$ satisfies the local bounds \eqref{local-bounds},
+it is clear that the right hand side of \eqref{last_stage_RK_aux2}
+is responsible not only for increasing the accuracy of $U^H$ in space and time
+but also for creating violations of the local bounds.
+%
+We use the standard ideas in the Flux Corrected Transport (FCT) methodology
+by \cite{boris1973flux} and \cite{zalesak1979fully}, see also \cite{kuzmin2012flux},
+to limit the flux correction; i.e., the right hand side of \eqref{last_stage_RK_aux2}.
+%
+To do this we need to rewrite the right hand side of \eqref{last_stage_RK_aux2}
+as an anti-diffusive flux correction $f_{ij}^C$.
+To guarantee conservation of mass we need $f_{ij}^C=-f_{ji}^C$.
+Let $K^m_{ij}$ be the entries of the transport operator corresponding to the $m$-th stage
+in the RK method. Then 
+\begin{align}
+  k_{m,i} = F_{m,i}=\sum_j (K^m_{ij}U_j^m - K^m_{ji}U_i^m),
+\end{align}
+see remark \ref{remark:conservation_low-order} for more details.
+Similarly $F_i^n=\sum_j(K^n_{ij}U_j^n - K^n_{ji}U_i^n)$.
+Finally, since $\sum_j D_{ij}^{L,n}=0$, we get
+$\sum_jD_{ij}^{L,n}U_j^n=\sum_jD_{ij}^{L,n}(U_j^n-U_i^n)$. Therefore, the flux correction is
+given as follows: 
+\begin{align}
+  \begin{split}
+  f_{ij}^C = \Delta t \sum_j D_{ij}^{L,n}(U_j^n-U_i^n)
+  +  \Delta t m_i(b_1-1)\sum_j(K^n_{ij}U_j^n - K^n_{ji}U_i^n) 
+  +  \Delta t m_i\sum_{m=2}^M b_k \sum_j (K^m_{ij}U_j^m - K^m_{ji}U_i^m).
+  \end{split}
+\end{align}
+Since $D_{ij}^{L,n}=D_{ji}^{L,n}$, it is clear that $f_{ij}^C=-f_{ji}^C$.
+Now we rewrite \eqref{last_stage_RK_aux2} as
+\begin{align}
+  m_i(U_i^H-U_i^L) = \sum_j f_{ij}^C.
+\end{align}
+
+Finally the solution at time $t^{n+1}$ is given by 
+\begin{align}\label{MRK_last_stage}
+  m_i(U_i^{n+1}-U_i^L)=\sum_j\mathcal{L}_{ij}f_{ij}^C,
+\end{align}
+where $\mathcal{L}_{ij}$ are the flux limiters given by
+\begin{subequations}
+\begin{align}
+  \mathcal{L}_{ij}:=
+  \begin{cases}
+    \min(R_i^+,R_j^-), & \text{ if } f_{ij}^C\geq 0, \\
+    \min(R_i^-,R_j^+), & \text{otherwise}, \\
+  \end{cases}
+\end{align}
+where
+\begin{align}
+  R_i^+ &:=
+  \begin{cases}
+    \min\left[1, \frac{m_i(U_i^{\max}-U_i^L)}{f_i^{C,+}} \right], & f_i^{C,+}\neq 0, \\
+    1, & \text{otherwise}
+  \end{cases},
+  & R_i^- &:=
+  \begin{cases}
+    \min\left[1, \frac{m_i(U_i^{\min}-U_i^L)}{f_i^{C,-}} \right], & f_i^{C,-}\neq 0, \\
+    1, & \text{otherwise}
+  \end{cases}, \\
+  f_i^{C,+}&:=\sum_j \max(0,f_{ij}^C)  & f_i^{C,-}&:=\sum_j \min(0,f_{ij}^C).
+\end{align}
+\end{subequations}
+
+\begin{remark}[About the discrete maximum principle (DMP).]
+  The solution $U_i^{n+1}$ satisfies the following local bounds:
+  \begin{align*}
+    U_i^{\min} \leq U_i^{n+1} \leq U_i^{\max}.
+  \end{align*}
+  The proof is very standard (see for instance \cite{guermond2014second,kuzmin2012flux}).
+  Assume $f_i^{C,+}\neq 0$, then 
+  \begin{align*}
+    \begin{split}
+      m_i(U_i^{n+1}-U_i^L)
+      &=\sum_j\mathcal{L}_{ij}f_{ij}^C
+      \leq\sum_{j,f_{ij}^C\geq0}\mathcal{L}_{ij}f_{ij}^C
+      =\sum_{j,f_{ij}^C\geq0}\min(R_i^+,R_j^-)f_{ij}^C 
+      \leq R_i^+ f_i^{C,+}
+      \leq \frac{m_i(U_i^{\max}-U_i^L)}{f_i^{C,+}}f_i^{C,+}\\
+      &=m_i(U_i^{\max}-U_i^L)
+      \implies U_i^{n+1}\leq U_i^{\max}. 
+    \end{split}
+  \end{align*}
+  If $f_i^{C,+}=0$,
+  \begin{align*}
+    \begin{split}
+      m_i(U_i^{n+1}-U_i^L)\leq R_i^+ f_i^{C,+}=0\implies U_i^{n+1}\leq U_i^L\leq U_i^{\max}.
+    \end{split}
+  \end{align*}
+  The lower bound is proven similarly.
+\end{remark}
+
+\begin{remark}[About mass conservation.]
+  The method \eqref{MRK_last_stage} is mass conservative in the sense that
+  $\sum_i m_iU_i^{n+1}=\sum_i m_iU_i^n$.
+  Recall that the limiters are symmetric and the flux correction is skew symmetric; i.e.,
+  $\mathcal{L}_{ij}=\mathcal{L}_{ji}$ and $f_{ij}^C=-f_{ji}^C$, respectively.
+  Therefore,
+  \begin{align*}
+    \begin{split}
+    \mathcal{L}_{ij}f_{ij}^C=-\mathcal{L}_{ji}f_{ji}^C
+    \implies \sum_i\sum_j \mathcal{L}_{ij}f_{ij}^C=0 
+    \implies \sum_i m_iU_i^{n+1}=\sum_i m_iU_i^L.
+    \end{split}
+  \end{align*}
+  Finally, due to remark \ref{remark:conservation_low-order}, $\sum_i m_iU_i^L=\sum_i m_iU_i^n$.
+  Therefore, $\sum_i m_iU_i^{n+1}=\sum_i m_iU_i^n$.  
+\end{remark}
+
+\subsection{Modified RK methods with flux limiting on all stages}
+\subsection{Hierarchical modified RK methods with flux limiting}
+
+\clearpage
+\section{Numerical experiments}
+
+{\it Advection with smooth initial data.} Consider the domain $\Omega=(0,1)$
+with periodic boundary conditions. The velocity is given by $\bfv=1$ and the initial
+condition by
+\begin{align}\label{smooth_initial_data}
+  u(\bfx,t=0)=\frac{1}{2}(\sin(2\pi x)+1), 
+\end{align}
+which is clearly bounded between $[0,1]$.
+
+\subsection{Modified RK methods with flux limiting on last stage}
+
+{\it Advection with smooth initial data.}
+We consider the one-dimensional problem with initial data given by \eqref{smooth_initial_data}
+and perform a convergence study with different methods.
+The spatial discretization is given by second order central finite differences.
+%
+In all cases, we solve the problem up to $t=1$ and report the minimum and maximum values
+and the error and convergence in the $L^1$-norm given by
+\begin{align}
+  E=h\sum_i |U_i-u_i^{\text{exact}}|.
+\end{align}
+
+%
+As a reference, we solve the problem using the standard 4th order Runge-Kutta method.
+We consider \eqref{MRK_last_stage} with global bounds given by $(u_i^{\min}, u_i^{\max})=(0,1), ~\forall i$
+and local bounds given by \eqref{local-bounds}.
+In all cases the time step is given by $\Delta t=C h/U$ with $C=0.8, U=1$ and $h=\frac{1}{N-1}$ where $N$ is the number of DOFs
+reported in the results. The results are shown in table \ref{table:MRK4_limiting_last_stage}.
+
+{\color{red} NOTE: The time step should be chosen via \eqref{CFL_low_order_scheme}.
+  However, I think $\Delta t=C h/U$ is enough for 1D with uniform meshes. I will make the change in the code and run again the tests.}
+
+\begin{table}[h]\scriptsize
+\begin{center}
+\begin{tabular}{|c||c|c|c|c||c|c|c|c||c|c|c|c||} \cline{1-13}
+\multicolumn{1}{|c||}{} &
+\multicolumn{4}{|c||}{Standard RK4} &
+\multicolumn{4}{|c||}{Modified RK4 with global bounds} &
+\multicolumn{4}{|c||}{Modified RK4 with local bounds} \\ \hline
+$N$ & $ \min$ &  $1-\max$ & $ E $ &  & $\min$ &  $\max$ & $E$ &   & $\min$ & $\max$ & $E$ &  \\ \hline
+21  & 3.52E-2 & -1.46E-2 & 1.26E-2 & --   & 3.79E-2 & 0.9996 & 1.17E-2 & --   & 4.30E-2 & 0.9745 & 1.04E-2 & --    \\ \hline
+41  & -1.58E-2 & -7.66E-3 & 2.90E-3 & 2.12 & 0       & 0.9986 & 2.64E-3 & 2.14 & 1.13E-2 & 0.9905 & 2.58E-3 & 2.01 \\ \hline
+81  & -2.61E-3 & -2.88E-3 & 6.74E-4 & 2.10 & 7.03E-4 & 1      & 6.44E-4 & 2.03 & 5.38E-3 & 0.9966 & 6.42E-4 & 2.00 \\ \hline
+161 & -7.78E-4 & -7.89E-4 & 1.61E-4 & 2.05 & 0       & 1      & 1.59E-4 & 2.01 & 2.02E-3 & 0.9987 & 1.59E-4 & 2.00 \\ \hline
+321 & -3.39E-4 & -2.87E-4 & 3.98E-5 & 2.02 & 0       & 1      & 3.95E-5 & 2.01 & 7.82E-4 & 0.9995 & 3.96E-5 & 2.01 \\ \hline
+641 & -1.30E-4 & -3.56E-5 & 9.85E-6 & 2.01 & 0       & 1      & 9.83E-6 & 2.00 & 3.11E-4 & 0.9998 & 9.85E-6 & 2.00 \\ \hline
+\end{tabular}
+\caption{Grid convergence with second order central finite differences in space.
+  The time discretization is done via the standard RK4
+  and the modified RK4 \eqref{MRK_last_stage} using global and local bounds.}
+\label{table:MRK4_limiting_last_stage}
+\end{center}
+\end{table}
+
+\bibliographystyle{plain}
+%\bibliographystyle{abbrvnat}
+\bibliography{References}
 
 
 \end{document}
