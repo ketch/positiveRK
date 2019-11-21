@@ -1,0 +1,118 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{Positivity-preserving adaptive Runge-Kutta methods: project context and outline}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Main idea}
+
+The goal of this project is to develop a class of Runge--Kutta methods that enforce positivity or similar bound constraints (such as a maximum principle) on the numerical solution by adaptively choosing the method coefficients.
+
+If one considers the stages and their coefficients to be fixed,
+then choosing the weights in a way that guarantees a positive
+solution is a linear programming problem.
+
+\subsection{Additional potential directions}
+\begin{enumerate}
+    \item Adapt subquadrature weights ($A$) as well
+    \item Adapt time step size as well
+    \item Linear multistep methods
+\end{enumerate}
+
+\section{Challenges and potential solutions}
+\begin{enumerate}
+    \item Solving a linear programming problem at each step may be expensive.  This can be alleviated by pruning the set of positivity constraints.  Or, by focusing on implicit methods,
+    this cost is likely to be less significant in relative terms.
+    \item It is difficult to ensure stability of the resulting method,
+    since stability properties depend in a highly nonlinear way
+    on the weights.  One way to potentially avoid instabilities is
+    to ensure that the weights are not too far from those of a known
+    good method.
+    \item There may be no solution to the linear programming problem.
+    In this case we need a fallback.  This could involve resorting
+    to a lower-order embedded method (and possibly modifying its
+    weights as well).
+\end{enumerate}
+
+\section{Existing related approaches and their limitations}
+\subsection{Strong stability preserving (SSP) methods}
+Guarantee positivity under a step size restriction proportional
+to the explicit Euler positive step size.  If that step size
+is very small, SSP methods are not so useful.  Explicit
+one-step SSP methods can only be fourth-order accurate.  Also,
+implicit SSP methods do not guarantee positivity under
+large step sizes.  See e.g. \cite{gottlieb2009high,gottlieb2011strong}.
+
+\subsection{Modified Patankar methods}
+Guarantee positivity for certain types of ODEs
+(conservative production-destruction systems).
+Not applicable outside that problem class.  These methods
+are implicit, though only in a linear way.
+It's difficult to achieve higher than 3rd-order
+accuracy with them.  See e.g. \cite{ortleb2017patankar,kopecz2018unconditionally}.
+
+
+\subsection{Spatial adaptation of the time discretization}
+Yet another approach is to use different time integration methods
+in a localized spatial region where positivity is an issue.
+For instance, one can use a convex combination of high-
+and low-order schemes, with the combination chosen locally
+to ensure positivity \cite{duraisamy2003concepts}.
+See also \cite{ketcheson2013spatially,duraisamy2007implicit}.
+
+\subsection{Local adaptation of the spatial discretization}
+There are many works that take this approach, but we won't
+review them here as they are quite different in principle
+from the present focus.
+
+\section{Applications and test problems}
+
+\subsection{Explicit methods}
+
+\begin{enumerate}
+    \item Scalar conservation laws (advection, Burgers): solution bounded by extrema of initial data
+    \item Shallow water equations: enforce positive depth
+    \item Euler equations: enforce positive density, pressure
+    \item Reactive Euler equations or multiphase equations: box bounds
+\end{enumerate}
+
+\subsection{Implicit methods}
+
+\begin{enumerate}
+    \item Heat equation with non-smooth initial data: enforce positivity and/or maximum principle
+    \item Robertson problem
+    \item HV atmospheric pollution problem
+\end{enumerate}
+
+\section{Methods to work with}
+\subsection{Explicit methods}
+
+\begin{enumerate}
+    \item  SSP(10,4): lots of degrees of freedom in choosing weights
+    \item Other high-order explicit methods with extra stages
+    \item  Explicit extrapolation or deferred correction methods: have a built-in hierarchy of methods of increasing order, to use as fallbacks.  In particular, extrapolation methods based on explicit Euler can be guaranteed to have positive intermediate stages.
+\end{enumerate}
+
+\subsection{Implicit methods}
+\begin{enumerate}
+    \item  Implicit extrapolation or deferred correction methods: have a built-in hierarchy of methods of increasing order, to use as fallbacks.  In particular, extrapolation methods based on implicit Euler can be guaranteed to have positive intermediate stages.
+\end{enumerate}
+\end{document}
+
+
+\section{Research tasks}
+The research for this project mainly consists of implementing
+different approaches and testing the implementation on
+appropriate problems.  At each step, depending on the test
+results, various additional steps may be necessary.
+
+\begin{itemize}
+    \item Develop basic implementation of the idea and test it on simple problems.  Identify any problems that arise. (done)
+    \item Test fallback to lower-order embedded methods.
+    \item Implement implicit Euler extrapolation methods.
+\end{itemize}
