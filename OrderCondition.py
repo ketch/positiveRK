@@ -12,7 +12,20 @@ def tau_hat(k,A,c):
 
 
 def OrderCond(A,c,order = 1):
+    """
     #Generates Order Condition Matrix O and right side vector r for Linear Equation System O@b=r
+    
+    example:
+    
+    A: A matrix of RKM
+    c: c vector of RKM
+    order: Order to compute the order condition
+    
+    (O,rhs) = OrderCond(rkm.A,rkm.c,order = 1)
+    
+    O@b - rhs #should return 0
+    
+    """
     
     s = len(c) #number of stages
     
