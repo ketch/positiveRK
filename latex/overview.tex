@@ -1,0 +1,191 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+
+\title{Positivity-preserving adaptive Runge-Kutta methods: results}
+\author{Stephan Nuesslein}
+
+\begin{document}
+
+\maketitle
+
+\section{Main Idea}
+The goal of the project is to develop a positivity preserving method that uses adaptive b-Coefficients for every step.  This means that the computed stage values can be used and don't have to be recomputed. 
+The resulting b should comply with the order conditions as far as possible.
+
+Flowchart to evaluate a step:
+
+\begin{itemize}
+\item Calculate the stage values $k_1,\cdots,k_s$
+\item Calculate the $u_{n+1} = u_n + \Delta t K b_{d}$ with a default b
+\item Test it $u_{n+1} \geq 0$ if not:
+\item find a new b with $u_n + \Delta t K b \geq 0$
+\item Calculate the $u_{n+1} = u_n + \Delta t K b$ with the new b
+\end{itemize}
+
+
+\section{Applicable Problems}
+The approach can be used with ODE systems $u' = f(t,u)$ that ensure  $u(t) \geq 0 \forall_t \forall_{  u_0 \geq 0}$ 
+
+This can be tested with the property 
+\begin{equation}
+u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall_{u_c \geq 0} \forall_{t}
+\end{equation}
+
+For problems where only the combination of $f(t,u)$ and $u_0$ leads to positifity tests did not show promising results, additional it is not sure if the computed solution is reasonable.
+
+\section{Details}
+
+\subsection{Positifity}
+For solving an PDE with the method of lines an spartial grid  with $p$ points is introduced. 
+From this we get an ODE with an $u \in R^p$.
+
+To enshure that the solution is positive 
+
+\begin{align}
+ u_i^{n+1} &\geq 0   \;   \forall_{i \in \{0,p-1 \}}  \\
+ u_i^n + h \sum_{j=0}^{s-1} b_j h_i^j  &\geq 0   \;   \forall_{i \in \{0,p-1 \}}  
+\end{align}
+
+has to be fulfilled.
+This infers $p$ positivity constraints to the optimisation problem. These can be written as
+
+\begin{equation}
+u_i + h K  b \geq 0     
+\end{equation}
+
+where $K = \big[k^1 , \cdots k^{s-1}\big]$.
+
+
+
+
+\subsection{Order Conditions}
+
+The Order Conditions are an linear equations system and can be written as $O b = r$. 
+
+The vector $b \in R^s$ contains the b coefficients. $s$ is the number of stages. $O$ is an $n \times s$ matrix, where $g$ is the number of Order Conditions. $r$ is an vector containing the right hand side of the Order Conditions
+
+We if we use a $A$ from a known method we know that there is at least one solution for the linear equation system.
+In order to get an optimization problem the equation system has to be underdetermined.
+This implies that $rank{O} \leq s$. 
+Because the Quadrature Conditions are linear independent $p \leq s$ has to be fulfilled.
+This implies that the number of stages has to be higher as the wanted required order.
+
+\subsection{Objective function}
+Different types of objective functions have been tried. (Notebook: objectives.ipynb)
+
+\begin{description}
+
+\item[L1 norm] The optimisation Problem opimises for $min(|b-rkm.b|_1)$
+            
+\item[Quadrature]   The optimisation Problem opimises for $min(|bTq-r|)$
+                            where q is the quadrature condition of the next higher order 
+                            and r is the expected right hand side
+            
+\item[Hom. Order]    The optimisation Problem opimises for $min(|bTO|)$ where O are the homogenus Order Conditions of the next higher orders
+                            
+ 
+\end{description}
+
+The different approaches have been tested for a test problem from Kopecz and Meister 2018 (Two substances reacting). The optimization problem was used at every step.
+The magnitude of $b$ can get large if the Order Conditions are used as objective function.
+By changing the $b$ the stability function is altered. This can lead to oscillations if the poles of the rhs are no longer in the stability region of the resulting method.
+For this reason $||b_{optim}-b_{orig}||_1$ seems like a good choice
+It is important to only adapt the b if needed (also for performance reasons).
+
+
+\section{Results of experiments}
+\subsection{Explicit methods}
+For most of the test problems problems with stability occur before getting negative values. This means that we need methods with large stability region.
+A test problem that works good is the advection‐diffusion‐production‐destruction systems. 
+For the production‐destruction systems negative values at the intermediate steps occurred. These results of these could be suppressed by the optimization problem  except for some timesteps where these yield to glitches in the solution.
+
+Conclusion: it is important to control for negative Values in the intermediate stages.
+Possible solutions: Solve an positifity ensuring optimization Problem at every intermediate step.
+Can be formulated as choosing a new $b$ for every intermediate stage which then gets part of $A$ in the next step.
+
+Another idea to explore (Is kind of obvious but could also be stupid): Replace $f(t,u)$ with an $f_{pos}(t,u)$ with 
+$f(t,u)=f_{pos}(t,u) \forall u \geq 0 $
+Whereas $f_{pos}(t,u)$ is welldefined for $u \leq 0$
+
+
+\subsection{Implicit methods}
+Implicit methods seem like an advantageous choice for a couple of reasons.
+
+\begin{itemize}
+\item The computational effort of solving the optimisation Problem is relatively small compared to the overall cost of the method.
+\item Implicit methods are stable for large step sizes.
+\item Implicit methods ensure positifity for the backward euler step, even for large step sizes.
+\item There are no methods for ensuring positifity for higher order methods (Which we also can not get around for the general case)
+\end{itemize}
+
+Used for the ADP model the model yields good results, the main limit for the stepsize is the accuracy of the solver for the stageequations.
+
+When tested on the diffusion equation with an spike as initial data the $b$ is only changed for the first step. The change of the $b$ can lead to reasonable changes of the hight of the maximum. 
+
+
+
+\section{Useful proofs}
+
+\subsection{Existence of b}
+Ensuring a feasible $b$ exists for a certain order condition is in general very difficult.
+If we drop the order conditions it is known that there is a positive solution as long as there is a $k_c$ with $k_c \geq 0$.
+This is no problem when using a implicit method because a backward euler step always gives a positive solution. 
+
+\subsection{Stability function of linear combinations}
+Let $R_b(z)$ denote the stability function of a RKM method with the butcher tableau
+
+$$
+\begin{array}
+{c|c}
+c & A\\
+\hline
+& b^T
+\end{array}
+$$
+
+We want to prove that $R_{\alpha b_a+\beta b_b}(z)$ = $\alpha R_{ b_a}(z)+\beta R_{b_b}(z)$ when $\alpha + \beta = 1$ and $A$ is the same for all methods.
+
+We start with the definition of the RKM
+
+\begin{align}
+u_{n+1} &= u_n + \Delta t K (\alpha b_a+\beta b_b) \label{eq:u_n+1}  \\
+u_{n+1}^{sum} &= \alpha (u_n + \Delta t K b_a) + \beta (u_n + \Delta t K b_b) \label{eq:u_n+1_sum} \\
+& = (\alpha + \beta) u_n + \Delta t \alpha K b_a + \Delta t \beta K b_b \\
+&= u_n + \Delta t K (\alpha b_a+\beta b_b) \\
+&=u_{n+1} 
+\end{align}
+
+Now we insert the Stability functions for \ref{eq:u_n+1} and \ref{eq:u_n+1_sum} which we already know to be equal. We get 
+
+\begin{align}
+u_{n+1} &= u_{n+1}^{sum} \\
+R_{\alpha b_a+\beta b_b}(z) u_n &= \alpha R_{\alpha b_a}(z) u_n + \beta R_{\beta b_b}(z) u_n \\
+&= (\alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z)) u_n
+\end{align}
+
+because this has to be true for all $u_n$ we get
+
+\begin{equation}
+R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) 
+\end{equation}
+
+\subsection{Stability of convex combination}
+
+With this we can proof that the convex combination of two methods is absolutely stable at the points where both original methods were absolutely stable.
+
+We want to show that $|R_{b_a}(z)|  < 1 ^ |R_{b_b}(z)| < 1\Rightarrow |R_{\chi b_a +(1- \chi) b_b}(z)| < 1$ with $\chi \in [0,1]$.
+We write $\alpha = \chi$ and $\beta = 1-\chi$ for convenience.
+
+\begin{align}
+|R_{\alpha b_a +\beta b_b}(z)| &= |\alpha R_{b_a}(z) + \beta R_{b_a}(z)| \leq |\alpha R_{b_a}(z)| + |\beta R_{b_a}(z)|\\
+ &=| \alpha| \underbrace{|R_{b_a}(z)|}_{<1} + |\beta| \underbrace{|R_{b_a}(z)|}_{<1} < \alpha + \beta = 1
+\end{align}
+
+
+
+
+
+
+
+\end{document}
