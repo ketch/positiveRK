@@ -187,7 +187,7 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
 
 def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.ECOS,
                  fallback = True,num_fallback = 1,dumpK=False,verbose=False,LP_opts = {}, 
-                 return_status = False):
+                 return_status = False,dump_change = False):
 
     """    
     Options:
@@ -201,6 +201,7 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
         solver:     the solver used for solving the LP Problem
         fallback:   if True the order of the Order Conditions is reduced by num_fallback
         dumpK:      if True the stage values are also returned
+        dump_change:if True the change to the u_n at ecah step is also returned
         verbose:    if True function prints additional messages
         return_status: if True the function returns additional messages
 
@@ -233,6 +234,8 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
     
     if dumpK:
         KK = ['null']
+    if dump_change:
+        NN = ['null'] #array for the norms
     
     
     #Setup Runge Kutta 
@@ -248,23 +251,30 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
     
     if b_fixed == False:
         if fallback == True:
+            p_new = rkm.p-num_fallback
             O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p-num_fallback) #Fallback
         else:
+            p_new = rkm.p
             O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p) 
         
         
         LP_vars = setup_LP(solver,rkm,O,rhs,s)
-    
+    else:
+        p_new = None
           
         
     #for debugging b's    
     bb = np.zeros([s,int(t_final/dt)+2])
         
     status = {
+        'basemethod': rkm.name,
+        'order':{'orig':rkm.p,'new':p_new},
         'dt': dt,
         'success': True,
         'message': '',
-        'b':[]
+        'neg_stage': {},
+        'b':[],
+        'change':[]
     }
     
     if verbose: print('set up starting to solve')
@@ -278,7 +288,12 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
             
             K[:,i] = f(t+c[i]*dt,u_prime)
             
-            if np.any(u_prime<-1.e-5)and verbose: print(n+1,i,u_prime) #print input to f(t,u) if it is negative
+            if np.any(u_prime<-1.e-6):
+                status['message'] = status['message'] + 'negative u\' at step'+ str(n+1) + 'stage' + str(n+1) + '\n'
+                if n+1 not in status['neg_stage'].keys():
+                    status['neg_stage'][n+1] = np.zeros(s)
+                status['neg_stage'][n+1][i] = 1 #np.nonzero(u_prime > 1.e-6)
+                if verbose: print(n+1,i,u_prime) #print input to f(t,u) if it is negative
             
         if dumpK:
             KK.append(K.copy())
@@ -299,12 +314,14 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
                      status['success'] = False
                      status['message'] = status['message'] + 'LP-solver failed at step '+ str(n+1) + '\n'
                      break
-
+                status['change'].append(np.linalg.norm(K@(b-rkm.b)))
             
         else:
             b =rkm.b
         #update
-        u += dt*K@b
+        u += dt*K@b 
+        if dump_change:
+            NN.append(np.linalg.norm(K@(b-rkm.b)))
         n += 1
         t += dt
         
@@ -317,6 +334,8 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
     ret = (tt[0:n+1],uu[:,0:n+1],bb[:,0:n+1])
     if dumpK:
         ret= ret + (KK,)
+    if dump_change:
+        ret= ret + (NN,)
     if return_status:
         ret= ret + (status,)
     
@@ -438,7 +457,7 @@ def solver_nonlinear_nk(t,u,dt,a,f,verbose_solver = False,preconditioner=None):
 
 def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver_Matrix,
                            b_fixed = False,solver = cp.ECOS,fallback = True,num_fallback = 1,dumpK=False,verbose=False,
-                          LP_opts = {},solveropts = {},return_status = False):
+                          LP_opts = {},solveropts = {},return_status = False,dump_change = False):
     """   
     for Diagonally Implicit methods
     Options:
@@ -453,6 +472,7 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
         solver:     the solver used for solving the LP Problem
         fallback:   if True the order of the Order Conditions is reduced by num_fallback
         dumpK:      if True the stage values are also returned
+        dump_change:if True the change to the u_n at ecah step is also returned
         verbose:    if True function prints additional messages
         return_status: if True the function returns additional messages
 
@@ -496,6 +516,8 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
         
     if dumpK:
         KK = ['null']
+    if dump_change:
+        NN = ['null'] #array for the norms
     
     #Setup Runge Kutta 
     c = rkm.c
@@ -511,11 +533,16 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
     #Setup Optimisation Problem
     if b_fixed == False:
         if fallback == True:
+            p_new = rkm.p-num_fallback
             O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p-num_fallback) #Fallback
         else:
+            p_new = rkm.p
             O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p) 
         
+        
         LP_vars = setup_LP(solver,rkm,O,rhs,s)
+    else:
+        p_new = None
         
     #for debugging b's  
     if isinstance(dt_, (list, tuple, np.ndarray)):
@@ -524,9 +551,12 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
         bb = np.zeros([s,int(t_final/dt)+100])
 
     status = {
+        'basemethod': rkm.name,
+        'order':{'orig':rkm.p,'new':p_new},
         'dt': dt,
         'success': True,
         'message': '',
+        'neg_stage': {},
         'b':[]
     }
 
@@ -547,9 +577,13 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
             
             K[:,i] = solver_eqs(t+c[i]*dt,u_prime,dt,A[i,i],f,**solveropts)
             
-            if np.any(u_prime<-1.e-20)and verbose: print(n+1,i,u_prime) #print input to f(t,u) if it is negative
-            #print('intermediatestep computed')
-            
+            if np.any(u_prime<-1.e-6):
+                status['message'] = status['message'] + 'negative u\' at step'+ str(n+1) + 'stage' + str(n+1) + '\n'
+                if n+1 not in status['neg_stage'].keys():
+                    status['neg_stage'][n+1] = np.zeros(s)
+                status['neg_stage'][n+1][i] = 1 #np.nonzero(u_prime > 1.e-6)
+                if verbose: print(n+1,i,u_prime) #print input to f(t,u) if it is negative
+
         if dumpK:
             KK.append(K.copy())
         
@@ -569,11 +603,14 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
                      status['success'] = False
                      status['message'] = status['message'] + 'LP-solver failed at step '+ str(n+1) + '\n'
                      break
+                status['change'].append(np.linalg.norm(K@(b-rkm.b)))
 
         else:
             b =rkm.b
         #update
         u += dt*K@b
+        if dump_change:
+            NN.append(np.linalg.norm(K@(b-rkm.b)))
         t += dt
         n += 1
         
@@ -584,8 +621,10 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
        
     ret = (tt[0:n+1],uu[:,0:n+1],bb[:,0:n+1])
     if dumpK:
-        ret = ret + (KK,)
+        ret= ret + (KK,)
+    if dump_change:
+        ret= ret + (NN,)
     if return_status:
-        ret = ret + (status,)
-    
+        ret= ret + (status,)
+
     return ret

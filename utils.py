@@ -163,6 +163,11 @@ def find_dt(time_integrator,rkm,f,u0,dt_start,cond = '',tol = 0.001,Params = {})
             print('500 iterations reached')
             raise ValueError
 
+        if dt_new >= dt_start*1e5:
+            print('Time is getting to big. Apparently the time is not valid. Setting to 0')
+            dt_sol = 0
+            break
+
     return (dt_sol,dt,val) 
 
 
@@ -175,7 +180,8 @@ def findall_dt(time_integrator,rkm,f,u0,dt_start,tol = 0.001,Params = {}):
 
     Parameters:
     time_integrator:    function used to integrate the ODE
-    rkm,f,u0:           Arguments for time integrator
+    rkm:                The RKM to use, if tuple then the times for all RKM are computet 
+    f,u0:               Arguments for time integrator
     dt_start:           dt to start with
     tol:                the toleranc for dt
     
@@ -187,9 +193,76 @@ def findall_dt(time_integrator,rkm,f,u0,dt_start,tol = 0.001,Params = {}):
 
     conds = ('dt_pos','dt_stable','dt_feasible')
     dt = {}
+    if not type(rkm) is tuple:
+        for cond in conds:
+            print('search for',cond)
+            dt_sol,dt_,val_ = find_dt(time_integrator,rkm,f,u0,dt_start,cond = cond,tol = tol,Params = Params)
+            dt[cond] = dt_sol
+        return dt
 
-    for cond in conds:
-        print('search for',cond)
-        dt_sol,dt_,val_ = find_dt(time_integrator,rkm,f,u0,dt_start,cond = cond,tol = tol,Params = Params)
-        dt[cond] = dt_sol
-    return dt
+    else: #check for more methods
+        times = ()
+        for rkm_ in rkm:
+            print(rkm_)
+            dt = findall_dt(time_integrator,rkm_,f,u0,dt_start,tol = tol,Params = Params)
+            print(dt)
+            times = times + (dt,)
+        return times
+
+
+
+def plot_times(methods,dt,effective = False,title = ''):
+    """"
+    Function to plot the dt for multiple methods.
+
+    Paramters:
+    methods:    tuple with the methods
+    dt:         tuple with dicts of the methods
+    effective:  If true plot the effective timesteps
+    title:      String as title for the plot
+
+
+    """
+
+
+    labels = []
+    stages = []
+    dt_pos = []
+    dt_stable = []
+    dt_feasible = []
+
+    for i in range(len(methods)):
+        rkm = methods[i]
+        labels.append(rkm.name)
+        stages.append(len(rkm))
+        dt_pos.append(dt[i]['dt_pos'])
+        dt_stable.append(dt[i]['dt_stable'])
+        dt_feasible.append(dt[i]['dt_feasible'])
+    
+
+    stages = np.array(stages)
+    dt_pos = np.array(dt_pos)
+    dt_stable = np.array(dt_stable)
+    dt_feasible = np.array(dt_feasible)
+  
+    
+    x = np.arange(len(labels))  # the label locations
+    width = 0.1  # the width of the bars
+
+    fig, ax = plt.subplots()
+    if effective:
+        rects1 = ax.bar(x - width, dt_pos/stages, width, label='dt_pos_eff')
+        rects2 = ax.bar(x , dt_stable/stages, width, label='dt_stable_eff')
+        rects3 = ax.bar(x + width, dt_feasible/stages, width, label='dt_feasible_eff')
+    else:
+        rects1 = ax.bar(x - width, dt_pos, width, label='dt_pos')
+        rects2 = ax.bar(x , dt_stable, width, label='dt_stable')
+        rects3 = ax.bar(x + width, dt_feasible, width, label='dt_feasible')    
+
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    plt.grid()
+    print(labels)
+    
