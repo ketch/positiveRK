@@ -25,6 +25,7 @@ def setup_LP(solver,rkm,O,rhs,s):
     """
     
     if solver == 'scipy_ip' or solver == 'scipy_sim':
+        print('scipy')
         bounds = (0, None)
         A_eq = np.concatenate((O,-O),axis = 1)
         b_eq = rhs - O@rkm.b
@@ -34,6 +35,7 @@ def setup_LP(solver,rkm,O,rhs,s):
         LP_vars = (A_eq,b_eq,e,bounds)
             
     else:
+        print('cp')
         ap_op =cp.Variable(s)
         an_op =cp.Variable(s)
         e = np.ones(s) #vector for goal Function, just generates the 1-Norm of b
@@ -42,7 +44,7 @@ def setup_LP(solver,rkm,O,rhs,s):
 
     return LP_vars
 
-def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **options):
+def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False,maxval=None, **options):
     """
     This method solves the LP Problem
     
@@ -53,6 +55,7 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
     
     reduce:     If set, the LP problem is first solved with a reduced set of constriants
     verbose_LP: prints additional messages
+    maxval:     If scalar enforce the value as maximum on solution. If not used set to None
     options:    additional Options, are passed through to the used solver
     
     Returns:
@@ -68,12 +71,15 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
         2 : Problem appears to be infeasible.
         4 : Numerical difficulties encountered.
         5 : solver crashed
+        6 : Trivial Problem
 
     b: found b, if solver failed rkm.b
     
     """
 
     
+
+
                 
     if solver == 'scipy_ip' or solver == 'scipy_sim':
         (A_eq,b_eq,e,bounds) = LP_vars
@@ -85,30 +91,59 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
         
         
         if reduce:
-            u_ = u+dt*K@rkm.b #A intermediate version of u, if it is >=0 we can use it
-            i = np.zeros_like(u,dtype = bool)
-            while np.any(u_<0):
-                i = (u_<0)|i #update indecies for conditions
+            u_ = u +dt*K@rkm.b
+            if maxval:
+                i = (u_<0)|(u_>maxval)
+            else:
+                i = (u_<0)
+            l = [] #List to store number of positifity constraints considered in LP-Problem
+            if not np.any(i):
+                #apparently we got the trivial problem that is already ok
+                print('trival Problem for LP-Solver')
+                return (6,rkm.b,[0])
+            while not maxval and np.any(u_<0) or maxval and np.any((u_<0) | (u_>maxval)):
+                if maxval:
+                    i = (u_<0)|(u_>maxval)|i #update indecies for conditions
+                else:
+                    i = (u_<0)|i #update indecies for conditions
                 if verbose_LP: print(np.sum(i),'constraints')
+                l.append(np.sum(i))
                 
                 u_slice = u[i] #slice the u and K
                 K_slice = K[i,:]
                 
-                A_ub = np.concatenate((-K_slice,K_slice),axis = 1)
-                b_ub = 1/dt*u_slice+K_slice@rkm.b  
+                if maxval:
+                    A_ub_ = np.concatenate((-K_slice,K_slice),axis = 1)
+                    A_ub = np.concatenate((A_ub_,-A_ub_),axis = 0)
+                    b_ub_1 = 1/dt*u_slice+K_slice@rkm.b  
+                    b_ub_2 = 1/dt*(maxval-u_slice)-K_slice@rkm.b
+                    b_ub = np.concatenate((b_ub_1,b_ub_2),axis = 0)
+                else:
+                    A_ub = np.concatenate((-K_slice,K_slice),axis = 1)
+                    b_ub = 1/dt*u_slice+K_slice@rkm.b  
+                
                 res = linprog(e, A_ub=A_ub, b_ub=b_ub,A_eq=A_eq, b_eq=b_eq, bounds=bounds, method=method,
                               options = options)
                 
                 b = rkm.b+res.x[:s]-res.x[s:]
                 u_ = u+dt*K@b 
                 
-                if np.any(u_<0) and np.all((u_<0)|i == i): # there are no new conditions
+                if (not maxval and np.any(u_<0) and np.all((u_<0)|i == i) 
+                    or maxval and np.any((u_<0)|(u_>maxval)) and np.all((u_<0)|(u_>maxval)|i == i)): # there are no new conditions
                     if verbose_LP: print('number of conditions is not increasing')
                     break
       
         else:
-            A_ub = np.concatenate((-K,K),axis = 1)
-            b_ub = 1/dt*u+K@rkm.b    
+            l = [len(u)]
+            if maxval:
+                    A_ub_ = np.concatenate((-K,K),axis = 1)
+                    A_ub = np.concatenate((A_ub_,-A_ub_),axis = 0)
+                    b_ub_1 = 1/dt*u+K@rkm.b  
+                    b_ub_2 = 1/dt*(maxval-u)-K@rkm.b
+                    b_ub = np.concatenate((b_ub_1,b_ub_2),axis = 0)
+            else:
+                    A_ub = np.concatenate((-K,K),axis = 1)
+                    b_ub = 1/dt*u+K@rkm.b    
             res = linprog(e, A_ub=A_ub, b_ub=b_ub,A_eq=A_eq, b_eq=b_eq, bounds=bounds, method=method,options = options)
         
         
@@ -128,16 +163,32 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
         
         if reduce:
             u_ = u +dt*K@rkm.b
-            i = (u_<0)
-            while np.any(u_ < 0):
-                i = (u_<0)|i #update indecies for conditions
+            if maxval:
+                i = (u_<0)|(u_>maxval)
+            else:
+                i = (u_<0)
+            l = [] #List to store number of positifity constraints considered in LP-Problem
+            if not np.any(i):
+                #apparently we got the trivial problem that is already ok
+                print('trival Problem for LP-Solver')
+                return (6,rkm.b,[0])
+            while not maxval and np.any(u_<0) or maxval and np.any((u_<0)| (u_>maxval)):
+                if maxval:
+                    i = (u_<0)|(u_>maxval)|i #update indecies for conditions
+                else:
+                    i = (u_<0)|i #update indecies for conditions
                 if verbose_LP: print(np.sum(i),'constraints')
+                l.append(np.sum(i))
                 
                 u_slice = u[i] #slice the u and K
                 K_slice = K[i,:]
                 
                 #solve problem for slices u and K
-                prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
+                if maxval:
+                    prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
+                        [O@(ap_op-an_op+rkm.b)==rhs,u_slice+dt*K_slice@(ap_op-an_op+rkm.b)>=0, u_slice+dt*K_slice@(ap_op-an_op+rkm.b)<=maxval,ap_op>=0,an_op>=0]) 
+                else:
+                    prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
                         [O@(ap_op-an_op+rkm.b)==rhs,u_slice+dt*K_slice@(ap_op-an_op+rkm.b)>=0,ap_op>=0,an_op>=0]) 
                 try:
                     prob.solve(solver=solver,**options)
@@ -149,12 +200,18 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
 
                 u_ = u+dt*K@b
                 
-                if np.any(u_<0) and np.all((u_<0)|i == i): # there are no new conditions
+                if (not maxval and np.any(u_<0) and np.all((u_<0)|i == i) 
+                    or maxval and np.any((u_<0)|(u_>maxval)) and np.all((u_<0)|(u_>maxval)|i == i)): # there are no new conditions
                     if verbose_LP: print('number of conditions is not increasing')
                     break
                       
         else:
-            prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
+            l = [len(u)]
+            if maxval:
+                prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
+                    [O@(ap_op-an_op+rkm.b)==rhs,u+dt*K@(ap_op-an_op+rkm.b)>=0,u+dt*K@(ap_op-an_op+rkm.b)<=0,ap_op>=0,an_op>=0]) 
+            else:
+                prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
                     [O@(ap_op-an_op+rkm.b)==rhs,u+dt*K@(ap_op-an_op+rkm.b)>=0,ap_op>=0,an_op>=0]) 
             try:
                 prob.solve(solver=solver,**options)
@@ -177,7 +234,7 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
             status = 2
 
 
-    return (status,b)
+    return (status,l,b)
     
 
 
@@ -186,7 +243,7 @@ def solve_LP(solver,LP_vars,rkm,u,K,dt,reduce = False,verbose_LP = False, **opti
 
 
 def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.ECOS,
-                 fallback = True,num_fallback = 1,dumpK=False,verbose=False,LP_opts = {}, 
+                 fallback = True,num_fallback = 1,maxval = None,dumpK=False,verbose=False,LP_opts = {}, 
                  return_status = False,dump_change = False):
 
     """    
@@ -200,6 +257,7 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
         b_fixed:    if True rkm.b are used
         solver:     the solver used for solving the LP Problem
         fallback:   if True the order of the Order Conditions is reduced by num_fallback
+        maxval:     If scalar enforce the value as maximum on solution. If not used set to None
         dumpK:      if True the stage values are also returned
         dump_change:if True the change to the u_n at ecah step is also returned
         verbose:    if True function prints additional messages
@@ -236,6 +294,7 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
         KK = ['null']
     if dump_change:
         NN = ['null'] #array for the norms
+
     
     
     #Setup Runge Kutta 
@@ -251,8 +310,8 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
     
     if b_fixed == False:
         if fallback == True:
-            p_new = rkm.p-num_fallback
-            O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p-num_fallback) #Fallback
+            p_new = max(rkm.p-num_fallback,1) #Order = 0 is not allowed
+            O, rhs = OrderCond(rkm.A,rkm.c,order = p_new) #Fallback
         else:
             p_new = rkm.p
             O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p) 
@@ -274,7 +333,9 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
         'message': '',
         'neg_stage': {},
         'b':[],
-        'change':[]
+        'change':[],
+        'nup_pos_constriants':{},
+        'maxval':maxval
     }
     
     if verbose: print('set up starting to solve')
@@ -299,15 +360,16 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
             KK.append(K.copy())
         
         if b_fixed == False:
-            #test if positifity is correct
-            if (u+dt*K@rkm.b >= 0).all():
+            #test if constraints are correct 
+            u_ = u+dt*K@rkm.b 
+            if (u_>= 0).all() and (not maxval or (u_<= maxval).all()):
                 b =rkm.b
             
             else:
                  #Run Optimisation Problem
                 if verbose: print('change b',n+1)
                 status['b'].append(n+1)
-                (status_LP,b) = solve_LP(solver,LP_vars,rkm,u,K,dt,**LP_opts)
+                (status_LP,l,b) = solve_LP(solver,LP_vars,rkm,u,K,dt,maxval = maxval,**LP_opts)
                 if status_LP in [1,4]:
                     status['message'] = status['message'] + 'LP-solver reported Problem:'+ str(status_LP)+ 'at step' + str(n+1) + '\n'
                 elif status_LP in [2,3,5]: 
@@ -315,6 +377,7 @@ def RK_variable_b(rkm, dt, f, w0=[1.,0], t_final=1.,b_fixed = False,solver = cp.
                      status['message'] = status['message'] + 'LP-solver failed at step '+ str(n+1) + '\n'
                      break
                 status['change'].append(np.linalg.norm(K@(b-rkm.b)))
+                status['nup_pos_constriants'][n]=l
             
         else:
             b =rkm.b
@@ -533,8 +596,8 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
     #Setup Optimisation Problem
     if b_fixed == False:
         if fallback == True:
-            p_new = rkm.p-num_fallback
-            O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p-num_fallback) #Fallback
+            p_new = max(rkm.p-num_fallback,1) #Order = 0 is not allowed
+            O, rhs = OrderCond(rkm.A,rkm.c,order = p_new) #Fallback
         else:
             p_new = rkm.p
             O, rhs = OrderCond(rkm.A,rkm.c,order = rkm.p) 
@@ -557,7 +620,9 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
         'success': True,
         'message': '',
         'neg_stage': {},
-        'b':[]
+        'b':[],
+        'change':[],
+        'nup_pos_constriants':{}
     }
 
         
@@ -596,7 +661,7 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
                  #Run Optimisation Problem
                 if verbose: print('change b',n+1)
                 status['b'].append(n+1)
-                (status_LP,b) = solve_LP(solver,LP_vars,rkm,u,K,dt,**LP_opts)
+                (status_LP,l,b) = solve_LP(solver,LP_vars,rkm,u,K,dt,**LP_opts)
                 if status_LP in [1,4]:
                     status['message'] = status['message'] + 'LP-solver reported Problem:'+ str(status_LP)+ 'at step' + str(n+1) + '\n'
                 elif status_LP in [2,3,5]: 
@@ -604,6 +669,7 @@ def RK_variable_b_implicit(rkm, dt, f, w0=[1.,0], t_final=1.,solver_eqs = solver
                      status['message'] = status['message'] + 'LP-solver failed at step '+ str(n+1) + '\n'
                      break
                 status['change'].append(np.linalg.norm(K@(b-rkm.b)))
+                status['nup_pos_constriants'][n]=l
 
         else:
             b =rkm.b
