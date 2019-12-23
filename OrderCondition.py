@@ -11,7 +11,7 @@ def tau_hat(k,A,c):
     return c**k-k*A@(k-1)
 
 
-def OrderCond(A,c,order = 1):
+def OrderCond(A,c,order = 1,theta = 1):
     """
     #Generates Order Condition Matrix O and right side vector r for Linear Equation System O@b=r
     
@@ -38,23 +38,23 @@ def OrderCond(A,c,order = 1):
         
     else:
         if order >= 1:
-            O_rows.append(np.ones(s));      r.append(1)
+            O_rows.append(np.ones(s));      r.append(theta)
             
         if order >= 2:
-            O_rows.append(c);               r.append(1/2)
+            O_rows.append(c);               r.append(theta**2/2)
             
         if order >= 3:
-            O_rows.append(c**2);            r.append(1/3)
+            O_rows.append(c**2);            r.append(theta**3/3)
             O_rows.append(tau(2,A,c));      r.append(0.)
             
         if order >= 4:
-            O_rows.append(c**3);            r.append(1/4)
+            O_rows.append(c**3);            r.append(theta**4/4)
             O_rows.append(tau(2,A,c)*c);    r.append(0.)
             O_rows.append(tau(2,A,c)@A.T);  r.append(0.)
             O_rows.append(tau(3,A,c));      r.append(0.)
         
         if order >= 5:
-            O_rows.append(c**4);                     r.append(1/5)
+            O_rows.append(c**4);                     r.append(theta**5/5)
             O_rows.append(A@np.diag(c)@tau(2,A,c));  r.append(0.)
             O_rows.append(A@A@tau(2,A,c));           r.append(0.)
             O_rows.append(A@tau(3,A,c));             r.append(0.)
@@ -64,6 +64,9 @@ def OrderCond(A,c,order = 1):
             O_rows.append(np.diag(c**2)@tau(2,A,c)); r.append(0.)
             O_rows.append(tau(2,A,c)**2);            r.append(0.)
         if order >= 6:
+            if theta != 1: 
+                print('no dense output for that order')
+                raise NotImplementedError
             # order 6 conditions:
             O_rows.append(np.dot(A,c**4));                             r.append(1/30.)
             O_rows.append(np.dot(A,np.dot(A,c**3)));                   r.append(1/120.)
@@ -86,6 +89,9 @@ def OrderCond(A,c,order = 1):
             O_rows.append(np.dot(A,c)*np.dot(A,c)*c);                  r.append(1/24.)
             O_rows.append(c**5);                                       r.append(1/6.)
         if order >= 7:
+            if theta != 1: 
+                print('no dense output for that order')
+                raise NotImplementedError
             # order 7 conditions:
             O_rows.append(np.dot(A,c**5));                                          r.append(1/42.)
             O_rows.append(np.dot(A,np.dot(A,c**4)));                                r.append(1/210.)
