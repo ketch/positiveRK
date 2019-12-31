@@ -179,6 +179,7 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,maxval=No
                     if verbose_LP: print('Solver crashed')
                     b = None
                     status = 5
+                    break
 
                 u_ = u+dt*K@b
                 
@@ -221,7 +222,7 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,maxval=No
     
 
 
-def calculate_stages_imp(t,dt,u,rkm,f,solver_eqs,verbose=False,solveropts=None):
+def calculate_stages_imp(t,dt,u,rkm,f,solver_eqs,verbose=False,solveropts={}):
     """
     Function to calculate the stagevalues for a diagonaly implicit RKM
     
@@ -364,7 +365,7 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
                         if verbose: print('found new b')
                         return True, u_n,b, dt*the, message, change,p_new,the,status
 
-    return False, None,None, 0, message, None, 0, 0,status
+    return False, None,np.zeros_like(rkm.b)*np.nan, 0, message, None, 0, 0,status
 
 """
             else:
@@ -383,8 +384,8 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
 """
 
 class Solver:
-  def __init__(self, rkm = None,dt = None,t_final = None,b_fixed = None,tol_neg=None,
-                tol_change=None,p=None,theta=None,solver=None,LP_opts=None,solver_eqs = None):
+    def __init__(self, rkm = None,dt = None,t_final = None,b_fixed = None,tol_neg=None,
+                tol_change=None,p=None,theta=None,solver=None,LP_opts=None,solver_eqs = None,fail_on_requect = True):
         self.rkm = rkm #        Base Runge-Kutta method, in Nodepy format
         self.dt = dt#         time step size
         self.t_final = t_final #    final solution time  
@@ -396,14 +397,36 @@ class Solver:
         self.solver = solver#    the solver used for solving the LP Problem
         self.LP_opts = LP_opts#:    Dict containing options for LP-solver
         self.solver_eqs = solver_eqs
+        self.fail_on_requect = fail_on_requect#if True breaks if there is no fesible b
+
+    def __str__(self):
+        string =    ("RKM:           " +self.rkm.name + "\n" +
+                    "dt:            " +str(self.dt) + "\n" +
+                    "t_final:       " +str(self.t_final) + "\n" +
+                    "b_fixed:       " +str(self.b_fixed) + "\n" +
+                    "tol_neg:       " +str(self.tol_neg) + "\n" +
+                    "tol_change:    " +str(self.tol_change) + "\n" +
+                    "p:             " +str(self.p) + "\n" +
+                    "theta:         " +str(self.theta) + "\n" +
+                    "solver:        " +str(self.solver) + "\n" +
+                    "LP_opts:       " +str(self.LP_opts) + "\n" +
+                    "solver_eqs:    " +str(self.solver_eqs) + "\n" +
+                    "fail on re:    " +str(self.fail_on_requect) + "\n" )
+        return string
+                
+
 
 
 class Problem:
-  def __init__(self, f=None, u0 = None,minval = None,maxval = None):
+    def __init__(self, f=None, u0 = None,minval = None,maxval = None,description = ''):
         self.f = f #        RHS of ODE system
         self.u0 = u0#         Initial data
         self.minval = minval#
         self.maxval = maxval#        Limits for Problem
+        self.description = description
+
+    def __str__(self):
+        return self.description
 
 def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
 
@@ -552,10 +575,13 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
             u = u_n
         else:
             if verbose: print('step reqect')
-            status['b'][-1] = 'r'
-            ###Aternatively
-            #status['success'] = False
-            #break
+            if solver.fail_on_requect:
+                status['b'][-1] = 'r'
+                status['success'] = False
+                break
+            else:
+                status['b'][-1] = 'r'
+
 
         bb.append(b)
         uu.append(u)

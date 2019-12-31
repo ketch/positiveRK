@@ -9,13 +9,14 @@ find_dt: method for investigating certain dts using a bisect algorithm
 
 import numpy as np
 import matplotlib.pyplot as plt
+from RKimple import RK_integrate
 
 
-def plot_convergence(time_integrator,rkm,f,u0,dt,refernce,step=1,error='abs',dx='1',Norm = 2,Params = {}):
+def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm = 2,Params = {}):
     """"
     Parameters:
-    time_integrator:    function used to integrate the ODE
-    rkm,f,u0:           Arguments for time integrator
+    problem:            Problem Objects 
+    solver:             Solver object
     dt:                 dt array with dts
     reference:          Array with reference solutions to compare the computet solution against 
     error:              Definition of error computation, one of 'abs','rel','grid'
@@ -36,8 +37,9 @@ def plot_convergence(time_integrator,rkm,f,u0,dt,refernce,step=1,error='abs',dx=
     
     for i in range(dt.size):
         print('dt='+str(dt[i]))
-        t,u,b = time_integrator(rkm,dt[i],f,u0,**Params)
-        dif = refernce[:,i]-u[:,step]
+        solver.dt = dt[i]
+        status,t,u,b = RK_integrate(solver=solver,problem=problem,**Params)
+        dif = refernce[:,i]-u[step]
         if error == 'abs':
             err[i] = np.linalg.norm(dif,ord=Norm)
         elif error == 'rel':
@@ -48,7 +50,7 @@ def plot_convergence(time_integrator,rkm,f,u0,dt,refernce,step=1,error='abs',dx=
             print('Error not defined')
             print(error)
             raise ValueError
-        sol.append(u[:,step])
+        sol.append(u[step])
         
     plt.plot(dt,err,'o-')
     plt.yscale('log')
@@ -61,15 +63,15 @@ def plot_convergence(time_integrator,rkm,f,u0,dt,refernce,step=1,error='abs',dx=
     
         
 
-def find_dt(time_integrator,rkm,f,u0,dt_start,cond = '',tol = 0.001,Params = {}):
+def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
     
     """"
     The function searchs for the upper bound of dt that sattisfies a condition.
     A bisect search approach is used
 
     Parameters:
-    time_integrator:    function used to integrate the ODE
-    rkm,f,u0:           Arguments for time integrator
+    problem:            Problem Objects 
+    solver:             Solver object
     dt_start:           dt to start with
 
     cond: which condition to search for one of:
@@ -87,13 +89,12 @@ def find_dt(time_integrator,rkm,f,u0,dt_start,cond = '',tol = 0.001,Params = {})
     
     """
     #Check the settings for the integator
-    if 'b_fixed' in Params.keys():
-        print('overiding setting "b_fixed"')
+    
 
     if cond in ['dt_pos','dt_stable']:
-        Params['b_fixed'] = True
+        solver.b_fixed = True
     elif cond in ['dt_feasible']:
-        Params['b_fixed'] = False
+        solver.b_fixed = False
     else:
         print('no knwn conition')
         raise ValueError
@@ -122,11 +123,13 @@ def find_dt(time_integrator,rkm,f,u0,dt_start,cond = '',tol = 0.001,Params = {})
 
         #run integration
         print('Testing:',dt[-1])
-        t,u,b,status = time_integrator(rkm,dt[-1],f,u0,dumpK=False,return_status = True,**Params)
+        solver.dt = dt[-1]
+        #t,u,b,status = time_integrator(rkm,dt[-1],f,u0,dumpK=False,return_status = True,**Params)
+        status,t,u,b = RK_integrate(solver=solver,problem=problem,dumpK=False,**Params)
 
         #Test if condition is met
         if cond == 'dt_pos':
-            if np.all(u > -1e-8):
+            if np.all(np.array(u) > -1e-8):
                 val_new = True
             else:
                 val_new = False
@@ -138,8 +141,8 @@ def find_dt(time_integrator,rkm,f,u0,dt_start,cond = '',tol = 0.001,Params = {})
                 val_new = False
         
         elif cond == 'dt_stable':
-            n_start = np.linalg.norm(u[:,0])
-            n_end = np.linalg.norm(u[:,-1])
+            n_start = np.linalg.norm(u[0])
+            n_end = np.linalg.norm(u[-1])
 
             if n_end < 100*n_start:
                 val_new = True
@@ -171,7 +174,7 @@ def find_dt(time_integrator,rkm,f,u0,dt_start,cond = '',tol = 0.001,Params = {})
     return (dt_sol,dt,val) 
 
 
-def findall_dt(time_integrator,rkm,f,u0,dt_start,tol = 0.001,Params = {}):
+def findall_dt(problem,solver,dt_start,tol = 0.001,Params = {}):
     """"
     This function seachs for all important dt for a RKM.
     These are 'dt_pos','dt_stable' and 'dt_feasible'
@@ -179,9 +182,8 @@ def findall_dt(time_integrator,rkm,f,u0,dt_start,tol = 0.001,Params = {}):
 
 
     Parameters:
-    time_integrator:    function used to integrate the ODE
-    rkm:                The RKM to use, if tuple then the times for all RKM are computet 
-    f,u0:               Arguments for time integrator
+    problem:            Problem Objects 
+    solver:             Solver object, if solver is tuple of Solver object search for all
     dt_start:           dt to start with
     tol:                the toleranc for dt
     
@@ -193,18 +195,18 @@ def findall_dt(time_integrator,rkm,f,u0,dt_start,tol = 0.001,Params = {}):
 
     conds = ('dt_pos','dt_stable','dt_feasible')
     dt = {}
-    if not type(rkm) is tuple:
+    if not type(solver) is tuple:
         for cond in conds:
             print('search for',cond)
-            dt_sol,dt_,val_ = find_dt(time_integrator,rkm,f,u0,dt_start,cond = cond,tol = tol,Params = Params)
+            dt_sol,dt_,val_ = find_dt(problem,solver,dt_start,cond = cond,tol = tol,Params = Params)
             dt[cond] = dt_sol
         return dt
 
     else: #check for more methods
         times = ()
-        for rkm_ in rkm:
+        for rkm_ in solver:
             print(rkm_)
-            dt = findall_dt(time_integrator,rkm_,f,u0,dt_start,tol = tol,Params = Params)
+            dt = findall_dt(problem,rkm_,dt_start,tol = tol,Params = Params)
             print(dt)
             times = times + (dt,)
         return times
@@ -265,4 +267,43 @@ def plot_times(methods,dt,effective = False,title = ''):
     ax.legend()
     plt.grid()
     print(labels)
-    
+
+
+def show_status(status):
+    #print success
+    print('Succesfull:'); print(status['success'])
+    #number of adaptations
+    print('number of adaptations:');print(status['b'].count('c'))
+    #Number of step reqects
+    print('Number of step reqects:');print(status['b'].count('r'))
+
+    fig, axs = plt.subplots(3,1)
+
+    #plot on which timesteps the b was adabpted
+
+    axs[0].eventplot(np.nonzero(np.array(status['b'])=='c'), colors='blue', lineoffsets=0.5,
+                    linelengths=0.5)
+
+    #plot the step reqects
+    axs[0].eventplot(np.nonzero(np.array(status['b'])=='r'), colors='red', lineoffsets=-0.5,
+                    linelengths=0.5)
+
+    axs[0].set_xlim([0,len(status['b'])])
+
+    #plot the resulting order 
+
+    axs[1].plot([-1,len(status['b'])+1],[status['Solver'].rkm.order(),status['Solver'].rkm.order()],color = 'black')
+    axs[1].plot(np.array(status['order']),'x',color = 'blue')
+    axs[1].set_xlim([0,len(status['order'])])
+
+    axs[1].set_ylim([-0.5,status['Solver'].rkm.order()+0.5])
+
+    #plot the theta
+
+    axs[2].plot([-1,len(status['b'])+1],[1,1],color = 'black')
+    axs[2].plot(np.array(status['theta']),'x',color = 'blue')
+    axs[2].set_xlim([0,len(status['order'])])
+
+    axs[2].set_ylim([-0.1,1.1])
+
+    #plot number of conditions
