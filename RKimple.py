@@ -183,6 +183,140 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
     return (status,l,b)
             
 
+def solve_LP_convex(solver,B,w,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 0,maxval=np.infty, **options): 
+    """
+    This method solves the LP Problem
+    
+    Parameters:
+    
+    solver:     a string with the solver that should be used
+    O:          Order condition matrix
+    rhs:        Order condition right hand side
+    
+    reduce:     If set, the LP problem is first solved with a reduced set of constriants
+    verbose_LP: prints additional messages
+    minval:     Vector or scalar, is the minimum to enforce for solution. If not needed set to -inf
+    maxval:     Vector or scalar, is the minimum to enforce for solution. If not needed set to inf
+    options:    additional Options, are passed through to the used solver
+    
+    Returns:
+    status: integer representing the status of the algorithm.
+      For scipy
+        0 : Optimization proceeding nominally.
+        1 : Iteration limit reached.
+        2 : Problem appears to be infeasible.
+        3 : Problem appears to be unbounded.
+        4 : Numerical difficulties encountered.
+      For cvypy
+        0 : Optimization proceeding nominally.
+        2 : Problem appears to be infeasible.
+        4 : Numerical difficulties encountered.
+        5 : solver crashed
+        6 : Trivial Problem
+    l = Array with number of constraints
+    b: found b, if solver failed rkm.b
+    
+    """
+    s = len(rkm.b)
+    k = K.shape[0] #Number of ODEs
+
+    l = []
+
+    #Filter for variables with boundarys
+    if np.isscalar(minval):
+        minval = np.repeat(minval,k)        
+    if np.isscalar(maxval):
+        maxval = np.repeat(maxval,k)
+    
+    i_n = minval > -np.infty
+    i_p = maxval < np.infty
+
+
+    i_min = np.zeros(k,bool)
+    i_max = np.zeros(k,bool)
+    if reduce: #We do not need it otherwise
+        u_ = u +dt*K@rkm.b
+
+
+    while True: #We check at the end for break conditions
+
+        #Reduce
+        if reduce:
+            i_min[i_n] = i_min[i_n] | (u_[i_n] < minval[i_n])
+            i_max[i_p] = i_max[i_p] | (u_[i_p] > maxval[i_p])
+        
+        else:
+            i_min = i_n
+            i_max = i_p
+
+        if not np.any(i_min) and not np.any(i_max):
+            print('trivial Problem')
+            return (0,0,rkm.b)
+        
+        
+        l.append(np.sum(i_min)+np.sum(i_max))
+
+        #Solve LP-Problem
+
+        u_min = u[i_min] #slice the u and K
+        K_min = K[i_min,:]
+        u_max = u[i_max] 
+        K_max = K[i_max,:]
+        minval_min = minval[i_min]
+        maxval_max = maxval[i_max]
+
+        if solver == 'scipy_ip' or solver == 'scipy_sim':
+            raise NotImplementedError
+
+        else:
+            a_op = cp.Variable(len(w))
+            e = np.ones(len(w)) 
+
+            
+            #Using different implementations to aviod empyt matricies
+            if K_max.shape[0]>0 and K_min.shape[0]>0:
+                prob = cp.Problem(cp.Minimize(w@a_op),
+                    [e@a_op==1,
+                    u_min+dt*K_min@B@a_op>=minval_min,
+                    u_max+dt*K_max@B@a_op<=maxval_max,a_op>=0,a_op<=1])
+            elif K_min.shape[0]>0:
+                prob = cp.Problem(cp.Minimize(w@a_op),
+                    [e@a_op==1,
+                    u_min+dt*K_min@B@a_op>=minval_min,a_op>=0,a_op<=1])                
+            elif K_max.shape[0]>0:
+                prob = cp.Problem(cp.Minimize(w@a_op),
+                    [e@a_op==1,
+                    u_max+dt*K_max@B@a_op<=maxval_max,a_op>=0,a_op<=1])
+            else:
+                raise ValueError
+                #should alredy be detected as trivial Problem
+                
+            try:
+                prob.solve(solver=solver,**options)
+                b = B@a_op.value
+            except:
+                if verbose_LP: print('Solver crashed')
+                return (5,l,None)
+            
+            if prob.status == cp.OPTIMAL:
+                status = 0
+            elif prob.status == cp.OPTIMAL_INACCURATE:
+                if verbose_LP: print(prob.status)
+                status = 4
+            else:
+                status = 5
+            
+
+        #Test for break conditions
+        if np.all(i_min == i_n) and np.all(i_max == i_p): #reached whole set 
+            break
+        u_ = u +dt*K@b
+        if np.all(np.greater_equal(i_min,u_<minval)) and np.all(np.greater_equal(i_max,u_>maxval)): 
+            #if there are no new negative values appearing
+            break
+    
+    return (status,l,b)
+ 
 
 
 
@@ -331,25 +465,83 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
 
     return False, None,np.zeros_like(rkm.b)*np.nan, 0, message, None, 0, 0,status
 
-"""
-            else:
-                 #Run Optimisation Problem
+def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropts,verbose = False):
+    """
+    function to adapt the b to meke sure it complies with the boundaries
+    Parameters:
+    rkm:        RKM used
+    K:          Matrix with stagevalues
+    dt:         dt used to calculate the stagevalues
+    u:          solution at timestep
+    minval:     Minimum value
+    maxval:     Maximum value
+    tol_neg:    Which negativevalues are accepted for u
+    tol_change: MAximum value for |K@(b-rkm.b)|_2 accepted
+    p:          range of orders to try enforcing as iterabel
+    theta:      factors of timesteps to try as iterable. Element of [0 to 1]^k
+    solver:     solver to use
+    solveropts: optins for the LP-Problem
+    verbose:    Print additional messages
+
+    return:
+    success:     True if a new b could be found
+    u_n:          u^{n+1}
+    b:          The b used
+    dt:         the dt used 
+    message:    A status message as text
+    status:     Status as dict
+
+    """
+    message = ''
+    status = {}
+    print('changed')
+
+    for i,the in enumerate(theta): #loop through all the sub-timesteps
+        for p_new in p:     #loop through orders
+
+            if verbose: print('Try: Order=',p_new,'Theta=',the)
+            #Construct Problem
+            #Matrix with the used methods
+            B = [[rkm.b]]
+            w = [0]
+            for order in range(rkm.p,p_new-1,-1):
+                B.append(rkm.b_hat[order])
+                w.extend([1/order]*len(rkm.b_hat[order]))
                 
-                status['b'].append(n+1)
-                
-                if status_LP in [1,4]:
-                    status['message'] = status['message'] + 'LP-solver reported Problem:'+ str(status_LP)+ 'at step' + str(n+1) + '\n'
-                elif status_LP in [2,3,5]: 
-                     status['success'] = False
-                     status['message'] = status['message'] + 'LP-solver failed at step '+ str(n+1) + '\n'
-                     break
-                status['change'].append(np.linalg.norm(K@(b-rkm.b)))
-                status['nup_pos_constriants'][n]=l
-"""
+            B = np.concatenate(B).T
+            if verbose: display(B)
+            w = np.array(w)
+
+            (status_LP,l,b) = solve_LP_convex(solver,B,w,rkm,u,K,dt,maxval = maxval,minval = minval,**solveropts)
+            
+            if status_LP in [2,3,5]:
+                #Error Handling for didn not work
+                if verbose:    print('LP-Solve failed, probably infeasibel')
+            else: #Did work, testing further
+                u_n = u + dt*K@b
+                if not (np.all(u_n >= minval-tol_neg) and np.all(u_n <= maxval+tol_neg)) : 
+                    #got a solution form the LP solver that is stil not positive...
+                    #do some error handling here
+                    if verbose:    print('LP-Solve returned a b that leads to a false solution')
+                    if verbose >= 2:    print(min(u_n-minval)); print(max(u_n-maxval)); print(u_n)
+                else:
+                    change = np.linalg.norm(K@(b-rkm.b))
+                    if change > tol_change: # to big adaption...
+                        #do some error handling here
+                        if verbose:    print('a to big adaptation to the solution by changing the b')
+                        if verbose >= 2: print('|K(b_new-b)|=',change)
+                    else: #we got a acceptable solution
+                        if verbose: print('found new b')
+                        return True, u_n,b, dt*the, message, change,p_new,the,status
+
+    return False, None,np.zeros_like(rkm.b)*np.nan, 0, message, None, 0, 0,status
+
+
 
 class Solver:
     def __init__(self, rkm = None,dt = None,t_final = None,b_fixed = None,tol_neg=None,
-                tol_change=None,p=None,theta=None,solver=None,LP_opts=None,solver_eqs = None,fail_on_requect = True):
+                tol_change=None,p=None,theta=None,solver=None, convex = False,
+                LP_opts=None,solver_eqs = None,fail_on_requect = True):
         self.rkm = rkm #        Base Runge-Kutta method, in Nodepy format
         self.dt = dt#         time step size
         self.t_final = t_final #    final solution time  
@@ -359,6 +551,7 @@ class Solver:
         self.p = p#        range of orders to try enforcing as iterabel
         self.theta = theta#     factors of timesteps to try as iterable. Element of [0 to 1]^k
         self.solver = solver#    the solver used for solving the LP Problem
+        self.convex = convex #Use a convex combiantion of given methods when adapting the b
         self.LP_opts = LP_opts#:    Dict containing options for LP-solver
         self.solver_eqs = solver_eqs
         self.fail_on_requect = fail_on_requect#if True breaks if there is no fesible b
@@ -476,6 +669,8 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
         'change':[None],
         'old_min':[None],
         'new_min':[None],
+        'old_max':[None],
+        'new_max':[None],
         'order':[None],
         'theta':[None]
     }
@@ -525,9 +720,16 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
                 status['theta'].append(None)
                 status['old_min'].append(None)
                 status['new_min'].append(None)
+                status['old_max'].append(None)
+                status['new_max'].append(None)
             else:
-                status['old_min'].append(np.min(u_n))
-                success,u_n,b,dt,message, change, order, the,LP_stat = adapt_b(solver.rkm,K,dt,u,problem.minval,problem.maxval,
+                status['old_min'].append(np.min(u_n - problem.minval))
+                status['old_max'].append(np.max(u_n - problem.maxval))
+                if solver.convex:
+                    success,u_n,b,dt,message, change, order, the,LP_stat = adapt_b_convex(solver.rkm,K,dt,u,problem.minval,problem.maxval,
+                        solver.tol_neg,solver.tol_change,solver.p,solver.theta,solver.solver,solver.LP_opts,verbose = verbose)
+                else:
+                    success,u_n,b,dt,message, change, order, the,LP_stat = adapt_b(solver.rkm,K,dt,u,problem.minval,problem.maxval,
                         solver.tol_neg,solver.tol_change,solver.p,solver.theta,solver.solver,solver.LP_opts,verbose = verbose)
                 status['b'].append('c')
                 status['message'] += message
@@ -535,7 +737,9 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
                 status['change'].append(change)
                 status['order'].append(order)
                 status['theta'].append(the)
-                status['new_min'].append(np.min(u_n))
+                if success:
+                    status['new_min'].append(np.min(u_n - problem.minval))
+                    status['new_max'].append(np.max(u_n - problem.maxval))
 
 
             
