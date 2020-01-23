@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
+\usepackage{amsfonts}
 
 \title{Positivity-preserving adaptive Runge-Kutta methods: results}
 \author{Stephan Nuesslein}
@@ -438,6 +439,75 @@ We write $\alpha = \chi$ and $\beta = 1-\chi$ for convenience.
 |R_{\alpha b_a +\beta b_b}(z)| &= |\alpha R_{b_a}(z) + \beta R_{b_a}(z)| \leq |\alpha R_{b_a}(z)| + |\beta R_{b_a}(z)|\\
  &=| \alpha| \underbrace{|R_{b_a}(z)|}_{<1} + |\beta| \underbrace{|R_{b_a}(z)|}_{<1} < \alpha + \beta = 1
 \end{align}
+
+
+\subsection{Stability of direct adaptation}
+
+We would like to calculate the derivative of the border in respect to a change of $b$. 
+
+
+
+The stability function depending on the $b$ is expressed (Note: it is a bit complicated her because we cannot let it depend on the b directly, but only give b after a coordinate transformation, which also makes the expression easier because we can already introduce the order conditions here)
+$m$ is the number of dimensions of the Kernel of the Order Condition $m = dim\{Ker Q \}$
+The $b_1,\cdots,b_m$  are the Basis vectors of $Ker Q$. By this we can get the vector $w$ by $w = \left[b_1,\cdots,b_m\right]^{-1}(b-b_{orig})$.
+
+The General Stability function of all embedded RKM that satisfy the Order Conditions $Q$ is given by 
+
+\begin{equation}\label{eq:gen_stabilityf}
+R(w,z) = (1-(w_1,\cdots,w_m))R_{b_{orig}}(z) + w_1 R_{b_1}(z) + \cdots + w_m R_{b_m}(z)
+\end{equation}
+
+The border is defined by the implicit function 
+\begin{equation}\label{eq:border}
+|R(w,u+iv)|^2 -1 = 0
+\end{equation}
+This function can be vied either as $\mathbb{R}^m \times  \mathbb{C} \rightarrow \mathbb{R}$ or $\mathbb{R}^m \times  \mathbb{R}^2 \rightarrow \mathbb{R}$.
+We are only concerned with the expansion or contraction. Because of this we are only interested in the change perpendicular to the Border of the stability region. 
+
+For a point $z_0= u_0 +i v_0 $ 
+with $ |R(w,z_0)|^2 -1 = 0 $ the gradient of
+ $|R(w,u,v)|^2$ is calculated. 
+If the gradient does not vanish at $z = z_0$ Equation\,\ref{eq:border} Can be transformed in a function $\mathbb{R} \rightarrow \mathbb{R}$ depending on a single variable $a$ by setting $z = z_0 + n a$. The complex number $n$ denotes the normal vector $\vec{n} = \frac{\nabla |R(w,u,v))|^2}{\left| \nabla |R(w,u,v))|^2 \right|}$ of the border of the stability region written in complex notation. This defines the function $a(w)$ with $|R(w,z_0 + n a(w))|^2 -1 = 0$. 
+This gives the condition that this approach is only applicable if the gradient does not vanish on the border of the stability function. This is not true in general but for the most common RKM.
+The derivative $\frac{\mathrm d}{\mathrm d w} (a(w))$ can be calculated using the implicit function theorem. The defining function is $f: \mathbb{R} \rightarrow \mathbb{R}$ $f(a) = |R(b,z_0 + n a(w))|^2 -1 $ 
+If explicit methods are used this function is known to be continuously differentiable because it can be written as a Polynomial of $w_1,\cdots,w_m,u$ and $v$. This is a necessary condition for the use of the of the Implicit function theorem. 
+It is also known by definition, that for the point $w=0$ and $z = z_0$ the equation $ |R(w,z_0)|^2 -1 = 0 $ is satisfied.
+For simplicity only the formulas for the derivative at the value $b = b_{orig}$ are given. This corresponds to $w_1 = \cdots = w_m = 0$.
+The wanted derivative  is given by 
+
+\begin{equation}
+ \frac{\partial a}{\partial w_j} (w) =
+ - \left[ J_{f,a}(w,a(w))  \right] ^{-1} 
+   \left[ \frac{\partial f}{\partial w_j}(w,a(w)) \right]
+\end{equation}
+
+as long as the inverse of the Jacobian exists. This is true in most cases as it has been discussed above.
+
+The Jacobian $J_{f,a}(w,a(w))$ evaluated at $w=0$ can be calculated using the directional derivative 
+$$ J_{f,a}(b_{orig},a(w)) \Big|_{w=0} = 
+ \frac{\partial f}{\partial a} (w,a(w)) \Big|_{w=0} = 
+ \nabla |R(w,a(w)|^2 \vec{n} \Big|_{w=0}
+= \left| \nabla|R(0,z_0)|^2 \right| = \left| \nabla|R_{b_{orig}}(z_0)|^2 \right|$$ 
+
+
+The derivative in respect to $w_j$ is 
+$ \frac{\partial f}{\partial w_j}(w,a(w)) \Big|_{w=0}$
+this simplifies to 
+\begin{equation}\label{eq:derivative_to_b}
+- 2 \underbrace{R_{b_{orig}}(z_0)R^*_{b_{orig}}(z)}_{=|R_{b_{orig}}(z_0)|^2=1} + R_{b_{orig}}(z_0)R^*_{b_v}(z) + R_{b_v}(z_0)R^*_{b_{orig}}(z_0) 
+= -2 + R_{b_{orig}}(z_0)R^*_{b_v}(z_0) + R_{b_v}(z_0)R^*_{b_{orig}}(z_0)
+\end{equation}
+using the fact that $z_0$ is on the border of the stability region.
+The derivative $-2 + R_{b_{orig}}(z_0)R^*_{b_v}(z_0) + R_{b_v}(z_0)R^*_{b_{orig}}(z_0)$ is known to be finite for explicit methods, because $R_{b_v}$ and $R_{b_{orig}}$ are Polynomials and $|z_0| < \infty$
+The same process can be done for all points on the border of the stability region. 
+As long as $\left[ J_{f,a}(w,a(w))  \right] ^{-1} > 0$ the derivative $\frac{\partial a}{\partial w_j} (w)$ is finite. This means that a small change the $b$ only leads to a small change of the stability region.
+
+
+
+
+
+
+
 
 
 
