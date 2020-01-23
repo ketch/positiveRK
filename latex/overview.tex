@@ -13,18 +13,24 @@ With increasing complexity of the right hand side a step requect has a high cost
 The goal of the project is to develop a positivity preserving method that uses adaptive b-Coefficients for every step.  This means that the computed stage values can be used and don't have to be recomputed. 
 The resulting b should comply with the order conditions as far as possible.
 
+Important things to point out:
+Approach preserves linear invariants
+Not cost anything if there are no negative components (exept for the test)
+
+(Note: The problem is connected to the theory about embedded methods, in the sense that one have different RKM with the same set of stage values. It may be interesting to have some literature regarding this)
+
 \section{Main Idea}
 
 When computing the solution of an ODE $u ' = f(t,u) $ using a RK Method with $s$ Stages we first compute the stage values 
 
 \begin{equation}
-k^{j} =  f(t^n + \Delta t c_j, u^n + \Delta t \sum_{l = 1}^{s} a_{jl} k^l  \quad j = 1,\cdots,s)
+k^{(j)} =  f(t^n + \Delta t c_j, u^n + \Delta t \sum_{l = 1}^{s} a_{jl} k^{(l)}  \quad j = 1,\cdots,s)
 \end{equation}
 
 Afterwards we calculate the solution 
 
 \begin{equation}
-u^{n+1} = u^n + \Delta t \sum_{j  = 1}^s k^{j} b_j .
+u^{n+1} = u^n + \Delta t \sum_{j  = 1}^s k^{(j)} b_j .
 \end{equation}
 
 This equation can be formulated to
@@ -38,7 +44,7 @@ where $K$ is a matrix containing the stage values $k_1,\cdots,k_s$.
 One reason why steps are requected is that the new solution does not comply with positifity. 
 So it may be adventagious to adapt Equation\,\ref{eq:Combination} in such a way that $u^{n+1}$ is positive. This is done by adapting the weights $b$.
 As we can see in Equation\,\ref{eq:Combination} $u^{n+1}$ depends linearly on the stage values.
-By altering the weights we can violate the Order Conditions. 
+When altering the weights the Order Conditions should be still meet. 
 Because $A$ is already fixed the Order Conditions reduce to linear equations.
 This means that finding the $b$ can be done by solving a linear Programming problem.
  
@@ -83,7 +89,7 @@ has to be fulfilled.
 This infers $p$ positivity constraints to the optimisation problem. These can be written as
 
 \begin{equation}
-u_i + h K  b \geq 0     
+u_i + \Delta t K  b \geq 0     
 \end{equation}
 
 where $K = \big[k^1 , \cdots k^{s-1}\big]$.
@@ -93,12 +99,14 @@ This causes unnecessary many inequality constraints on the LP-Problem. To simpli
 
 For this we write
 \begin{equation}
-u_i^n + h \sum_{j=0}^{s-1} b_j h_i^j  \geq 0   \;   \forall_{i \in k \subseteq \{1,\cdot,m \}} 
+u_i^n + \Delta b \sum_{j=0}^{s-1} b_j h_i^j  \geq 0   \;   \forall_{i \in h \subseteq \{1,\cdot,m \}} 
 \end{equation}
 
-Now we have to choose a $k \subseteq \{1,\cdots,m \}$ that include all indecies that are needed for determining the $b$.
+Now we have to choose a $h \subseteq \{1,\cdots,m \}$ that include all indecies that are needed for determining the $b$.
 
-A reasonable approach is to set $k_0 = {i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0}$. It is possible that this set changes with another b that was computed using the $k_0$. To account for this we generate $k_1 = {i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0} \cup k_0$ using the new $u_i^{n+1}$. This ensures that we cannot get stuck in a loop. In the worst case $|k_a|$ is growing very slowly until $k = \{1,\cdots,m \}$. 
+A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
+After the solution with the reduced set is computed, the algorithm has to check if the positifity of the other values $i \notin h \subseteq \{1,\cdot,m \}$ is still meet. 
+If the conditions is not meet a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u_i^{n+1}$ is generated and the LP-Problem is solved again. This process id repeated until a solution is found that leads to a $u_{n+1} \geq 0$. The choice of $h_{a+1}$ based on the $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$. 
 
 This effect did not occur so far. A approach on this would be to make a educated guess which indecies could get a problem with positifity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ 
 
@@ -108,20 +116,44 @@ Here it is important to update these sets simultaneously.
 
 \subsection{Order Conditions}
 
-The Order Conditions are an linear equations system and can be written as $O b = r$. 
+The Order Conditions are an linear equations system and can be written as $Q b = r$. 
 
-The vector $b \in R^s$ contains the b coefficients. $s$ is the number of stages. $O$ is an $n \times s$ matrix, where $g$ is the number of Order Conditions. $r$ is an vector containing the right hand side of the Order Conditions
+The vector $b \in R^s$ contains the b coefficients. $s$ is the number of stages. $Q$ is an $n \times s$ matrix, where $g$ is the number of Order Conditions. $r$ is an vector containing the right hand side of the Order Conditions
 
-We if we use a $A$ from a known method we know that there is at least one solution for the linear equation system.
+If the $A$ of a  preexisting RK-method is used, there is at least one solution for the linear equation system.
 In order to get an optimization problem the equation system has to be underdetermined.
-This implies that $rank{O} \leq s$. 
-Because the Quadrature Conditions are linear independent, $p \leq s$ has to be fulfilled.
+This implies that $rank{Q} < s$. 
+Because the Quadrature Conditions are linear independent, there are at least $q$ independent vectors in $Q$. This leads to the $p < s$.
 This implies that the number of stages has to be higher as the wanted required order.
 
-Accomplished using equality constraints for the LP-Problem.
+
+\subsection{Ways to formulate the Optimization Problem}
+
+There are two possible ways to write down the adaptation of the $b$. The first way is to directly adapt the $b$ by adding a correction  $\Delta b$ that ensures positivity. 
+This is the easiest way to adapt the $b$. An advantageous property is that the step size can be reduced after calculation the stage values by using the dense output order conditions.  
+(Note: Recommendation for explicit methods)
+
+The second approach is to choose $b$ as a convex combination of a set of $b$s. This approach is more useful if some embedded methods with certain properties are know. 
+This approach is also shows more  predictable behavior because the resulting $u^{n+1}_b$ is also a convex combination of the solutions $u^{n+1}_{b_1},u^{n+1}_{b_2},\cdots$ 
+(Note: Recommendation for implicit methods)
 
 
-\subsection{Objective function}
+Both approaches are explained in more detail in the following sections.
+
+
+\subsection{Direct Adaptation}
+
+The Direct Adaptation approach leads to two set of constraints on the $b$.
+
+The first set of constraints is the positifity and can be written as 
+$$u_{n+1}=u_n+\Delta K \vec{b} \geq 0$$
+
+The second set of constraints are the Order Conditions
+$$Qb=r$$
+
+The weights $b = b_{orig} + \Delta b$ consist of the weights $b_{orig}$ of the original method and an adaption $\Delta b$. This $\Delta b \in ker \{ Q \}$. 
+
+To determine the optimal $b$ a objective function is needed.
 Different types of objective functions have been tried. (Notebook: objectives.ipynb)
 
 \begin{description}
@@ -137,17 +169,18 @@ Different types of objective functions have been tried. (Notebook: objectives.ip
  
 \end{description}
 
-A reasonable property of the objective function would be that for a set of b only constrained by the order condition the LP-Problem gives the original b as optimal solution.  $argmin(f_{optim}(b)) = b_{orig}$. In practice this also means that we do not have to solve the optimization Problem if no constraints are violated because we already know the solution of this case. This is adventagious for performance reasons.
+A reasonable property of the objective function would be that for a set of $b$ only constrained by the order condition the LP-Problem gives $b = b_{orig}$ as optimal solution.  $argmin(f_{optim}(b)) = b_{orig}$. In practice this also means that there is no need to solve solve the optimization Problem if no constraints are violated because the solution of this problem is already known. This is adventagious for performance reasons.
 The different approaches have been tested for a test problem from Kopecz and Meister 2018 (Two substances reacting). The optimization problem was used at every step.
 The magnitude of $b$ can get large if the Order Conditions are used as objective function.
 By changing the $b$ the stability function is altered. This can lead to oscillations if the poles of the rhs are no longer in the stability region of the resulting method.
-For this reason $||b_{optim}-b_{orig}||$ seems like a good choice. The Norm $||x||_1$ can be implement the with Linear Programming using slack variables. We choose $||b_{optim}-b_{orig}||_1$ as objectie function.
+For this reason $||b-b_{orig}||$ seems like a good choice. The Norm $||x||_1$ can be implement the with Linear Programming using slack variables. We choose $||b_{optim}-b_{orig}||_1$ as objective function.
 
 Large values of b can lead to numerical instability. Because $\sum_{i  = 1}^s b_i = 1$, a increase of $|b|$ leads to a combination of negative and positive values. Because the computation only is done with a finite precision (and usually in floating point) large $||b||$ can lead to absorption effects.    
 
-\subsection{Adaption of Timestep using the dense output formual}
 
-If the original step $\Delta t$ was to large and there is no suitable $b$, we would like to calculate a $u^(n+1)$ using the stage values instead of rejecting the step. For this the time step is reduced after calculation the stage values. This can be done using the Order Conditions for dense Output (Source for this?).
+\subsubsection{Adaption of Timestep using the dense output formual}
+
+If the original step $\Delta t$ was to large and there is no suitable $b$, we would like to calculate a $u^(n+1)$ using the stage values instead of rejecting the step. For this the time step is reduced after calculation the stage values. This can be done using the Order Conditions for dense Output (todo: Source for this).
 We introduce $\theta \in [0,1]$. The new step taken has the length $\theta \Delta t$ whereas $\Delta t$ is the time step used when calculating the Stagevalues.
 To calculate a reduced step the Order Conditions have to be adapted and a new $b_{orig}$ for the objective function (and more important the Error detection afterwards) has to be generated. 
 (TODO: the $b_{orig}$ is still a open question)
@@ -155,6 +188,50 @@ To calculate a reduced step the Order Conditions have to be adapted and a new $b
 When adapting the Order Condition to a new $\theta$ the Order Condition Matrix $Q$ stays unchanged whereas the right hand side depends on $\theta$.
 
 The dependency of $r(\theta)$ is nonlinear. This means that the maximum $\theta$ with a suitable $b$ can not be calculated by using a LP-Problem. This means that different $\theta$ have to be tested independently. 
+(Note: we could include some algorithm to search for it)
+
+
+\subsection{Convex combination of existing methods}
+For some test problems (e.g. the Heat Equation solved with an implicit method), large distortions occur, even though a norm of the distortion of the b is used as a objective function. 
+For implicit methods it is known that implicit euler steps lead to a positive solution for any $\Delta t$. The backward Euler is still only first Order but shows more exact results in certain cases than a method of higher Order that shows distortions of the solution caused by the larger error coefficients ($\Delta t \gg 0$, so they do not disappear because of the nature of the polynomial).
+A possible method to fix this is to generate the new b based on a convex combination of embedded methods of RKM. 
+
+todo: write this down in more detail with proofs
+$b$ is in a convex hull of al b
+If all the used b complie with an order conditions the new method also has this order
+
+$$ q^T b = q^T (\chi b_{\alpha} + (1-\chi) b_{\beta}) = \chi q^T  b_{\alpha} + (1-\chi) q^T  b_{\beta}) = \chi rhs + (1-\chi) rhs = rhs$$
+
+
+The optimisation problem is changed to:
+
+$$u_{n+1}=u_n+\Delta K \vec{b} \geq 0$$
+
+with
+
+$$ \vec{b} = \sum_i^d a_i \vec{b_i}$$
+
+$$ \forall_{i \in \{1, \cdots d \}} 0 \leq a_1 \leq 1$$
+
+and the objective
+
+$$ min \left(\sum_i^d w_i a_i \right) $$
+
+with some weighting factors $w_1,\cdots,w_d$. The weighting factors determine which is the preferred b to use.
+
+Because the optimal solution of the unconstrained problem has to be the original $b$ the weight $w_0$ corresponding to $b_{orig}$ should be the smallest $w$. This weight is simply set to $w_{b_{orig}} = 0$. For the other weights $w_i = \frac{1}{Order\{b_i\}}$ is used.
+
+For methods with $s \geq p$ we would still like to have some degrees of freedom for the highest order. For this we have to introduce at least one $b$ that complies with the order Condition of the highest order and $b \neq b_{orig}$.
+These additional $b$ can be constructed by calculating a Span $S$ of the Kernel $ker Q$ of the Order Condition Matrix $Q$. For every vector $s \in S$ one set of weights with $b = b_{orig} + a s$ and one with $b = b_{orig} - a s$ is added. The $a$ is a parameter that determines how big a change is allowed. 
+
+As a first order method a $b$ is added that corresponds to a series of backward euler steps. These are know to be yield to a positive result (Todo: source).
+
+An important property of the embedded methods is that they should show the desired stability characteristics.
+
+A Reduction of the step size suing the order Conditions for dense output would also be possible. For this 
+Doing dense Output here is a bit complicated, but it would not help ensure positifity only (maybe) increase exactness. (Note: is it worth exploring this or is it better to just leave this open for further research it may be also interesting regardless the study of positifity)
+Everything has downsides...
+ 
 
 
 \subsection{Choice of Baseline method}
@@ -193,13 +270,11 @@ In \ref{proof:combiningb} it is stated that one can construct the stability func
 (Note:They do not behave like a Vector space because there is no scalar Product, and all the vector have to add up to 1... Is there something simmilar so we don not have to explain everything here?)
 
 
-Alternative 1:
-
-If the resulting method can be written as a convex combination of different methods it is easy to prove that the resulting stability function is at least the Intersection of the stability region of the methods that define the convex combination. 
+If the new $b$ is a chosen as a convex combination of $b$ it is easy to prove that the resulting  the Region of absolute stability is at least the Intersection of the region of absolute stability of the methods that define the convex combination. 
 
 
-Alternative2:
 
+If the $b$ is adapted directly there is no such proof.
 A useful property of the resulting stability region is that it is similar to the stability region of the baseline method. 
 (Note: is it possible to give some statement like: If the stability regions of the rkm used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions)
 
@@ -226,7 +301,7 @@ If all the combinations of $\theta$ and $p$ did not lead to a acceptable $b$ the
 
 (Note: Should we discuss which solver is used. Probably it is not worth using space for some plot etc. on this... Maybe a short note?)
 
- 
+
 
 \section{Results of experiments}
 \subsection{Explicit methods}
