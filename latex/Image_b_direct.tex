@@ -1,0 +1,19 @@
+\begin{tikzpicture}
+    % Draw axes
+	\coordinate (borig) at (1.2,1.8);
+    \coordinate (b) at (2,1);
+	\coordinate (db) at ($(b)-(borig)$);
+
+    \draw [<->,thick] (0,2.5) node (yaxis) [above] {$b_2$}
+        |- (3,0) node (xaxis) [right] {$b_1$};
+
+
+%Add subspace 
+	\draw[thick,red,dotted] ($-0.9*(db)+(borig)$) -- ($0.9*(db)+(b)$);
+	\draw[thick,red] ($-0.6*(db)+(borig)$) -- ($0.6*(db)+(b)$);
+	
+	\draw[thick,->] (borig) -- node[anchor=south west ,pos = 0.5] {$\Delta b$} (b);
+	\draw[thick,->] (0,0) -- node[anchor=south east,pos = 0.8] {$b_{orig}$} (borig);
+    \draw[thick,->] (0,0) -- node[anchor=north west,pos = 0.8] {$b$} (b);
+
+\end{tikzpicture}
