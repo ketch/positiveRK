@@ -10,7 +10,7 @@ from scipy.optimize import linprog
 
 
 
-def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 0,maxval=np.infty, **options): 
+def solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,reduce = False,verbose_LP = False,minval = 0,maxval=np.infty, **options): 
     """
     This method solves the LP Problem
     
@@ -19,7 +19,8 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
     solver:     a string with the solver that should be used
     O:          Order condition matrix
     rhs:        Order condition right hand side
-    
+    rkm:        RKM
+    b_orig:     Original b
     reduce:     If set, the LP problem is first solved with a reduced set of constriants
     verbose_LP: prints additional messages
     minval:     Vector or scalar, is the minimum to enforce for solution. If not needed set to -inf
@@ -41,7 +42,7 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
         5 : solver crashed
         6 : Trivial Problem
     l = Array with number of constraints
-    b: found b, if solver failed rkm.b
+    b: found b, if solver failed b_origg
     
     """
     s = len(rkm.b)
@@ -62,7 +63,7 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
     i_min = np.zeros(k,bool)
     i_max = np.zeros(k,bool)
     if reduce: #We do not need it otherwise
-        u_ = u +dt*K@rkm.b
+        u_ = u +dt*K@b_orig
 
 
     while True: #We check at the end for break conditions
@@ -78,7 +79,7 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
 
         if not np.any(i_min) and not np.any(i_max):
             print('trivial Problem')
-            return (0,0,rkm.b)
+            return (0,0,b_orig)
         
         
         l.append(np.sum(i_min)+np.sum(i_max))
@@ -99,7 +100,7 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
                 method = 'revised simplex'
 
             A_eq = np.concatenate((O,-O),axis = 1)
-            b_eq = rhs - O@rkm.b
+            b_eq = rhs - O@b_orig
             bounds = (0, None)
             e = np.ones(2*s)
                 
@@ -107,8 +108,8 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
             A_ub_max = np.concatenate((K_max,-K_max),axis = 1)
             A_ub = np.concatenate((A_ub_min,A_ub_max),axis = 0)
             #print('A_ub',A_ub)
-            b_ub_1 = 1/dt*(u_min-minval_min)+K_min@rkm.b  
-            b_ub_2 = 1/dt*(maxval_max-u_max)-K_max@rkm.b
+            b_ub_1 = 1/dt*(u_min-minval_min)+K_min@b_orig 
+            b_ub_2 = 1/dt*(maxval_max-u_max)-K_max@b_orig
             b_ub = np.concatenate((b_ub_1,b_ub_2),axis = 0)
             #print('b_ub',b_ub)
 
@@ -120,16 +121,17 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
                 return (5,l,None)
                 
             if res.success:
-                b = rkm.b+res.x[:s]-res.x[s:]
+                b = b_orig+res.x[:s]-res.x[s:]
                 status = res.status 
             elif res.status == 4: 
                 if verbose_LP: print('Numerical difficulties, giving it a try')
-                b = rkm.b+res.x[:s]-res.x[s:]
+                b = b_orig+res.x[:s]-res.x[s:]
                 status = res.status 
             else:
                 if verbose_LP: print('solver did not find solution, stauts:',res.status)
-                b = None
                 status = res.status 
+                if verbose_LP: print(status)
+                return (5,l,None)
 
 
         else:
@@ -141,24 +143,24 @@ def solve_LP(solver,O,rhs,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 
             #Using different implementations to aviod empyt matricies
             if K_max.shape[0]>0 and K_min.shape[0]>0:
                 prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
-                    [O@(ap_op-an_op+rkm.b)==rhs,
-                    u_min+dt*K_min@(ap_op-an_op+rkm.b)>=minval_min,
-                    u_max+dt*K_max@(ap_op-an_op+rkm.b)<=maxval_max,ap_op>=0,an_op>=0])
+                    [O@(ap_op-an_op+b_orig)==rhs,
+                    u_min+dt*K_min@(ap_op-an_op+b_orig)>=minval_min,
+                    u_max+dt*K_max@(ap_op-an_op+b_orig)<=maxval_max,ap_op>=0,an_op>=0])
             elif K_min.shape[0]>0:
                 prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
-                    [O@(ap_op-an_op+rkm.b)==rhs,
-                    u_min+dt*K_min@(ap_op-an_op+rkm.b)>=minval_min,ap_op>=0,an_op>=0])                
+                    [O@(ap_op-an_op+b_orig)==rhs,
+                    u_min+dt*K_min@(ap_op-an_op+b_orig)>=minval_min,ap_op>=0,an_op>=0])                
             elif K_max.shape[0]>0:
                 prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
-                    [O@(ap_op-an_op+rkm.b)==rhs,
-                    u_max+dt*K_max@(ap_op-an_op+rkm.b)<=maxval_max,ap_op>=0,an_op>=0])
+                    [O@(ap_op-an_op+b_orig)==rhs,
+                    u_max+dt*K_max@(ap_op-an_op+b_orig)<=maxval_max,ap_op>=0,an_op>=0])
             else:
                 raise ValueError
                 #should alredy be detected as trivial Problem
                 
             try:
                 prob.solve(solver=solver,**options)
-                b = ap_op.value - an_op.value + rkm.b
+                b = ap_op.value - an_op.value + b_orig
             except:
                 if verbose_LP: print('Solver crashed')
                 return (5,l,None)
@@ -440,8 +442,12 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
             if verbose: print('Try: Order=',p_new,'Theta=',the)
             #Construct Order conditions
             O,rhs = OrderCond(rkm.A,rkm.c,order=p_new,theta=the)
+            if the == 1:
+                b_orig = rkm.b 
+            else:
+                b_orig = rkm.b_dense(the)
 
-            (status_LP,l,b) = solve_LP(solver,O,rhs,rkm,u,K,dt,maxval = maxval,minval = minval,**solveropts)
+            (status_LP,l,b) = solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,maxval = maxval,minval = minval,**solveropts)
             
             if status_LP in [2,3,5]:
                 #Error Handling for didn not work
@@ -585,7 +591,27 @@ class Problem:
     def __str__(self):
         return self.description
 
-def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
+class StepsizeControl:
+    def __init__(self,dt_max,dt_min,a_tol,r_tol,f,tol_reqect):
+        """
+        Class to organize stepsize control
+
+        Parmeters: 
+        dt_max:     maximum stepsie
+        dt_min:     minimum stepsze
+        f:          function of (dt,error) that returns the next stepsize
+
+        """
+        self.a_tol = a_tol
+        self.r_tol = r_tol
+        self.dt_max = dt_max
+        self.dt_min = dt_min
+        self.f = f
+        self.tol_reqect = tol_reqect
+
+
+
+def RK_integrate(solver = [], problem = [],stepsize_control = None, dumpK=False,verbose=False):
 
     """    
     Options:
@@ -609,6 +635,16 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
             minval:
             maxval:        Limits for Problem
                 
+
+                
+        stepsize_control: (optional) StepsizeControl object with the fields:
+            Parmeters: 
+            dt_max:     maximum stepsie
+            dt_min:     minimum stepsze
+            tol:        tolerance
+            f:          function of (stepsize_control,dt_old,error,change,success) that returns the next dt
+
+        
         
         dumpK:      if True the stage values are also returned
         verbose:    if True function prints additional messages
@@ -645,8 +681,9 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
     dt= solver.dt
 
     #setup stepsize control
-    dt_old = 1 #variable with the last tried dts
-
+    dt_old = 0 #variable with the last tried dts
+    error = None
+    tol_met = True
 
     success = True #For stepsize control at first step
     
@@ -666,25 +703,27 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
         'neg_stage': [None],
         'LP_stat': [None],
         'b':[None],
+        'sc':[None],
         'change':[None],
         'old_min':[None],
         'new_min':[None],
         'old_max':[None],
         'new_max':[None],
         'order':[None],
-        'theta':[None]
+        'theta':[None],
+        'dt_calc':[None],
+        'error':[None]
     }
     if verbose: print('set up, starting to solve')
 
     while t<solver.t_final:
         #Control new stepsize
+        if t>0 and stepsize_control: #not call on startup
+            dt = stepsize_control.f(stepsize_control,dt_old,error,change,success,tol_met)
         if t+dt > solver.t_final:
-            dt = solver.t_final-t
-        if not success:
-            dt = 0.5 *dt_old
-        if success:
-            dt = solver.dt
-        dt_old = dt    
+            dt = solver.t_final-t 
+        dt_old = dt
+          
         
 
         #Compute the new K
@@ -695,6 +734,7 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
             K,message,neg_stage = calculate_stages_imp(t,dt,u,solver.rkm,problem.f,solver.solver_eqs,verbose=verbose)
         status['message'] += message
         status['neg_stage'].append(neg_stage)
+        status['dt_calc'].append(dt)
 
 
 
@@ -708,6 +748,7 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
             u_n = u_n
             b = solver.rkm.b
             status['b'].append('o')
+            change = 0
         else:
             if np.all(u_n >= problem.minval) and np.all(u_n <= problem.maxval):
                 #everything is fine
@@ -722,6 +763,7 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
                 status['new_min'].append(None)
                 status['old_max'].append(None)
                 status['new_max'].append(None)
+                change = 0
             else:
                 status['old_min'].append(np.min(u_n - problem.minval))
                 status['old_max'].append(np.max(u_n - problem.maxval))
@@ -740,14 +782,37 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
                 if success:
                     status['new_min'].append(np.min(u_n - problem.minval))
                     status['new_max'].append(np.max(u_n - problem.maxval))
+                else:
+                    status['new_min'].append(None)
+                    status['new_max'].append(None)                    
 
+        #Calculate error estimate 
+        if stepsize_control:
+            #if success:
+            #    sc = stepsize_control.a_tol+np.max([u,u_n],0)*stepsize_control.r_tol
+            #else:
+            #    sc = stepsize_control.a_tol+u*stepsize_control.r_tol
+            #error = np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat))/sc)/len(u)
+            error = np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat)))
+            status['error'].append(error)
+            if error > stepsize_control.tol_reqect:
+                tol_met = False
+                if verbose: print('tol not met')
+                status['message'] += 'tol not met'
+                status['sc'].append('r')
+            else: 
+                tol_met = True
+                status['sc'].append('m')
 
             
-        if success:
+        if success and tol_met:
             if verbose: print('advancing t')
             t += dt
             u = u_n
-        else:
+            ##Cropp negative Values TODO more options/Dokumentation
+            #u[u<0] = 0
+
+        if not success:
             if verbose: print('step reqect')
             if solver.fail_on_requect:
                 status['success'] = False
@@ -755,6 +820,7 @@ def RK_integrate(solver = [], problem = [],dumpK=False,verbose=False):
                 break
             else:
                 status['b'][-1] = 'r'
+
 
 
         bb.append(b)
@@ -845,6 +911,15 @@ def solver_nonlinear_arg(t,u,dt,a,f,verbose_solver = False,preconditioner=None):
         #print(u+dt*a*f(t,y))
         print('min:')
         print(min(u+dt*a*f(t,y)))
+
+    ##Added here some stuff to test behavior of LP-Solver not ment for production!!!
+    #Crops the negative values
+    #h = f(t,y)
+    #h[y<0]= u[y<0]/(dt*a)#We define y to 0 and calculate h using the stageeq
+
+    #if ier != 1: 
+    #    print(mesg)
+    #return(h)
     
     if ier != 1: 
         print(mesg)
