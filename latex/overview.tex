@@ -11,7 +11,7 @@
 \usetikzlibrary{calc}
 \usepackage{color}
 
-\usepackage[backend=biber]{biblatex}
+\usepackage[backend=biber,url  = false]{biblatex}
 \addbibresource{pos_rk_stephan.bib}
 
 \title{Positivity-preserving adaptive Runge-Kutta methods: results}
@@ -21,6 +21,7 @@
 
 \maketitle
 
+\section{Introduction}
 
 A big number of problems that preserve positifity reaction discretiesed PDEs...
 
@@ -33,6 +34,8 @@ The resulting b should comply with the order conditions as far as possible.
 (Note: The problem is connected to the theory about embedded methods, in the sense that one have different RKM with the same set of stage values. It may be interesting to have some literature regarding this)
 
 Other Approaches: 
+
+
 ssp104 methods: The idea is to construct a rkm Method out of explicit euler steps, that lead to a positive result for small enough $\Delta t$. (Todo: Read some literature regarding this and give a short explaination)
 
 Implicit methods: Modified Patanka-Runge-Kutta (MPRK) \cite{kopecz_comparison_2019}
@@ -41,7 +44,9 @@ The idea of adapting the $b$ after calculation the stage values is used in \cite
 In this case it is used to adapt the properties of the time integrator for a method of lines simulation on a PDE. With this approach it is possible to have different properties of the RKM at different parts of the domain. 
 
 
-\section{Main Idea}
+(TODO: Outline of paper)
+
+\section{Main Idea}\label{sec:main_idea}
 
 When computing the solution of an ODE $u ' = f(t,u) $ using a RK-Method with $s$ Stages the stage values $k^{(1)},\cdots,k^{(s)}$ are computed according to
 
@@ -71,7 +76,7 @@ To ensure this the Order Conditions should be still meet.
 Because the coeffeicents $a_{jl}$ are already fixed the Order Conditions reduce to linear equations.
 This means that finding the $b$ can be done by solving a linear Programming problem.
  
-This approach to ensure positifity preserves linear invariants like mass conservation, because it is a regular RKM. 
+This approach preserves linear invariants like mass conservation, because it is a regular RKM. 
 If there are no negative values in $u^{n+1}$ with the original $b$, then the method does not cause additional effort, because it only has to solve the LP-Problem if the regular RKM does not lead to a positive $u^{n+1}$. (exept for the test)
 No additional evaluations of the rhs.
 
@@ -86,7 +91,7 @@ Flowchart to evaluate a step:
 \end{itemize}
 
 
-\section{Applicable Problems}
+\section{Applicable Problems}\label{sec:app_problem}
 The approach can be used with ODE systems $u' = f(t,u)$ that ensure  $u(t) \geq 0 \forall_t \forall_{  u_0 \geq 0}$ 
 
 This can be tested with the property 
@@ -94,11 +99,13 @@ This can be tested with the property
 u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall_{u_c \geq 0} \forall_{t}
 \end{equation}
 
-For problems where only the combination of $f(t,u)$ and $u_0$ leads to the positifity of the exact solution, tests did not show promising results. Additional it is not certain if the computed solutions would be reasonable.
+For problems where the exact solution is positive for certain $u_0$ but positifity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additional it is not certain if the computed solutions would be reasonable.
 
-\section{Details}
+\section{Details}\label{sec:Deta	ils}
 
 \subsection{Positifity}
+
+(Note: Probably it is better to move this section further to the back)
 
 For the further discussion we are concerned with a System of $m$ coupled ODEs. 
 In this setup  $u \in \mathbb{R}^m$.
@@ -108,7 +115,7 @@ To enshure that the solution is positive
 
 \begin{align}
  u_i^{n+1} &\geq 0   \;   \forall_{i \in \{1, \cdots,m \}}  \\
- u_i^n + h \sum_{j=0}^{s-1} b_j h_i^j  &\geq 0   \;   \forall_{i \in \{1,\cdots,m \}}  
+ u_i^n + h \sum_{j=0}^{s-1} b_j k_i^j  &\geq 0   \;   \forall_{i \in \{1,\cdots,m \}}  
 \end{align}
 
 has to be fulfilled.
@@ -124,16 +131,17 @@ This causes unnecessary many inequality constraints on the LP-Problem. To simpli
 
 The new positifity constraints can be formulated as
 \begin{equation}
-u_i^n + \Delta b \sum_{j=0}^{s-1} b_j h_i^j  \geq 0   \;   \forall_{i \in h \subseteq \{1,\cdot,m \}} 
+u_i^n + \Delta b \sum_{j=0}^{s-1} b_j k_i^j  \geq 0   \;   \forall_{i \in h \subseteq \{1,\cdot,m \}} 
 \end{equation}
 
 For this a set $h \subseteq \{1,\cdots,m \}$ that include all indecies that are needed for determining the $b$ has to be chosen.
 
 A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
-After the new $b$ and $u^{n+1}$ is computed using $h_0$, the algorithm has to check if the positifity of the other values $i \notin h_0 \subseteq \{1,\cdots,m \}$ is still meet. 
+After the new $b$ and $u^{n+1}$ is computed using $h_0$, the algorithm has to check if the positifity of the other values $u_i | i \notin h_0 \subseteq \{1,\cdots,m \}$ is still meet. 
 If the conditions is not meet a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP-Problem is solved again. This process id repeated until a solution is found that leads to a $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on the $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$. 
 
-This effect did not occur so far. A approach on this would be to make a educated guess which indecies could get a problem with positifity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ 
+This effect did not occur so far. 
+(Note: A approach on this would be to make a educated guess which indecies could get a problem with positifity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
 
 When enforcing a maximum value the number of constraints can be reduced using the same technique. When both enforcing maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints. 
 Here it is important to update these sets simultaneously.  
@@ -157,12 +165,12 @@ This implies that the number of stages has to be higher as the wanted order.
 
 There are two possible ways to write down the adaptation of the $b$. The first way is to directly adapt the original weights $b_{orig}$ by adding a correction $\Delta b$ that ensures positivity.
 This is the easiest way to adapt the $b$. An advantageous property is that the step size can be reduced after calculation the stage values by using the dense output order conditions.  
-(Note: Recommendation for explicit methods)
+This approach suits best for explicit methods.
 The direct adaption approach is explained in more detail in section\,\ref{sec:direct}.
 
 The second approach is to choose $b$ as a convex combination of a set of $b$s. This approach is more useful if some embedded methods with certain properties are know. 
 This approach also shows more  predictable behavior because the resulting $u^{n+1}_b$ is also a convex combination of the solutions $u^{n+1}_{b_a},u^{n+1}_{b_b},\cdots$ 
-(Note: Recommendation for implicit methods)
+This approach works best with implicit methods.
 The direct adaption approach is explained in more detail in section\,\ref{sec:convex}
 
 Both approaches are shown in figure\,\ref{fig:b_space}.
@@ -187,7 +195,7 @@ Both approaches are shown in figure\,\ref{fig:b_space}.
 
 When directly adapting the $b$ a new $b$ that complies with the Order Conditions is chosen.   
 The weights $b = b_{orig} + \Delta b$ consist of the weights of the original method $b_{orig}$ and an adaption $\Delta b$. This $\Delta b \in \mathrm{ker}(Q)$. 
-In Figure\,\ref{fig:b_direct} this is is drawn. The red line represents the subspace of $b$ that compile with the Order Conditions. Both $b_{orig}$ and $b$ are in this subspace. 
+In Figure\,\ref{fig:b_direct} this is drawn. The red line represents the subspace of $b$ that satisfy the Order Conditions. Both $b_{orig}$ and $b$ are in this subspace. 
  
 To run it as a LP-Problem a set of constraints is constructed.  
 Also a objective function is needed to determine the optimal $b$.
@@ -224,9 +232,14 @@ This can be achieved by $argmin(f_{optim}(b)) = b_{orig}$.
 In practice this also means that there is no need to solve solve the optimization Problem if no constraints are violated because the solution of this problem is already known. This is adventagious for performance reasons.
 The different approaches have been tested on a linear test problem from \cite{kopecz_unconditionally_2018}. The optimization problem was used at every step.
 The magnitude of $b$ can get large if the Order Conditions are used as objective function.
-Large values of b can lead to numerical instability. Because $\sum_{i  = 1}^s b_i = 1$, a increase of $||b||$ leads to a combination of negative and positive values. Because the computation only is done with a finite precision (and usually in floating point) large $||b||$ can lead to absorption effects.    
+Large values of b can lead to numerical problems. Because $\sum_{i  = 1}^s b_i = 1$, a increase of $||b||$ leads to a combination of negative and positive values. Because the computation only is done with a finite precision (and usually in floating point) large $||b||$ can lead to absorption effects.    
 By changing the $b$ the stability function is altered. This can lead to oscillations if the poles of the RHS are no longer in the stability region of the resulting method.
-For these reasons $||b-b_{orig}||$ seems like a good choice. The 1-Norm can be implement the with Linear Programming using slack variables. We choose $||b_{optim}-b_{orig}||_1$ as objective function.
+For these reasons $||b-b_{orig}||$ seems like a good choice. The 1-Norm can be implement the with Linear Programming using slack variables. We choose 
+
+\begin{equation}
+f_{obj} = ||b_{optim}-b_{orig}||_1
+\end{equation}
+ as objective function.
 
 
 
@@ -245,16 +258,18 @@ The dependency of $r(\theta)$ is nonlinear. This means that the maximum $\theta$
 
 
 \subsection{Convex combination of existing methods}\label{sec:convex}
-For some test problems (e.g. the Heat Equation solved with an implicit method), large distortions occur, even though a norm of the distortion of the b is used as a objective function. 
-For implicit methods it is known that implicit euler steps lead to a positive solution for any $\Delta t$. The backward Euler is still only first Order but shows more exact results in certain cases than a method of higher Order that shows distortions of the solution caused by the larger error coefficients ($\Delta t \gg 0$, so they do not disappear because of the nature of the polynomial).
+For some test problems (e.g. the Heat Equation solved with an implicit method of higher order), large distortions occur, even though a norm of the distortion of the b is used as a objective function. 
+For implicit methods it is known that the backward euler steps lead to a positive solution for any $\Delta t$ \cite{hundsdorfer_numerical_2003}. The backward Euler is still only first Order but shows more exact results than a method of higher Order that is distorted by the adaption of the $b$, at least at some steps. 
 A possible method to fix this is to generate the new b based on a convex combination of embedded methods of RKM. 
 
 \subsubsection{Constraints}
 At first a set of embedded methods of the RKM $b_1,\cdots,b_d$ are needed. 
-If all the used b complies with an order conditions the new method also has this order.
-This can is straightforward using
+If all the used $b$ compile with the order conditions the new method is also of the same Order.
+This is straightforward using
 
-$$ q^T b = q^T (\chi b_{\alpha} + (1-\chi) b_{\beta}) = \chi q^T  b_{\alpha} + (1-\chi) q^T  b_{\beta}) = \chi rhs + (1-\chi) rhs = rhs$$
+$$ Q b = Q (\chi b_{\alpha} + (1-\chi) b_{\beta}) = \chi Q  b_{\alpha} + (1-\chi) Q b_{\beta}) = \chi r + (1-\chi) r = r$$
+
+$b_{\alpha}$ and $b_{\beta}$ are the methods that are combined to $b$ using the parameter $\chi$. The Matrix $Q$ and the vector $r$ are the Order Conditions as defined in Section\,\ref{sec:OrderCond}.
 
 The new $b$ is defined as 
 \begin{equation}\label{eq:b_convex_def}
@@ -269,20 +284,24 @@ To ensure the that Equation\,\ref{eq:b_convex_def} yields a convex combination f
  0 \leq a_1 \leq 1  \forall_{i \in \{1, \cdots d \}}
 \end{equation}
 \begin{equation}
- \sum_{i=1}^d a = 1
+ \sum_{i=1}^d a_i = 1
 \end{equation}
 
 
 The positifity constraint changes to 
 
-$$u_{n+1}=u_n+\Delta K B a \geq 0$$
+$$u_{n+1}=u_n+\Delta t K B a \geq 0$$
+
+where $a = [a_1,\cdots,a_d]^T$
 
 
 \subsubsection{Objective Function}
 
 As an Objective function the function
 
-$$ min \left(\sum_i^d w_i a_i \right) $$
+\begin{equation}
+f_{obj} = min \left(\sum_i^d w_i a_i \right)
+\end{equation}
 
 is used.  The $w_1,\cdots,w_d$ are weighting factors that determine which is the preferred $b_i$ to use.
 
@@ -292,7 +311,7 @@ Because the optimal solution of the unconstrained problem has to be the original
 For methods with $s \geq p$ it is useful to have some degrees of freedom for the highest order. For this at least one $b$ that complies with the order Condition of the highest order and $b \neq b_{orig}$ has been introduced.
 These additional $b$ can be constructed by calculating a Span $S$ of the Kernel $\mathrm{ker} (Q)$ of the Order Condition Matrix $Q$. For every vector $s \in S$ one set of weights with $b = b_{orig} + a s$ and one with $b = b_{orig} - a s$ is added. The $a$ is a parameter that determines how big a change is allowed. 
 
-As a first order method a $b$ is added that corresponds to a series of backward euler steps. These are know to be yield to a positive result (Todo: source).
+As a first order method a $b$ is added that corresponds to a series of backward euler steps. These are know to be yield to a positive result.
 
 An important property of the embedded methods is that they should show the desired stability characteristics.
 
@@ -345,24 +364,105 @@ For all methods with the number of stages equal to the order of the method, ther
 If the Classical RK4 method is used the Order has to reduced more because the RK4 method does not have embedded methods of order 3.
 Contrary to this methods with $s > p$ have degrees of freedom even without reducing the order. 
 
-Another important property is the stability region in comparison with the maximum $\Delta t$ that ensures positifity. For this approach to be useful the RK-method has to yield negative results for $\Delta t$ smaller than the biggest stable $?Delta t$.
+Another important property is the stability region in comparison with the maximum $\Delta t$ that ensures positifity. For this approach to be useful the RK-method has to yield negative results for $\Delta t$ smaller than the biggest stable $\Delta t$.
 
 (Note: up to this point i do not understand why this is happening. We only see it occur depending on the Proble-RKM combination)
 
 A third property is the existence of a positive solution. This corresponds to the question if there is a embedded first order method that ensures positivity. This is particularly interesting for Implicit methods, because the $\Delta t$ is not limited by the stability. 
 If we have a embedded first Order Method we can ensure that there is always a positive solution, which might be of first Order. (Todo: Source)
 
-\subsection{Error detection/Approximation}
-(Todo: edit this whole section, Add some mathematically more rigorous statement)
+\subsection{Error detection and Approximation}
+When changing the weights the solution $u^{n+1}$ is changed. 
+By incorporating the Order Conditions for a certain Order the space of $b$ that can be choose is limited to a linear Subspace. 
+Now it is important to know if the new solution $u^{n+1}$ still resembles the solution of the ODE $u(t_{n+1})$. 
+We can motivate this with the following example:
 
-The main question is: We see that for certain $b$ that comply with the Order Conditions we get results that do not resemble the solution. (some type of glitches, artefacts)
+Take the linear, positifity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
 
-Note: in general it is difficult to give some mathematically rigorous statement for this statement because -by definition- it only applies for $\delta t \gg 0$ where the proofs using the Taylor Series do not give valid results any more. We could say that the main idea of the adaption of $b$ is to alter the error in a certain way that we know that the numerical solution gets 'better' in the sense that it only leads to positive solutions. 
-When taking the Taylor Series of the numeric solution the coefficients up to the Order of the method are fixed by the Order Conditions. The only degrees of freedom are the coefficents above the Order Conditions. This requires that $\Delta t > 0$. (More like $\Delta t^n \approx \Delta t^(n+1) $)
-The main way is to ensure that for $\Delta t \to 0$ : $b \to b_{orig}$. For this case we already know that the numeric solution converges to the exact solution.  
-This is made sure by property of the Objective function that $argmin(f_{optim}(b)) = b_{orig}$. 
+\begin{equation}
+u'(t) = A u(t) \qquad A = \left[\begin{matrix}- a & 1\\a & -1\end{matrix}\right] \quad a =5
+\end{equation}
 
-To make sure that the new adapted solution is still reasonable we measure the deviation form the Original method. In the worst case the errors add up. (todo: here some math formula... (We know that can not be the case because we already know that we will reduce the error for the quantity we will make positive, still we can use it as a upper bound.))
+and the first order RKM with two stages
+
+\begin{align}
+\begin{array}{c|cc}
+0 &  & \\
+\frac{1}{2} & \frac{1}{2} & \\
+\hline
+ & \frac{1}{2} & \frac{1}{2}\\
+\end{array}
+\end{align}
+
+If simulated with $\Delta t = 1$ the stage values are 
+
+\begin{equation}
+k^1 = \left(\begin{matrix}-5\\5\end{matrix}\right) \qquad k^2 = \left(\begin{matrix}10\\-10\end{matrix}\right)
+\end{equation}
+
+All $b$ that comply with the order Condition for the first order can be expressed as
+
+\begin{equation}
+b= \left(\begin{matrix}\frac{1}{2}\\ \frac{1}{2}\end{matrix}\right) + \alpha \left(\begin{matrix}1\\ -1\end{matrix}\right)
+\end{equation}
+
+Therefor the general solution is 
+
+\begin{equation}
+u^{1} = u^0 + \Delta t  \left[k^1,k^2\right] b = \left(\begin{matrix}\frac{5}{2}\\- \frac{5}{2}\end{matrix}\right) \alpha  \left(\begin{matrix}-15\\15\end{matrix}\right)
+\end{equation}
+
+By a suitable choice of $\alpha \in [\frac{1}{6},\frac{7}{30}]$ any $u$ that complies with mass conservation and positifity can be reached. 
+
+This gives raise to the question weather the new solution is reasonable.
+This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
+
+
+ 
+\subsubsection{Error Detection}
+For this approach is difficult to give some mathematically rigorous statement regarding the convergence of the method, because it only applies if the error of the original method causes the solution to get negative. This can only happen if the Truncation error is large enough. This requires $\Delta t \gg 0$ where lower coefficients of the Taylor Series are no longer sufficient to approximate the behavior. 
+One could say that the main idea of the adaption of $b$ is to alter the error in a certain way, so that the numerical solution gets 'better' in the sense that it leads to positive solutions. 
+The local error of a RKM $e(\Delta t) =u(t_0 + \Delta t) - u^1$ can be expressed using the Taylor series of the RKM and the Taylor series of the exact solution. % Hairer I P134
+
+\begin{align}\label{eq:Taylor_sol_ref}
+u(t_0 + \Delta t) &= u(t_0) + u'(t_0) \Delta t + \frac{u''(t_0)}{2} \Delta t^2 + \cdots + \frac{u^{(p)}(t_0)}{p!} \Delta t^p + \frac{u^{(p+1)}(t_0)}{(p+1)!} \Delta t^{p+1} + \cdots \\
+u^{n+1} &= u(t_0)  + v_1 \Delta t + \frac{v_2}{2} \Delta t^2 + \cdots + \frac{v_p}{p!} \Delta t^p + \frac{v_{p+1}}{(p+1)!} \Delta t^{p+1} + \cdots \\
+\end{align}
+
+The derivatives of $u(t)$ can be solely expressed with the partial derivatives of the RHS $f(t,u)$, whereas the coefficients $v_1,v_2,\cdots$ also depend on the RKM. 
+In this case the RKM is fixed apart from the weights $b$. 
+Because of this $v_1,v_2,\cdots$ are functions of $b$.
+Because the $b$ are chosen to ensure the Order Conditions the coefficients $v_1,\cdots,v_p$ are fixed and equal the according derivatives. 
+The only remaining degrees of freedom are the coefficients $v_{p+1},v_{p+2},\cdots$.
+These can be adapted by changing the $b$.
+
+The main way is to ensure that the RKM with adapted b i to ensure that the $b$ approach $b_{orig}$ for $\Delta t \to 0$. For this $b$ it is already know that the numeric solution converges to the exact solution.  
+This is made sure by property of the Objective function that 
+
+\begin{equation}
+\mathrm{argmin}(f_{optim}(b)) = b_{orig}
+\end{equation}
+
+This approximation is not very useful for real applications. 
+To approximate the error of a new step we propose following approxiamtion of the local error:
+
+\begin{align}
+err = |u(t^n)-u^n| &= |u(t^n) - (u^n_{b_{orig}+\Delta t K(b-b_{orig})})| \\
+ &\leq \underbrace{|u(t^n)-u^n_{b_{orig}}|}_{\approx err_T}+\underbrace{|\Delta t K(b-b_{orig})|}_{= err_{adapt}}
+\end{align}
+
+After adapting the $b$ the Approximation Error is checked. If $|\Delta t K(b-b_{orig})|$ is larger than the tolerance the $b$ is requected. 
+
+\subsubsection{Steppsize Control}
+An important part of an RKM method is the ability to approximate the error of the solution to use it to control the step size. 
+The truncation error $|u(t^n)-u^n_{b_{orig}}|$ is usually approximated with an standard error estimator $err_T = | u^{n}_{b_{orig}} - u^{n}_{\hat{b}} |$.
+
+Both errors are added to get an approximation of the total error $err = err_T +w_a err_{adapt}$. The parameter $w_a \leq 1$ is used to account for the fact that the real error is smaller than $err = err_T +err_{adapt}$. The factor also improves the stability of the step size control because $err_{adapt}$ is not as smooth as $err_T$, especially if negative values only occur for a small number of steps.
+If the LP-Problem was infeasible and no $b$ was found the $err_{approx}$ is set to a custom value. This value should be chosen sufficiently large to ensure that the next step take is smaller, but still not to large to keep the stepsize control stable.
+
+This type of error estimation is easy to implement because it can be easily incorporated in an existing step size control and takes advantage of the standard error approximation.
+
+%To make sure that the new adapted solution is still reasonable we measure the deviation form the Original method. In the worst case the errors add up. (todo: here some math formula... (We know that can not be the case because we already know that we will reduce the error for the quantity we will make positive, still we can use it as a upper bound.))
 
 
 \subsection{Stability Region}
@@ -373,15 +473,15 @@ It depends on the solved problem, the RKM and the used $\Delta t$ on how many st
 
 In \ref{proof:combiningb} it is stated that one can construct the stability function of a RKM  $R_b$  with the weights $b = \alpha b_1 + \beta b_2$ by adding the weighted stability functions $R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) $ where all stability functions have the same $A$ and $\alpha + \beta = 1$.
 
-(Todo:It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations can not happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient  condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
+%(Todo:It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations can not happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient  condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
 
 
 
 \subsubsection{Convex Combination}
-If the new $b$ is a chosen as a convex combination of $b$ it is easy to prove that the resulting  the Region of absolute stability is at least the Intersection of the region of absolute stability of the methods that define the convex combination. (Compare Section\,\ref{proof:convex_comb}). This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
+If the new $b$ is chosen as a convex combination of $b$ it is easy to prove that the resulting  the Region of absolute stability is at least the Intersection of the region of absolute stability of the methods that define the convex combination. (Compare Section\,\ref{proof:convex_comb}). This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
 
 
-\subsection{Direct Adaptation}
+\subsubsection{Direct Adaptation}
 If the $b$ is adapted directly there is no such proof.
 A useful property of the resulting stability region is that it is similar to the stability region of the baseline method. 
 (Note: is it possible to give some statement like: If the stability regions of the rkm used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions)
@@ -404,90 +504,28 @@ If all the combinations of $\theta$ and $p$ did not lead to a acceptable $b$ the
 
 (Note: It would also be possible to use another strategy for traversing all the combinations of $(p,\theta)$. Is it worth exploring these? Eg, a visect algorithm for $\Theta$ or linear approximations)
 
+
+
+\section{Results of experiments}\label{sec:Numeric_Results}
+
 (Note: Is here a good place to give a note on where supplementary code can be found?)
 
 (Note: Should we discuss which solver is used. Probably it is not worth using space for some plot etc. on this... Maybe a short note?)
 
 
-
-\section{Results of experiments}
 \subsection{Explicit methods}
 For most of the test problems problems with stability occur before getting negative values. This means that we need methods with large stability region.
 
-\subsubsection{ADP}
-A test problem that works good is the advection‐diffusion‐production‐destruction systems. 
-For the production‐destruction systems negative values at the intermediate steps occurred. These results of these could be suppressed by the optimization problem  except for some timesteps where these yield to glitches in the solution.
 
-Conclusion: it is important to control for negative Values in the intermediate stages.
-Possible solutions: Solve an positifity ensuring optimization Problem at every intermediate step.
-Can be formulated as choosing a new $b$ for every intermediate stage which then gets part of $A$ in the next step.
-
-Another idea to explore (Is kind of obvious but could also be stupid): Replace $f(t,u)$ with an $f_{pos}(t,u)$ with 
-$f(t,u)=f_{pos}(t,u) \forall u \geq 0 $
-Whereas $f_{pos}(t,u)$ is welldefined for $u \leq 0$
-
-
-We are going to test the solvers for multiple $\Delta t$. For the explicit method we want to show the important times.
-
-$$ \Delta t \; \underset{0}{+}---------\underset{\Delta t_{pos}}{+}\underbrace{--------}_{\gamma}\underset{\Delta t_{feasible}}{+}---\underset{\Delta t_{stable}}{+}--->  $$
-
-\begin{itemize}
-\item
-$\Delta t_{pos}$ is the largest stepsize that yields to positive results without adapting the $b$
-
-\item
-$\Delta t_{feasible}$ is the largest stepsize that can be used with the adaptive $b$
-
-\item
-$\Delta t_{stable}$ is the largest stepsize for that the method is stable
-\end{itemize}
-
-
-The timesteps where the adaption of the b is usefull is denoted with $\gamma$ idealy this interval is as large as possible. This means that $\Delta t_{pos} \ll \Delta t_{feasible} \approx \Delta t_{stable}$
-
-With stepsizes $\Delta t > \Delta t_{stable} $ we cann not expect the solution to be reasonable
-
-$\Delta t$ for the ADP Problem 
-
-\begin{tabular}{|c|c|c|c|c|}
-\hline 
-Method & $\Delta t_{pos}$ &$\Delta t_{stable}$& $\Delta t_{feasible}$  \\ 
-\hline
-fe & 0.0015 & --- &  0.0051 \\
-\hline 
-ssp104 fallback =1 & 0.0134 & 0.0309 & 0.0311 \\ 
-\hline 
-dp5 &0.0031 &0.0031 & 0.0031\\ 
-\hline 
-ck5 & 0.0044&  0.0044 & 0.0044\\ 
-\hline 
-merson4 fallback= 1& 0.0038& 0.0055 & 0.0084\\
-\hline
-\end{tabular} 
-
-We can see that for the ssp104 method is a good choice for this approach when solving this testproblem.  The merson4 method is also suitable. We can not get benefits form dp5 and ck5.
-
-
-\subsubsection{Quantum Simulations}
-Shows following shortcomings:
-
-To ensure positifity we do not only need $\rho_{i,i} \geq 0$ but also the additional constraint $|\rho_{j,k}|^2 \leq \rho_{j,j} \rho_{k,k}$ at least for the elements with $j = k +1$ and $j = k-1$. This conditions can not be formulated as LP-Problem.
 
 \subsection{Implicit methods}
 Implicit methods seem like an advantageous choice for a couple of reasons.
 
-\begin{itemize}
-\item The computational effort of solving the optimisation Problem is relatively small compared to the overall cost of the method.
-\item Implicit methods are stable for large step sizes.
-\item Implicit methods ensure positifity for the backward euler step, even for large step sizes.
-\item There are no methods for ensuring positifity for higher order methods (Which we also can not get around for the general case)
-\end{itemize}
-
-Used for the ADP model the model yields good results, the main limit for the stepsize is the accuracy of the solver for the stageequations.
-
 When tested on the diffusion equation with an spike as initial data the $b$ is only changed for the first step. The change of the $b$ can lead to reasonable changes of the hight of the maximum. 
 
+\subsection{Stepsize control}
 
+\subsection{Dense Output}
 
 \section{Useful proofs}
 
