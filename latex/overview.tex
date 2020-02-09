@@ -90,61 +90,63 @@ Flowchart to evaluate a step:
 \item Calculate the $u_{n+1} = u_n + \Delta t K b$ with the new b
 \end{itemize}
 
+\subsection{Example I}\label{sec:example_reac}
 
-\section{Applicable Problems}\label{sec:app_problem}
-The approach can be used with ODE systems $u' = f(t,u)$ that ensure  $u(t) \geq 0 \forall_t \forall_{  u_0 \geq 0}$ 
+TODO: Add here the reaction equation, show that it behaves better with the new approach. (still keep it simple with fixed stepsize...)
 
-This can be tested with the property 
+\subsection{Example II}\label{sec:example_lin}
+
+(Note: The primary goal here is to put the idea of changing the b into perspective. We have shown the general idea and how it works, now we want to discuss on what it does in practice. At first we state it is good to preserve the order... Get to the Example ... and show that there is more to it)
+
+By incorporating the Order Conditions for a certain Order the space of $b$ that can be choose is limited to a linear Subspace. 
+Now it is important to know if the new solution $u^{n+1}$ still resembles the solution of the ODE $u(t_{n+1})$. 
+We can motivate this with the following example:
+
+Take the linear, positifity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
+
 \begin{equation}
-u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall_{u_c \geq 0} \forall_{t}
+u'(t) = A u(t) \qquad A = \left[\begin{matrix}- a & 1\\a & -1\end{matrix}\right] \quad a =5
 \end{equation}
 
-For problems where the exact solution is positive for certain $u_0$ but positifity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additional it is not certain if the computed solutions would be reasonable.
+and the first order RKM with two stages
+
+\begin{align}
+\begin{array}{c|cc}
+0 &  & \\
+\frac{1}{2} & \frac{1}{2} & \\
+\hline
+ & \frac{1}{2} & \frac{1}{2}\\
+\end{array}
+\end{align}
+
+If simulated with $\Delta t = 1$ the stage values are 
+
+\begin{equation}
+k^1 = \left(\begin{matrix}-5\\5\end{matrix}\right) \qquad k^2 = \left(\begin{matrix}10\\-10\end{matrix}\right)
+\end{equation}
+
+All $b$ that comply with the order Condition for the first order can be expressed as
+
+\begin{equation}
+b= \left(\begin{matrix}\frac{1}{2}\\ \frac{1}{2}\end{matrix}\right) + \alpha \left(\begin{matrix}1\\ -1\end{matrix}\right)
+\end{equation}
+
+Therefor the general solution is 
+
+\begin{equation}
+u^{1} = u^0 + \Delta t  \left[k^1,k^2\right] b = \left(\begin{matrix}\frac{5}{2}\\- \frac{5}{2}\end{matrix}\right) \alpha  \left(\begin{matrix}-15\\15\end{matrix}\right)
+\end{equation}
+
+By a suitable choice of $\alpha \in [\frac{1}{6},\frac{7}{30}]$ any $u$ that complies with mass conservation and positifity can be reached. 
+
+This gives raise to the question weather the new solution is reasonable.
+This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
+
+
+
 
 \section{Details}\label{sec:Deta	ils}
 
-\subsection{Positifity}
-
-(Note: Probably it is better to move this section further to the back)
-
-For the further discussion we are concerned with a System of $m$ coupled ODEs. 
-In this setup  $u \in \mathbb{R}^m$.
-Systems of ODEs with a high number of dimensions can appear when solving a PDE with the method of lines.
-
-To enshure that the solution is positive 
-
-\begin{align}
- u_i^{n+1} &\geq 0   \;   \forall_{i \in \{1, \cdots,m \}}  \\
- u_i^n + h \sum_{j=0}^{s-1} b_j k_i^j  &\geq 0   \;   \forall_{i \in \{1,\cdots,m \}}  
-\end{align}
-
-has to be fulfilled.
-This infers $m$ positivity constraints to the optimisation problem. These can be written as
-
-\begin{equation}
-u_i + \Delta t K  b \geq 0     
-\end{equation}
-
-where $K = \big[k^1 , \cdots k^{s-1}\big]$.
-
-This causes unnecessary many inequality constraints on the LP-Problem. To simplify the problem one want to reduce the number of positifity constraints by ignoring it for ODEs where there is no issue with positifity.
-
-The new positifity constraints can be formulated as
-\begin{equation}
-u_i^n + \Delta b \sum_{j=0}^{s-1} b_j k_i^j  \geq 0   \;   \forall_{i \in h \subseteq \{1,\cdot,m \}} 
-\end{equation}
-
-For this a set $h \subseteq \{1,\cdots,m \}$ that include all indecies that are needed for determining the $b$ has to be chosen.
-
-A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
-After the new $b$ and $u^{n+1}$ is computed using $h_0$, the algorithm has to check if the positifity of the other values $u_i | i \notin h_0 \subseteq \{1,\cdots,m \}$ is still meet. 
-If the conditions is not meet a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP-Problem is solved again. This process id repeated until a solution is found that leads to a $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on the $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$. 
-
-This effect did not occur so far. 
-(Note: A approach on this would be to make a educated guess which indecies could get a problem with positifity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
-
-When enforcing a maximum value the number of constraints can be reduced using the same technique. When both enforcing maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints. 
-Here it is important to update these sets simultaneously.  
 
 
 \subsection{Order Conditions}\label{sec:OrderCond}
@@ -375,43 +377,7 @@ If we have a embedded first Order Method we can ensure that there is always a po
 When changing the weights the solution $u^{n+1}$ is changed. 
 By incorporating the Order Conditions for a certain Order the space of $b$ that can be choose is limited to a linear Subspace. 
 Now it is important to know if the new solution $u^{n+1}$ still resembles the solution of the ODE $u(t_{n+1})$. 
-We can motivate this with the following example:
-
-Take the linear, positifity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
-
-\begin{equation}
-u'(t) = A u(t) \qquad A = \left[\begin{matrix}- a & 1\\a & -1\end{matrix}\right] \quad a =5
-\end{equation}
-
-and the first order RKM with two stages
-
-\begin{align}
-\begin{array}{c|cc}
-0 &  & \\
-\frac{1}{2} & \frac{1}{2} & \\
-\hline
- & \frac{1}{2} & \frac{1}{2}\\
-\end{array}
-\end{align}
-
-If simulated with $\Delta t = 1$ the stage values are 
-
-\begin{equation}
-k^1 = \left(\begin{matrix}-5\\5\end{matrix}\right) \qquad k^2 = \left(\begin{matrix}10\\-10\end{matrix}\right)
-\end{equation}
-
-All $b$ that comply with the order Condition for the first order can be expressed as
-
-\begin{equation}
-b= \left(\begin{matrix}\frac{1}{2}\\ \frac{1}{2}\end{matrix}\right) + \alpha \left(\begin{matrix}1\\ -1\end{matrix}\right)
-\end{equation}
-
-Therefor the general solution is 
-
-\begin{equation}
-u^{1} = u^0 + \Delta t  \left[k^1,k^2\right] b = \left(\begin{matrix}\frac{5}{2}\\- \frac{5}{2}\end{matrix}\right) \alpha  \left(\begin{matrix}-15\\15\end{matrix}\right)
-\end{equation}
-
+This can be seen in example in section\,\ref{sec:example_lin}.
 By a suitable choice of $\alpha \in [\frac{1}{6},\frac{7}{30}]$ any $u$ that complies with mass conservation and positifity can be reached. 
 
 This gives raise to the question weather the new solution is reasonable.
@@ -471,70 +437,8 @@ By adapting the $b$ the used RK Method is changed. This also alters the stabilit
 It depends on the solved problem, the RKM and the used $\Delta t$ on how many steps the stability function is altered. For Problems where only a small number of step are affected a bigger change in the stability function would be acceptable. For Problems with require a adaptation of the weights for every step one needs to make sure that the resulting method is stable.
 
 
-In \ref{proof:combiningb} it is stated that one can construct the stability function of a RKM  $R_b$  with the weights $b = \alpha b_1 + \beta b_2$ by adding the weighted stability functions $R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) $ where all stability functions have the same $A$ and $\alpha + \beta = 1$.
+The stability function of a RKM  $R_b$  with the weights $b = \alpha b_1 + \beta b_2$ cn be calculated by adding the weighted stability functions $R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) $ where all stability functions have the same $A$ and $\alpha + \beta = 1$.
 
-%(Todo:It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations can not happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient  condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
-
-
-
-\subsubsection{Convex Combination}
-If the new $b$ is chosen as a convex combination of $b$ it is easy to prove that the resulting  the Region of absolute stability is at least the Intersection of the region of absolute stability of the methods that define the convex combination. (Compare Section\,\ref{proof:convex_comb}). This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
-
-
-\subsubsection{Direct Adaptation}
-If the $b$ is adapted directly there is no such proof.
-A useful property of the resulting stability region is that it is similar to the stability region of the baseline method. 
-(Note: is it possible to give some statement like: If the stability regions of the rkm used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions)
-
-In Section\,\ref{sec:deriv_sr_b} a proof is given that for most methods a small change of $b$ does not alter the stability function dramatically.
-
-
-
-
-
-
-\section{Implementation aspects of the Algorithm}
-
-(Todo: Maybe a flowchart and a description on how we stitch everything together.) 
-
-The algorithm on adapting the b consists of two main loops. The outer loop loops through all the $\theta$, staring with $\theta = 1$ down to the lowest $\theta$. The inner loop loops through the orders, starting with the highest Order down to the lowest Order. 
-Until a acceptable $b$ the algorithm tests combiantions of $\theta$ and $p$. At first the Order Conditions are constructed. On these a LP-Solver is invoiced. If the LP-Problem is infeasible the algorithm immediately tries the next combination. If the LP-Problem is feasible we test if the $b$ is acceptable. At first it is tested weather the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. (Note: because of the chosen objective function it can not be unbounded) As second test the deviation from the old solution (Compare Error estimation) is calculated. If the error is bigger than a set maximum error the $b$ is also rejected and the algorithm also switch to the next combination.
-As soon as the algorithm finds a suitable $b$ the loops are aborted and the $b$ is used for the update step.
-If all the combinations of $\theta$ and $p$ did not lead to a acceptable $b$ the step has to be rejected and a new set of stage values has to bee computed.
-
-(Note: It would also be possible to use another strategy for traversing all the combinations of $(p,\theta)$. Is it worth exploring these? Eg, a visect algorithm for $\Theta$ or linear approximations)
-
-
-
-\section{Results of experiments}\label{sec:Numeric_Results}
-
-(Note: Is here a good place to give a note on where supplementary code can be found?)
-
-(Note: Should we discuss which solver is used. Probably it is not worth using space for some plot etc. on this... Maybe a short note?)
-
-
-\subsection{Explicit methods}
-For most of the test problems problems with stability occur before getting negative values. This means that we need methods with large stability region.
-
-
-
-\subsection{Implicit methods}
-Implicit methods seem like an advantageous choice for a couple of reasons.
-
-When tested on the diffusion equation with an spike as initial data the $b$ is only changed for the first step. The change of the $b$ can lead to reasonable changes of the hight of the maximum. 
-
-\subsection{Stepsize control}
-
-\subsection{Dense Output}
-
-\section{Useful proofs}
-
-\subsection{Existence of b}
-Ensuring a feasible $b$ exists for a certain order condition is in general very difficult.
-If we drop the order conditions it is known that there is a positive solution as long as there is a $k_c$ with $k_c \geq 0$.
-This is no problem when using a implicit method because a backward euler step always gives a positive solution. 
-
-\subsection{Stability function of linear combinations}\label{proof:combiningb}
 Let $R_b(z)$ denote the stability function of a RKM method with the butcher tableau
 
 $$
@@ -572,7 +476,13 @@ because this has to be true for all $u_n$ we get
 R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) 
 \end{equation}
 
-\subsection{Stability of convex combination}\label{proof:convex_comb}
+
+%(Todo:It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations can not happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient  condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
+
+
+
+\subsubsection{Stability of convex combination}
+If the new $b$ is chosen as a convex combination of $b$ it is easy to prove that the resulting  the Region of absolute stability is at least the Intersection of the region of absolute stability of the methods that define the convex combination. (Compare Section\,\ref{proof:convex_comb}). This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
 
 With this we can proof that the convex combination of two methods is absolutely stable at the points where both original methods were absolutely stable.
 
@@ -585,11 +495,15 @@ We write $\alpha = \chi$ and $\beta = 1-\chi$ for convenience.
 \end{align}
 
 
-\subsection{Stability of direct adaptation}\label{sec:deriv_sr_b}
+
+\subsubsection{Stability of  Direct Adaptation}
+If the $b$ is adapted directly there is no such proof.
+A useful property of the resulting stability region is that it is similar to the stability region of the baseline method. 
+(Note: is it possible to give some statement like: If the stability regions of the rkm used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions)
+
+For most methods a small change of $b$ does not alter the stability function dramatically.
 
 We would like to calculate the derivative of the border in respect to a change of $b$. 
-
-
 
 The stability function depending on the $b$ is expressed (Note: it is a bit complicated her because we cannot let it depend on the b directly, but only give b after a coordinate transformation, which also makes the expression easier because we can already introduce the order conditions here)
 $m$ is the number of dimensions of the Kernel of the Order Condition $m = \mathrm{dim}\{\mathrm{Ker} (Q) \}$
@@ -651,6 +565,99 @@ using the fact that $z_0$ is on the border of the stability region.
 The derivative $-2 + R_{b_{orig}}(z_0)R^*_{b_v}(z_0) + R_{b_v}(z_0)R^*_{b_{orig}}(z_0)$ is known to be finite for explicit methods, because $R_{b_v}$ and $R_{b_{orig}}$ are Polynomials and $|z_0| < \infty$
 The same process can be done for all points on the border of the stability region. 
 As long as $\left[ J_{f,a}(w,a(w))  \right] > 0$ the derivative $\frac{\partial a}{\partial w_j} (w)$ is finite. This means that a small change the $b$ only leads to a small change of the stability region.
+
+
+
+\section{Implementation aspects of the Algorithm}
+
+TODO: Discuss in this section aspects that are needed for implementation (and improve the usability) but do not concern the mathematical idea of the approach.
+
+\subsection{Positifity}
+
+
+For the further discussion we are concerned with a System of $m$ coupled ODEs. 
+In this setup  $u \in \mathbb{R}^m$.
+Systems of ODEs with a high number of dimensions can appear when solving a PDE with the method of lines.
+
+To enshure that the solution is positive 
+
+\begin{align}
+ u_i^{n+1} &\geq 0   \;   \forall_{i \in \{1, \cdots,m \}}  \\
+ u_i^n + h \sum_{j=0}^{s-1} b_j k_i^j  &\geq 0   \;   \forall_{i \in \{1,\cdots,m \}}  
+\end{align}
+
+has to be fulfilled.
+This infers $m$ positivity constraints to the optimisation problem. These can be written as
+
+\begin{equation}
+u_i + \Delta t K  b \geq 0     
+\end{equation}
+
+where $K = \big[k^1 , \cdots k^{s-1}\big]$.
+
+This causes unnecessary many inequality constraints on the LP-Problem. To simplify the problem one want to reduce the number of positifity constraints by ignoring it for ODEs where there is no issue with positifity.
+
+The new positifity constraints can be formulated as
+\begin{equation}
+u_i^n + \Delta b \sum_{j=0}^{s-1} b_j k_i^j  \geq 0   \;   \forall_{i \in h \subseteq \{1,\cdot,m \}} 
+\end{equation}
+
+For this a set $h \subseteq \{1,\cdots,m \}$ that include all indecies that are needed for determining the $b$ has to be chosen.
+
+A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
+After the new $b$ and $u^{n+1}$ is computed using $h_0$, the algorithm has to check if the positifity of the other values $u_i | i \notin h_0 \subseteq \{1,\cdots,m \}$ is still meet. 
+If the conditions is not meet a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP-Problem is solved again. This process id repeated until a solution is found that leads to a $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on the $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$. 
+
+This effect did not occur so far. 
+(Note: A approach on this would be to make a educated guess which indecies could get a problem with positifity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
+
+When enforcing a maximum value the number of constraints can be reduced using the same technique. When both enforcing maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints. 
+Here it is important to update these sets simultaneously.  
+
+\subsection{•}
+(Todo: Maybe a flowchart and a description on how we stitch everything together.) 
+
+The algorithm on adapting the b consists of two main loops. The outer loop loops through all the $\theta$, staring with $\theta = 1$ down to the lowest $\theta$. The inner loop loops through the orders, starting with the highest Order down to the lowest Order. 
+Until a acceptable $b$ the algorithm tests combiantions of $\theta$ and $p$. At first the Order Conditions are constructed. On these a LP-Solver is invoiced. If the LP-Problem is infeasible the algorithm immediately tries the next combination. If the LP-Problem is feasible we test if the $b$ is acceptable. At first it is tested weather the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. (Note: because of the chosen objective function it can not be unbounded) As second test the deviation from the old solution (Compare Error estimation) is calculated. If the error is bigger than a set maximum error the $b$ is also rejected and the algorithm also switch to the next combination.
+As soon as the algorithm finds a suitable $b$ the loops are aborted and the $b$ is used for the update step.
+If all the combinations of $\theta$ and $p$ did not lead to a acceptable $b$ the step has to be rejected and a new set of stage values has to bee computed.
+
+(Note: It would also be possible to use another strategy for traversing all the combinations of $(p,\theta)$. Is it worth exploring these? Eg, a visect algorithm for $\Theta$ or linear approximations)
+
+
+
+\section{Results of experiments}\label{sec:Numeric_Results}
+
+(Note: Is here a good place to give a note on where supplementary code can be found?)
+
+(Note: Should we discuss which solver is used. Probably it is not worth using space for some plot etc. on this... Maybe a short note?)
+
+\subsection{Applicable Problems}\label{sec:app_problem}
+The approach can be used with ODE systems $u' = f(t,u)$ that ensure  $u(t) \geq 0 \forall_t \forall_{  u_0 \geq 0}$ 
+
+This can be tested with the property 
+\begin{equation}
+u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall_{u_c \geq 0} \forall_{t}
+\end{equation}
+
+For problems where the exact solution is positive for certain $u_0$ but positifity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additional it is not certain if the computed solutions would be reasonable.
+
+
+\subsection{Explicit methods}
+For most of the test problems problems with stability occur before getting negative values. This means that we need methods with large stability region.
+
+
+
+\subsection{Implicit methods}
+Implicit methods seem like an advantageous choice for a couple of reasons.
+
+When tested on the diffusion equation with an spike as initial data the $b$ is only changed for the first step. The change of the $b$ can lead to reasonable changes of the hight of the maximum. 
+
+\subsection{Stepsize control}
+
+\subsection{Dense Output}
+
+
 
 
 
