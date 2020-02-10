@@ -12,7 +12,7 @@
 \usepackage{color}
 
 \usepackage[backend=biber,url  = false]{biblatex}
-\addbibresource{pos_rk_stephan.bib}
+\addbibresource{Bib_RK_optim.bib}
 
 \title{Positivity-preserving adaptive Runge-Kutta methods: results}
 \author{Stephan Nuesslein}
@@ -23,89 +23,156 @@
 
 \section{Introduction}
 
-A big number of problems that preserve positifity reaction discretiesed PDEs...
 
-With increasing complexity of the right hand side a step requect has a high cost. 
-The goal of the project is to develop a positivity preserving method that uses adaptive b-Coefficients for every step.  This means that the computed stage values can be used and don't have to be recomputed. 
+Many physical processes can be described with differential equations. 
+The physical property that are involved in these processes often only make sense if they are positive or non-negative. 
+Concentrations or number of particles have to be $\geq 0$.
+Other values may only make sense if they comply with other restrictions. An Example of these would-be probabilities or fractions which have to be $\geq 0$ and $\leq 1$.
+The ordinary differential equations (ODE) or a partial differential equations (PDEs) are often too complex to solve them analytically and therefore require numerical methods to get an approximate solution.
+Numerical methods generally do not satisfy these restrictions on the solutions.
+
+The most common methods to solve ODEs are Runge–Kutta methods (RKMs). 
+With the method of lines (MOL) it is also possible to solve PDEs with RKMs.
+At first the PDE is discretized in space. The resulting semi-discrete problem is an ODE that can be solved with a RKM. 
+It is possible to semi-discretize PDEs in a ways that preserve positivity\cite{kopecz_comparison_2019,kopecz_unconditionally_2018}.
+
+Therefore, it is interesting to know how to use RKMs that preserve positifity.
+For RKMs some theoretical limitations are known. One is that any unconditionally positive RKM has an order $\leq 1$. \cite{hundsdorfer_numerical_2003,bolley_conservation_1978,horvath_positivity_1998}. The only well know RKM that is unconditionally positive is the backward euler method, which is obliviously of first order. 
+This causes restrictions on the step size for any RKM with a higher order.
+
+There are multiple approaches to get positivity preserving numerical schemes.
+One method is the Strong Stability Preserving Runge Kutta (SSPRK). 
+The idea is to construct a RKM that can be written as convex combination of euler steps. 
+By this the stability properties of the forward euler step are carried over to the SSPRK.
+The same happens to the positivity properties. By this the positivity of the method is ensured for time steps $\Delta t$ with $\Delta t \leq R \Delta t_{FE}$, where $R$ depends on the used SSPRK and $\Delta t_{FE}$ is the forward euler time step \cite{gottlieb_strong_2011}. 
+The Modified Patanka Runge Kutta (MPRK) are 
+based on the Patanka RKM. In these destruction Terms are scaled by the new solution. This preserves positivity but violates the mass conservation. The MPRK overcome this disadvantage by also scaling the production terms. This is done by solving a linear equation system \cite{kopecz_comparison_2019}.
+An approach to ensure positivity in a practical application is shown in \cite{shampine_non-negative_2005}. Ensuring the positivity is done by redefining the ODE outside the domain. Another technique used are event finding methods. This approach is implemented in the Matlab ODE Suite.
+Unconditionally positive method of order higher than 1 are the diagonally split Runge-Kutta (DSRK) methods \cite{horvath_positivity_1998}. These are no longer part of the general linear methods. This allows them to be positive and higher order. (TODO: two sentences here)
+
+In the following paper an approach is taken that does not overcome the order imitation but is based on the idea that in practical problems for many time steps positivity can be achieved with a higher order methods.
+The main idea is to adapt the RKM after computation of the stage values in a way that ensures positivity.  
+This means that the computed stage values can be used and don't have to be recomputed. With increasing complexity of the right-hand side, a step reject has a high cost. This makes the additional cost of adapting the RKM economically.
 The resulting b should comply with the order conditions as far as possible.
 
+A common way to calculate two different solutions with one set of stage values is the use of embedded methods for error approximation. 
+The idea of adapting the weights $b$ after calculating the stage values is used in \cite{ketcheson_spatially_2013}
+In this case it is used to adapt the properties of the time integrator for a method of lines simulation on a PDE. With this approach, it is possible to have different properties of the RKM at different parts of the domain. 
 
+In this paper, an adaption of the $b$ is done by solving a Linear programming (LP)-Problem.
+(TODO: Description LP-Problem)
 
-(Note: The problem is connected to the theory about embedded methods, in the sense that one have different RKM with the same set of stage values. It may be interesting to have some literature regarding this)
+The paper unfolds as follows. In section\,\ref{sec:main_idea} the main idea is explained. How the method can be written as LP-Problem is explained in section\,\ref{sec:LP-Problem}.
+In section\,\ref{sec:integration} it is described how the new approach can be used with different RKM, how it can be integrated in a step size control and how the Region of absolute stability can be approximated.  
+In section\,\ref{sec:imple} further details that were used when implementing the algorithm are described.
+In section\,\ref{sec:Numeric_Results} Numerical results are given for multiple testproblems.
+A conclusion is given in section\,\ref{sec:conclusion}  
 
-Other Approaches: 
+%(TODO: We know that we cannot work around the limitation from \cite{hundsdorfer_numerical_2003}, Where would be a good place to put this?)
 
-
-ssp104 methods: The idea is to construct a rkm Method out of explicit euler steps, that lead to a positive result for small enough $\Delta t$. (Todo: Read some literature regarding this and give a short explaination)
-
-Implicit methods: Modified Patanka-Runge-Kutta (MPRK) \cite{kopecz_comparison_2019}
-
-The idea of adapting the $b$ after calculation the stage values is used in \cite{ketcheson_spatially_2013}
-In this case it is used to adapt the properties of the time integrator for a method of lines simulation on a PDE. With this approach it is possible to have different properties of the RKM at different parts of the domain. 
-
-
-(TODO: Outline of paper)
 
 \section{Main Idea}\label{sec:main_idea}
 
-When computing the solution of an ODE $u ' = f(t,u) $ using a RK-Method with $s$ Stages the stage values $k^{(1)},\cdots,k^{(s)}$ are computed according to
-
+When computing the solution of an ODE $u ' = f(t,u) $ using a RK-Method with $s$ Stages and the Butcher tableau
+\begin{align}
+\begin{array}{c|c}
+c &  A \\
+\hline
+ & b\\
+\end{array}
+\end{align}
+the stage values $k^{(1)},\cdots,k^{(s)}$ are computed according to
 \begin{equation}
 k^{(j)} =  f(t^n + \Delta t c_j, u^n + \Delta t \sum_{l = 1}^{s} a_{jl} k^{(l)}  \quad j = 1,\cdots,s)
 \end{equation}
-
 Based on these values the next solution $u^{n+1}$ is computed by
-
 \begin{equation}
 u^{n+1} = u^n + \Delta t \sum_{j  = 1}^s k^{(j)} b_j .
 \end{equation}
-
 This equation can be formulated to
-
 \begin{equation}\label{eq:Combination}
 u^{n+1} = u^n + \Delta t K b
 \end{equation}
-
 where $K$ is a matrix containing the stage values $k_1,\cdots,k_s$.
 
-One reason why steps are requected is that the new solution $u^{n+1}$ does not comply with positifity. 
-So it may be adventagious to adapt Equation\,\ref{eq:Combination} in such a way that $u^{n+1}$ is positive. This is done by adapting the weights $b$.
+The new solution $u^{n+1}$ does not comply with positifity for some cases. 
+So it may be adventagious to adapt Equation\,\ref{eq:Combination} in such a way that $u^{n+1}$ is positive, instead of rejecting the Solution and computing a new set of stagevalues. This is done by adapting the weights $b$.
+
+
+
+
+For the computation of the stage-values only the $A$ has to be known. The $b$ is not needed for this computation. 
+Based on this Observation we can define $RKM_{A}$ as the set of RKMs that share the same $A$ and only differ by $b$.
+Calculating the stage-values can be considered as solving the ODE for all RKM in $RKM_a$ at the same time.
+The idea now is to choose one $RKM_{(A,b)} \in RKM_{A}$ by fixing the $b$. 
+Because the stage-values are already known we can choose a $RKM_{(A,b)}$ that leads to a positive $u^{n+1}$, if $RKM_{(A,b)} \in RKM_{A} | u^{n+1} \geq 0$ exists.
+When altering the $b$ the properties of an RKM are preserved. 
+Especially this approach preserves linear invariants like mass conservation, because it is a regular RKM. 
+
 As it can be see in Equation\,\ref{eq:Combination} $u^{n+1}$ is a linear combination of the stage values and the previous solution $u^n$.
-When altering the weights the properties of the RKM should be preserved. Especially the Order of the RKM.  
-To ensure this the Order Conditions should be still meet. 
 Because the coeffeicents $a_{jl}$ are already fixed the Order Conditions reduce to linear equations.
 This means that finding the $b$ can be done by solving a linear Programming problem.
  
-This approach preserves linear invariants like mass conservation, because it is a regular RKM. 
-If there are no negative values in $u^{n+1}$ with the original $b$, then the method does not cause additional effort, because it only has to solve the LP-Problem if the regular RKM does not lead to a positive $u^{n+1}$. (exept for the test)
-No additional evaluations of the rhs.
-
-Flowchart to evaluate a step:
-
-\begin{itemize}
-\item Calculate the stage values $k_1,\cdots,k_s$
-\item Calculate the $u_{n+1} = u_n + \Delta t K b_{d}$ with a default b
-\item Test $u_{n+1} \geq 0$, if not:
-\item find a new b with $u_n + \Delta t K b \geq 0$
-\item Calculate the $u_{n+1} = u_n + \Delta t K b$ with the new b
-\end{itemize}
+If there are no negative values in $u^{n+1}$ with the original $b$, then the method does not cause additional computational effort, because it only has to solve the LP-Problem if the regular RKM does not lead to a positive $u^{n+1}$. %(exept for the test)
 
 \subsection{Example I}\label{sec:example_reac}
 
-TODO: Add here the reaction equation, show that it behaves better with the new approach. (still keep it simple with fixed stepsize...)
+To illustrate the use of the method we consider the Following reaction equation from\,\cite{kopecz_comparison_2019}.
+
+\begin{subequations}
+\label{eq:Reaction}
+\begin{align}
+u_1' &= 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\
+u_2' &= \frac{u_1u_2}{0.01+u_1}-0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\
+u_3' &= 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\
+u_4' &=0.05 u_2 + 0.02 u_3 0.003u_4
+\end{align}
+\end{subequations}
+and the initial conditions
+\begin{equation}
+u(0) = (8,2,1,4)^T
+\end{equation}
+When solved with the Cash-Karp (CK5) method and $\Delta t = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem. 
+In Figure\,\ref{fig:exampleI} the obtained results are plotted with a dashed line. 
+At $t=1.905$ $u_1$ gets negative. This leads to a diverging solution.
+
+Now the $b$ are adapted. The results are also plotted in Figure\,\ref{fig:exampleI}. 
+All $u\geq0$ is now fulfilled. Because of this a qualitatively correct solution is obtained.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{plots/exampleI.pdf}
+    \caption{Numerical approxiamtion of Reaction Problem from \cite{kopecz_comparison_2019}. Computed with ck5 and $\Delta t = 0.005$. The dashed line are the reference solution without the adaption of the $b$. The lower plot are the weights $b$ }
+    \label{fig:exampleI}
+\end{figure}
+
+The used weights $b_1,\cdots,b_5$ are also plotted in Figure\,\ref{fig:exampleI}. 
+The used weights are equal for $t<1.905$. At $t=1.905$ the weights are first adapted to ensure the positivity of the solution. For $t>2.63$ the original set of weights lead to a positive solution. Because of this the used weights equal the original weights again.
+
+
+\section{Details (TODO: better title)}\label{sec:LP-Problem}
+
+In the following section it is explained how the approach can be written as a LP-Problem. 
+For this we have to consider which $b$ to choose. 
+Generally any $b \in \mathbb{R}$ can be used. 
+A first requirement would be that the new solution is positive.
+We can further reduce this space by enforcing the Order Conditions. 
+By incorporating the Order Conditions the space of $b$ is limited to a subspace of $\mathbb{R}$. %(Note: not linear because 0 is not insubspace)
+Finally we have to give a objective function to get the optimal $b$.
 
 \subsection{Example II}\label{sec:example_lin}
 
 (Note: The primary goal here is to put the idea of changing the b into perspective. We have shown the general idea and how it works, now we want to discuss on what it does in practice. At first we state it is good to preserve the order... Get to the Example ... and show that there is more to it)
 
-By incorporating the Order Conditions for a certain Order the space of $b$ that can be choose is limited to a linear Subspace. 
-Now it is important to know if the new solution $u^{n+1}$ still resembles the solution of the ODE $u(t_{n+1})$. 
-We can motivate this with the following example:
 
-Take the linear, positifity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
+The main goal is to choose a $RKM_{(A,b)}$ that for which $u^{n+1}$ resembles the solution of the ODE $u(t_{n+1})$. 
+A obvious objective is to use a $RKM_{(A,b)}$ with a high order, but this is not enough.
+To get a better understanding for the method we consider the behavior of a simple problem.   
+
+We take the linear, positifity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
 
 \begin{equation}
-u'(t) = A u(t) \qquad A = \left[\begin{matrix}- a & 1\\a & -1\end{matrix}\right] \quad a =5
+u'(t) = L u(t) \qquad L = \left[\begin{matrix}- a & 1\\a & -1\end{matrix}\right] \quad a =5
 \end{equation}
 
 and the first order RKM with two stages
@@ -138,14 +205,13 @@ u^{1} = u^0 + \Delta t  \left[k^1,k^2\right] b = \left(\begin{matrix}\frac{5}{2}
 \end{equation}
 
 By a suitable choice of $\alpha \in [\frac{1}{6},\frac{7}{30}]$ any $u$ that complies with mass conservation and positifity can be reached. 
-
-This gives raise to the question weather the new solution is reasonable.
-This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
-
+By adding additional constraints on the $b$ the choice of $\alpha$ can be narrowed down. 
+An objective function is also needed to make the choice unique. This should be designed in a way to prefer $b$ that are close to the original weights $b_{orig}$
 
 
+%This gives raise to the question weather the new solution is reasonable.
+%This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
 
-\section{Details}\label{sec:Deta	ils}
 
 
 
@@ -323,6 +389,10 @@ A Reduction of the step size suing the order Conditions for dense output would a
 Everything has downsides...
  
 
+\section{TODO: Title} \label{sec:integration}
+
+In the previous sections a algorithm for choosing a $b$ has been presented. 
+In the following section it is explained how this Algorithm can be integrated into the framework of existing solvers.
 
 \subsection{Choice of Baseline Method}
 An important property for the used baseline method is the Existence of embedded methods and the degrees of freedom for the b.
@@ -402,7 +472,7 @@ Because the $b$ are chosen to ensure the Order Conditions the coefficients $v_1,
 The only remaining degrees of freedom are the coefficients $v_{p+1},v_{p+2},\cdots$.
 These can be adapted by changing the $b$.
 
-The main way is to ensure that the RKM with adapted b i to ensure that the $b$ approach $b_{orig}$ for $\Delta t \to 0$. For this $b$ it is already know that the numeric solution converges to the exact solution.  
+The main way is to ensure that the RKM with adapted b converges to the correct solution is to ensure that the $b$ approaches $b_{orig}$ for $\Delta t \to 0$. For this $b$ it is already know that the numeric solution converges to the exact solution.  
 This is made sure by property of the Objective function that 
 
 \begin{equation}
@@ -568,7 +638,7 @@ As long as $\left[ J_{f,a}(w,a(w))  \right] > 0$ the derivative $\frac{\partial 
 
 
 
-\section{Implementation aspects of the Algorithm}
+\section{Implementation aspects of the Algorithm}\label{sec:imple}
 
 TODO: Discuss in this section aspects that are needed for implementation (and improve the usability) but do not concern the mathematical idea of the approach.
 
@@ -657,7 +727,7 @@ When tested on the diffusion equation with an spike as initial data the $b$ is o
 
 \subsection{Dense Output}
 
-
+\section{Conclusion} \label{sec:conclusion}
 
 
 
