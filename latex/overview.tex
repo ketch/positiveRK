@@ -73,7 +73,7 @@ A conclusion is given in section\,\ref{sec:conclusion}
 
 \section{Main Idea}\label{sec:main_idea}
 
-When computing the solution of an ODE $u ' = f(t,u) $ using a RK-Method with $s$ Stages and the Butcher tableau
+When computing the solution of an ODE $u ' = f(t,u) $ using a RKM with $s$ Stages and the Butcher tableau
 \begin{align}
 \begin{array}{c|c}
 c &  A \\
@@ -81,43 +81,49 @@ c &  A \\
  & b\\
 \end{array}
 \end{align}
-the stage values $k^{(1)},\cdots,k^{(s)}$ are computed according to
+the stage values $y^{(1)},\cdots,y^{(s)}$ are computed according to
 \begin{equation}
-k^{(j)} =  f(t^n + \Delta t c_j, u^n + \Delta t \sum_{l = 1}^{s} a_{jl} k^{(l)}  \quad j = 1,\cdots,s)
+y^{(j)} =  u^n + \Delta t \sum_{k = 1}^{s} a_{jk} f(t^n + \Delta t c_k,y^{(k)})  \quad j = 1,\cdots,s
 \end{equation}
 Based on these values the next solution $u^{n+1}$ is computed by
 \begin{equation}
-u^{n+1} = u^n + \Delta t \sum_{j  = 1}^s k^{(j)} b_j .
+u^{n+1} = u^n + \Delta t \sum_{j  = 1}^s f(t^n + \Delta t c_j,y^{(j)}) b_j .
 \end{equation}
-This equation can be formulated to
+The stage derivatives $f^{(1)},\cdots,f^{(s)}$ can be calculated with
+\begin{equation}
+f^{(j)} = f(t^n + \Delta t c_j,y^{(j)})
+\end{equation}
+The new solution can now be calculated with
 \begin{equation}\label{eq:Combination}
-u^{n+1} = u^n + \Delta t K b
+u^{n+1} = u^n + \Delta t F b
 \end{equation}
-where $K$ is a matrix containing the stage values $k_1,\cdots,k_s$.
+where $F$ is a matrix containing the stage derivatives $f^{(1)},\cdots,f^{(s)}$.
 
-The new solution $u^{n+1}$ does not comply with positifity for some cases. 
-So it may be adventagious to adapt Equation\,\ref{eq:Combination} in such a way that $u^{n+1}$ is positive, instead of rejecting the Solution and computing a new set of stagevalues. This is done by adapting the weights $b$.
-
-
+The new solution $u^{n+1}$ does not comply with positivity for some cases. 
+So it may be advantageous to adapt \eqref{eq:Combination} in such a way that $u^{n+1}$ is positive, instead of rejecting the Solution and computing a new set of stage values. This is done by adapting the weights $b$.
 
 
-For the computation of the stage-values only the $A$ has to be known. The $b$ is not needed for this computation. 
-Based on this Observation we can define $RKM_{A}$ as the set of RKMs that share the same $A$ and only differ by $b$.
-Calculating the stage-values can be considered as solving the ODE for all RKM in $RKM_a$ at the same time.
+
+
+For the computation of the stage derivatives only the $A$ has to be known. The $b$ is not needed for this computation. 
+Based on this Observation we can define $RKM_{A}$ as the set of RKMs that share the same $A$ and only differ in $b$.
+Calculating the stage derivatives can be considered as solving the ODE for all RKM in $RKM_A$ at the same time.
 The idea now is to choose one $RKM_{(A,b)} \in RKM_{A}$ by fixing the $b$. 
-Because the stage-values are already known we can choose a $RKM_{(A,b)}$ that leads to a positive $u^{n+1}$, if $RKM_{(A,b)} \in RKM_{A} | u^{n+1} \geq 0$ exists.
+Because the stage derivatives are already known we can choose a $RKM_{(A,b)}$ that leads to a positive $u^{n+1}$, if $RKM_{(A,b)} \in RKM_{A} | u^{n+1} \geq 0$ exists.
 When altering the $b$ the properties of an RKM are preserved. 
 Especially this approach preserves linear invariants like mass conservation, because it is a regular RKM. 
 
-As it can be see in Equation\,\ref{eq:Combination} $u^{n+1}$ is a linear combination of the stage values and the previous solution $u^n$.
-Because the coeffeicents $a_{jl}$ are already fixed the Order Conditions reduce to linear equations.
+As it can be see in \eqref{eq:Combination} $u^{n+1}$ is a linear combination of the stage values and the previous solution $u^n$.
+Because the coefficients $a_{jl}$ are already fixed the Order Conditions reduce to linear equations.
 This means that finding the $b$ can be done by solving a linear Programming problem.
  
-If there are no negative values in $u^{n+1}$ with the original $b$, then the method does not cause additional computational effort, because it only has to solve the LP-Problem if the regular RKM does not lead to a positive $u^{n+1}$. %(exept for the test)
+If there are no negative values in $u^{n+1}$ with the original $b$, then the method does not cause additional computational effort, because it only has to solve the LP-Problem if the regular RKM does not lead to a positive $u^{n+1}$. %(except for the test)
+
+
 
 \subsection{Example I}\label{sec:example_reac}
 
-To illustrate the use of the method we consider the Following reaction equation from\,\cite{kopecz_comparison_2019}.
+To illustrate the use of the method we consider the following reaction equation from\,\cite{kopecz_comparison_2019}.
 
 \begin{subequations}
 \label{eq:Reaction}
@@ -147,36 +153,35 @@ All $u\geq0$ is now fulfilled. Because of this a qualitatively correct solution 
 \end{figure}
 
 The used weights $b_1,\cdots,b_5$ are also plotted in Figure\,\ref{fig:exampleI}. 
-The used weights are equal for $t<1.905$. At $t=1.905$ the weights are first adapted to ensure the positivity of the solution. For $t>2.63$ the original set of weights lead to a positive solution. Because of this the used weights equal the original weights again.
+The used weights are equal the original weights for $t<1.905$. At $t=1.905$ the weights are first adapted to ensure the positivity of the solution. For $t>2.63$ the original set of weights lead to a positive solution. Because of this the used weights equal the original weights again.
 
 
 \section{Details (TODO: better title)}\label{sec:LP-Problem}
 
-In the following section it is explained how the approach can be written as a LP-Problem. 
+In the following section, it is explained how the approach can be written as a LP-Problem. 
 For this we have to consider which $b$ to choose. 
-Generally any $b \in \mathbb{R}$ can be used. 
+Generally, any $b \in \mathbb{R}$ can be used. 
 A first requirement would be that the new solution is positive.
 We can further reduce this space by enforcing the Order Conditions. 
-By incorporating the Order Conditions the space of $b$ is limited to a subspace of $\mathbb{R}$. %(Note: not linear because 0 is not insubspace)
-Finally we have to give a objective function to get the optimal $b$.
+By incorporating the Order Conditions, the space of $b$ is limited to a subspace of $\mathbb{R}$. %(Note: not linear because 0 is not in subspace)
+Finally, we have to give a objective function to get the optimal $b$.
+
 
 \subsection{Example II}\label{sec:example_lin}
 
-(Note: The primary goal here is to put the idea of changing the b into perspective. We have shown the general idea and how it works, now we want to discuss on what it does in practice. At first we state it is good to preserve the order... Get to the Example ... and show that there is more to it)
+(Note: The primary goal here is to put the idea of changing the b into perspective. We have shown the general idea and how it works, now we want to discuss on what it does in practice. At first, we state it is good to preserve the order... Get to the Example ... and show that there is more to it)
 
 
 The main goal is to choose a $RKM_{(A,b)}$ that for which $u^{n+1}$ resembles the solution of the ODE $u(t_{n+1})$. 
 A obvious objective is to use a $RKM_{(A,b)}$ with a high order, but this is not enough.
 To get a better understanding for the method we consider the behavior of a simple problem.   
 
-We take the linear, positifity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
+We take the linear, positivity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
 
 \begin{equation}
 u'(t) = L u(t) \qquad L = \left[\begin{matrix}- a & 1\\a & -1\end{matrix}\right] \quad a =5
 \end{equation}
-
 and the first order RKM with two stages
-
 \begin{align}
 \begin{array}{c|cc}
 0 &  & \\
@@ -185,32 +190,28 @@ and the first order RKM with two stages
  & \frac{1}{2} & \frac{1}{2}\\
 \end{array}
 \end{align}
-
 If simulated with $\Delta t = 1$ the stage values are 
-
 \begin{equation}
-k^1 = \left(\begin{matrix}-5\\5\end{matrix}\right) \qquad k^2 = \left(\begin{matrix}10\\-10\end{matrix}\right)
+f^1 = \left(\begin{matrix}-5\\5\end{matrix}\right) \qquad f^2 = \left(\begin{matrix}10\\-10\end{matrix}\right)
 \end{equation}
-
 All $b$ that comply with the order Condition for the first order can be expressed as
-
 \begin{equation}
 b= \left(\begin{matrix}\frac{1}{2}\\ \frac{1}{2}\end{matrix}\right) + \alpha \left(\begin{matrix}1\\ -1\end{matrix}\right)
 \end{equation}
-
-Therefor the general solution is 
-
+With this we have one degree of freedom for the choice of $b$. This is done by the parameter $\alpha$.
+If the general expression for $b$ is inserted in \eqref{eq:Combination} the general solution is 
 \begin{equation}
-u^{1} = u^0 + \Delta t  \left[k^1,k^2\right] b = \left(\begin{matrix}\frac{5}{2}\\- \frac{5}{2}\end{matrix}\right) \alpha  \left(\begin{matrix}-15\\15\end{matrix}\right)
+u^{1} = u^0 + \Delta t  \left[f^1,f^2\right] b = \left(\begin{matrix}\frac{5}{2}\\- \frac{5}{2}\end{matrix}\right) \alpha  \left(\begin{matrix}-15\\15\end{matrix}\right)
 \end{equation}
-
-By a suitable choice of $\alpha \in [\frac{1}{6},\frac{7}{30}]$ any $u$ that complies with mass conservation and positifity can be reached. 
+The solution for the original RKM would be $u^{1} = \left(\frac{5}{2} ,- \frac{5}{2}\right)^T$ which contains a negative value. But by changing the parameter $\alpha$ and therefore changing the $b$ a positive solution can be reached.
+By a suitable choice of $\alpha \in \left[\frac{1}{6},\frac{7}{30}\right]$ any $u$ that complies with mass conservation and positivity can be reached. 
 By adding additional constraints on the $b$ the choice of $\alpha$ can be narrowed down. 
 An objective function is also needed to make the choice unique. This should be designed in a way to prefer $b$ that are close to the original weights $b_{orig}$
 
 
-%This gives raise to the question weather the new solution is reasonable.
+%This gives raise to the question whether the new solution is reasonable.
 %This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
+
 
 
 
@@ -222,11 +223,12 @@ If $a_{jl}$ and $c_1,\cdots,c_s$ are already known, the Order Conditions for the
 
 The vector $b \in \mathbb{R}^s$ contains the weights and $Q$ is an $n \times s$ matrix, where $g$ is the number of Order Conditions. The vector $r$ contains the right hand side of the Order Conditions.
 
-If the $A$ of a  preexisting RK-method is used, there is at least one solution for the linear equation system.
-In order to get an optimization problem the equation system has to be underdetermined.
+If the $A$ of a preexisting RK-method is used, there is at least one solution for the linear equation system.
+In order to get an optimization problem, the equation system has to be underdetermined.
 This implies that $\mathrm{rank}(Q) < s$. 
 Because the Quadrature Conditions are linear independent, there are at least $p$ independent vectors in $Q$. This leads to the condition $p < s$.
 This implies that the number of stages has to be higher as the wanted order.
+
 
 
 \subsection{Ways to formulate the Optimization Problem}
@@ -236,8 +238,8 @@ This is the easiest way to adapt the $b$. An advantageous property is that the s
 This approach suits best for explicit methods.
 The direct adaption approach is explained in more detail in section\,\ref{sec:direct}.
 
-The second approach is to choose $b$ as a convex combination of a set of $b$s. This approach is more useful if some embedded methods with certain properties are know. 
-This approach also shows more  predictable behavior because the resulting $u^{n+1}_b$ is also a convex combination of the solutions $u^{n+1}_{b_a},u^{n+1}_{b_b},\cdots$ 
+The second approach is to choose $b$ as a convex combination of a set of $b$s. This approach is more useful if some embedded methods with certain properties are known. 
+This approach also shows more predictable behavior because the resulting $u^{n+1}_b$ is also a convex combination of the solutions $u^{n+1}_{b_a},u^{n+1}_{b_b},\cdots$ 
 This approach works best with implicit methods.
 The direct adaption approach is explained in more detail in section\,\ref{sec:convex}
 
@@ -262,20 +264,24 @@ Both approaches are shown in figure\,\ref{fig:b_space}.
 \subsection{Direct Adaptation}\label{sec:direct}
 
 When directly adapting the $b$ a new $b$ that complies with the Order Conditions is chosen.   
-The weights $b = b_{orig} + \Delta b$ consist of the weights of the original method $b_{orig}$ and an adaption $\Delta b$. This $\Delta b \in \mathrm{ker}(Q)$. 
+The weights $b = b_{orig} + \Delta b$ consist of the weights of the original method $b_{orig}$ and an adaption $\Delta b$. The adaption is $\Delta b \in \mathrm{ker}(Q)$. 
 In Figure\,\ref{fig:b_direct} this is drawn. The red line represents the subspace of $b$ that satisfy the Order Conditions. Both $b_{orig}$ and $b$ are in this subspace. 
  
 To run it as a LP-Problem a set of constraints is constructed.  
-Also a objective function is needed to determine the optimal $b$.
+Also, an objective function is needed to determine the optimal $b$.
 
 \subsubsection{Constraints}
 The Direct Adaptation approach leads to two set of constraints on the $b$.
-
-The first set of constraints is the positifity and can be written as 
-$$u_{n+1}=u_n+\Delta K \vec{b} \geq 0$$
-
+The first set of constraints is the positivity and can be written as 
+\begin{equation}
+u_{n+1}=u_n+\Delta K \vec{b} \geq 0
+\end{equation}
 The second set of constraints are the Order Conditions
-$$Qb=r$$
+\begin{equation}
+Qb=r
+\end{equation}
+
+
 
 
 
@@ -284,84 +290,72 @@ Different types of objective functions have been tried.
 
 \begin{description}
 
-\item[L1 norm] The optimisation Problem opimises for $min(|b-rkm.b|_1)$
+\item[L1 norm] The optimization Problem optimizes for $min(|b-rkm.b|_1)$
             
-\item[Quadrature]   The optimisation Problem opimises for $min(|b^Tq-r|)$
+\item[Quadrature]   The optimization Problem optimizes for $min(|b^Tq-r|)$
                             where q is the quadrature condition of the next higher order 
                             and r is the expected right hand side
             
-\item[Hom. Order]    The optimisation Problem opimises for $min(|bTO|)$ where O are the homogenus Order Conditions of the next higher orders
+\item[Hom. Order]    The optimization Problem optimizes for $min(|bTO|)$ where O are the homogenous Order Conditions of the next higher orders
                             
  
 \end{description}
 
 A reasonable property of the objective function would be that for the LP-Problem only constrained by the order condition the optimal solution is $b = b_{orig}$. 
 This can be achieved by $argmin(f_{optim}(b)) = b_{orig}$. 
-In practice this also means that there is no need to solve solve the optimization Problem if no constraints are violated because the solution of this problem is already known. This is adventagious for performance reasons.
+In practice, this also means that there is no need to solve solve the optimization Problem if no constraints are violated because the solution of this problem is already known. This is advantageous for performance reasons.
 The different approaches have been tested on a linear test problem from \cite{kopecz_unconditionally_2018}. The optimization problem was used at every step.
 The magnitude of $b$ can get large if the Order Conditions are used as objective function.
-Large values of b can lead to numerical problems. Because $\sum_{i  = 1}^s b_i = 1$, a increase of $||b||$ leads to a combination of negative and positive values. Because the computation only is done with a finite precision (and usually in floating point) large $||b||$ can lead to absorption effects.    
+Large values of b can lead to numerical problems. Because $\sum_{i  = 1}^s b_i = 1$, an increase of $||b||$ leads to a combination of negative and positive values. Because the computation is done with a finite precision (and usually in floating point) large $||b||$ can lead to absorption effects.    
 By changing the $b$ the stability function is altered. This can lead to oscillations if the poles of the RHS are no longer in the stability region of the resulting method.
 For these reasons $||b-b_{orig}||$ seems like a good choice. The 1-Norm can be implement the with Linear Programming using slack variables. We choose 
 
 \begin{equation}
-f_{obj} = ||b_{optim}-b_{orig}||_1
+f_{obj} = ||b-b_{orig}||_1
 \end{equation}
  as objective function.
 
 
 
-
 \subsubsection{Adaption of Timestep using the dense output formual}
 
-If the original step $\Delta t$ was to large and there is no suitable $b$, we would like to calculate a $u^{n+1}$ using the stage values instead of rejecting the step. For this the time step is reduced after calculation the stage values. This can be done using the Order Conditions for dense Output. These can be found in \cite{hairer_runge-kutta_1993}.
-We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \Delta t$ whereas $\Delta t$ is the time step used when calculating the Stagevalues.
+If the original step $\Delta t$ was too large and there is no suitable $b$, we would like to calculate a $u^{n+1}$ using the stage values instead of rejecting the step. For this the time step is reduced after calculation the stage values. This can be done using the Order Conditions for dense Output. These can be found in \cite{hairer_runge-kutta_1993}.
+We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \Delta t$ whereas $\Delta t$ is the time step used when calculating the stage values.
 To calculate a reduced step the Order Conditions have to be adapted and a new $b_{orig}$ for the objective function (and more important the Error detection afterwards) has to be generated. 
 (TODO: the $b_{orig}$ is still a open question)
 
 When adapting the Order Condition to a new $\theta$ the Order Condition Matrix $Q$ stays unchanged whereas the right hand side depends on $\theta$.
 
-The dependency of $r(\theta)$ is nonlinear. This means that the maximum $\theta$ with a suitable $b$ can not be calculated by solving a LP-Problem. This means that different $\theta$ have to be tested independently. 
+The dependency of $r(\theta)$ is nonlinear. This means that the maximum $\theta$ with a suitable $b$ cannot be calculated by solving a LP-Problem. This means that different $\theta$ have to be tested. 
 (Note: we could include some algorithm to search for it)
 
-
 \subsection{Convex combination of existing methods}\label{sec:convex}
-For some test problems (e.g. the Heat Equation solved with an implicit method of higher order), large distortions occur, even though a norm of the distortion of the b is used as a objective function. 
-For implicit methods it is known that the backward euler steps lead to a positive solution for any $\Delta t$ \cite{hundsdorfer_numerical_2003}. The backward Euler is still only first Order but shows more exact results than a method of higher Order that is distorted by the adaption of the $b$, at least at some steps. 
+For some test problems (e.g. the Heat Equation solved with an implicit method of higher order), large distortions occur, even though a norm of the distortion of the b is used as an objective function. 
+For implicit methods, it is known that the backward euler steps lead to a positive solution for any $\Delta t$ \cite{hundsdorfer_numerical_2003}. The backward Euler is still only first Order but shows more exact results than a method of higher Order that is distorted by the adaption of the $b$, at least at some steps. 
 A possible method to fix this is to generate the new b based on a convex combination of embedded methods of RKM. 
 
 \subsubsection{Constraints}
 At first a set of embedded methods of the RKM $b_1,\cdots,b_d$ are needed. 
 If all the used $b$ compile with the order conditions the new method is also of the same Order.
 This is straightforward using
-
 $$ Q b = Q (\chi b_{\alpha} + (1-\chi) b_{\beta}) = \chi Q  b_{\alpha} + (1-\chi) Q b_{\beta}) = \chi r + (1-\chi) r = r$$
-
 $b_{\alpha}$ and $b_{\beta}$ are the methods that are combined to $b$ using the parameter $\chi$. The Matrix $Q$ and the vector $r$ are the Order Conditions as defined in Section\,\ref{sec:OrderCond}.
 
 The new $b$ is defined as 
 \begin{equation}\label{eq:b_convex_def}
-\vec{b} = \sum_i^d a_i \vec{b_i} = Ba
+b = \sum_i^d a_i b_i = Ba
 \end{equation}
-
-
 where $B=\left[b_1,\cdots,b_d \right]$ is a matrix containing the embedded methods.  
-To ensure the that Equation\,\ref{eq:b_convex_def} yields a convex combination following constraints are enforced for the  the parameters $a,\cdots,a_d$.
-
+To ensure the that \eqref{eq:b_convex_def} yields a convex combination following constraints are enforced for the  the parameters $a,\cdots,a_d$.
 \begin{equation}
- 0 \leq a_1 \leq 1  \forall_{i \in \{1, \cdots d \}}
+ 0 \leq a_1 \leq 1  \forall {i \in \{1, \cdots d \}}
 \end{equation}
 \begin{equation}
  \sum_{i=1}^d a_i = 1
 \end{equation}
-
-
-The positifity constraint changes to 
-
+The positivity constraint changes to 
 $$u_{n+1}=u_n+\Delta t K B a \geq 0$$
-
 where $a = [a_1,\cdots,a_d]^T$
-
 
 \subsubsection{Objective Function}
 
@@ -379,27 +373,26 @@ Because the optimal solution of the unconstrained problem has to be the original
 For methods with $s \geq p$ it is useful to have some degrees of freedom for the highest order. For this at least one $b$ that complies with the order Condition of the highest order and $b \neq b_{orig}$ has been introduced.
 These additional $b$ can be constructed by calculating a Span $S$ of the Kernel $\mathrm{ker} (Q)$ of the Order Condition Matrix $Q$. For every vector $s \in S$ one set of weights with $b = b_{orig} + a s$ and one with $b = b_{orig} - a s$ is added. The $a$ is a parameter that determines how big a change is allowed. 
 
-As a first order method a $b$ is added that corresponds to a series of backward euler steps. These are know to be yield to a positive result.
+As a first order method, a $b$ is added that corresponds to a series of backward euler steps. These are known to be yield to a positive result.
 
 An important property of the embedded methods is that they should show the desired stability characteristics.
 
 A Reduction of the step size suing the order Conditions for dense output would also be possible. For this a set of embedded methods $b_1(\Theta),\cdots,b_d(\Theta)$ has to be constructed. This was not done in this research.
 
-(Note: Doing dense Output here is a bit complicated, but it would not help ensure positifity only (maybe) increase exactness.  is it worth exploring this or is it better to just leave this open for further research it may be also interesting regardless the study of positifity)
+(Note: Doing dense Output here is a bit complicated, but it would not help ensure positivity only (maybe) increase exactness.  is it worth exploring this or is it better to just leave this open for further research it may be also interesting regardless the study of positivity)
 Everything has downsides...
  
-
 \section{TODO: Title} \label{sec:integration}
 
-In the previous sections a algorithm for choosing a $b$ has been presented. 
-In the following section it is explained how this Algorithm can be integrated into the framework of existing solvers.
+In the previous sections an algorithm for choosing a $b$ has been presented. 
+In the following section, it is explained how this Algorithm can be integrated into the framework of existing solvers.
 
 \subsection{Choice of Baseline Method}
-An important property for the used baseline method is the Existence of embedded methods and the degrees of freedom for the b.
-As noted in Section\,\ref{sec:OrderCond} the number of Stages has to be higher than the Order. 
+An important property for the used baseline method is the existence of embedded methods and the degrees of freedom for the b.
+As noted in Section\,\ref{sec:OrderCond} the number of Stages has to be higher than the order. 
 Another important property is the number of degrees of freedom for the choice of the new weights. 
 These can be calculated using $s-\mathrm{rank}(Q)$%$\mathrm{dim}(\mathrm{ker}(Q))$.
-The number of degrees of freedom for different methods are shown in table\,\ref{table:DOF_exp} for explicit methods and in table\,\ref{table:DOF_imp} for implic methods.
+The number of degrees of freedom for different methods are shown in table\,\ref{table:DOF_exp} for explicit methods and in table\,\ref{table:DOF_imp} for implicit methods.
 
 \begin{table}[h!]
 \centering    %Generated below============ 
@@ -436,12 +429,12 @@ For all methods with the number of stages equal to the order of the method, ther
 If the Classical RK4 method is used the Order has to reduced more because the RK4 method does not have embedded methods of order 3.
 Contrary to this methods with $s > p$ have degrees of freedom even without reducing the order. 
 
-Another important property is the stability region in comparison with the maximum $\Delta t$ that ensures positifity. For this approach to be useful the RK-method has to yield negative results for $\Delta t$ smaller than the biggest stable $\Delta t$.
+Another important property is the stability region in comparison with the maximum $\Delta t$ that ensures positivity. For this approach to be useful the RK-method has to yield negative results for $\Delta t$ smaller than the biggest stable $\Delta t$.
 
-(Note: up to this point i do not understand why this is happening. We only see it occur depending on the Proble-RKM combination)
+(Note: up to this point I do not understand why this is happening. We only see it occur depending on the Problem-RKM combination)
 
-A third property is the existence of a positive solution. This corresponds to the question if there is a embedded first order method that ensures positivity. This is particularly interesting for Implicit methods, because the $\Delta t$ is not limited by the stability. 
-If we have a embedded first Order Method we can ensure that there is always a positive solution, which might be of first Order. (Todo: Source)
+A third property is the existence of a positive solution. This corresponds to the question if there is an embedded first order method that ensures positivity. This is particularly interesting for Implicit methods, because the $\Delta t$ is not limited by the stability. 
+If we have an embedded first Order Method we can ensure that there is always a positive solution, which might be of first Order. 
 
 \subsection{Error detection and Approximation}
 When changing the weights the solution $u^{n+1}$ is changed. 
@@ -450,10 +443,8 @@ Now it is important to know if the new solution $u^{n+1}$ still resembles the so
 This can be seen in example in section\,\ref{sec:example_lin}.
 By a suitable choice of $\alpha \in [\frac{1}{6},\frac{7}{30}]$ any $u$ that complies with mass conservation and positifity can be reached. 
 
-This gives raise to the question weather the new solution is reasonable.
+This gives raise to the question whether the new solution is reasonable.
 This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
-
-
  
 \subsubsection{Error Detection}
 For this approach is difficult to give some mathematically rigorous statement regarding the convergence of the method, because it only applies if the error of the original method causes the solution to get negative. This can only happen if the Truncation error is large enough. This requires $\Delta t \gg 0$ where lower coefficients of the Taylor Series are no longer sufficient to approximate the behavior. 
@@ -472,42 +463,39 @@ Because the $b$ are chosen to ensure the Order Conditions the coefficients $v_1,
 The only remaining degrees of freedom are the coefficients $v_{p+1},v_{p+2},\cdots$.
 These can be adapted by changing the $b$.
 
-The main way is to ensure that the RKM with adapted b converges to the correct solution is to ensure that the $b$ approaches $b_{orig}$ for $\Delta t \to 0$. For this $b$ it is already know that the numeric solution converges to the exact solution.  
+The main way is to ensure that the RKM with adapted b converges to the correct solution is to ensure that the $b$ approaches $b_{orig}$ for $\Delta t \to 0$. For this $b$ it is already known that the numeric solution converges to the exact solution.  
 This is made sure by property of the Objective function that 
-
 \begin{equation}
 \mathrm{argmin}(f_{optim}(b)) = b_{orig}
 \end{equation}
-
 This approximation is not very useful for real applications. 
-To approximate the error of a new step we propose following approxiamtion of the local error:
+To approximate the error of a new step we propose following approximation of the local error:
 
 \begin{align}
 err = |u(t^n)-u^n| &= |u(t^n) - (u^n_{b_{orig}+\Delta t K(b-b_{orig})})| \\
  &\leq \underbrace{|u(t^n)-u^n_{b_{orig}}|}_{\approx err_T}+\underbrace{|\Delta t K(b-b_{orig})|}_{= err_{adapt}}
 \end{align}
 
-After adapting the $b$ the Approximation Error is checked. If $|\Delta t K(b-b_{orig})|$ is larger than the tolerance the $b$ is requected. 
+After adapting the $b$ the Approximation Error is checked. If $|\Delta t K(b-b_{orig})|$ is larger than the tolerance the $b$ is rejected. 
 
 \subsubsection{Steppsize Control}
 An important part of an RKM method is the ability to approximate the error of the solution to use it to control the step size. 
 The truncation error $|u(t^n)-u^n_{b_{orig}}|$ is usually approximated with an standard error estimator $err_T = | u^{n}_{b_{orig}} - u^{n}_{\hat{b}} |$.
 
 Both errors are added to get an approximation of the total error $err = err_T +w_a err_{adapt}$. The parameter $w_a \leq 1$ is used to account for the fact that the real error is smaller than $err = err_T +err_{adapt}$. The factor also improves the stability of the step size control because $err_{adapt}$ is not as smooth as $err_T$, especially if negative values only occur for a small number of steps.
-If the LP-Problem was infeasible and no $b$ was found the $err_{approx}$ is set to a custom value. This value should be chosen sufficiently large to ensure that the next step take is smaller, but still not to large to keep the stepsize control stable.
+If the LP-Problem was infeasible and no $b$ was found the $err_{approx}$ is set to a custom value. This value should be chosen sufficiently large to ensure that the next step take is smaller, but still not too large to keep the step size control stable.
 
 This type of error estimation is easy to implement because it can be easily incorporated in an existing step size control and takes advantage of the standard error approximation.
 
-%To make sure that the new adapted solution is still reasonable we measure the deviation form the Original method. In the worst case the errors add up. (todo: here some math formula... (We know that can not be the case because we already know that we will reduce the error for the quantity we will make positive, still we can use it as a upper bound.))
-
+%To make sure that the new adapted solution is still reasonable we measure the deviation from the Original method. In the worst case the errors add up. (todo: here some math formula... (We know that cannot be the case because we already know that we will reduce the error for the quantity we will make positive, still we can use it as a upper bound.))
 
 \subsection{Stability Region}
 
 By adapting the $b$ the used RK Method is changed. This also alters the stability function and therefore changes the region of absolute stability. 
-It depends on the solved problem, the RKM and the used $\Delta t$ on how many steps the stability function is altered. For Problems where only a small number of step are affected a bigger change in the stability function would be acceptable. For Problems with require a adaptation of the weights for every step one needs to make sure that the resulting method is stable.
+It depends on the solved problem, the RKM and the used $\Delta t$ on how many steps the stability function is altered. For Problems where only a small number of step are affected a bigger change in the stability function would be acceptable. For Problems with require an adaptation of the weights for every step one needs to make sure that the resulting method is stable.
 
 
-The stability function of a RKM  $R_b$  with the weights $b = \alpha b_1 + \beta b_2$ cn be calculated by adding the weighted stability functions $R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) $ where all stability functions have the same $A$ and $\alpha + \beta = 1$.
+The stability function of a RKM $R_b$ with the weights $b = \alpha b_1 + \beta b_2$ cn be calculated by adding the weighted stability functions $R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) $ where all stability functions have the same $A$ and $\alpha + \beta = 1$.
 
 Let $R_b(z)$ denote the stability function of a RKM method with the butcher tableau
 
@@ -523,7 +511,6 @@ $$
 We want to prove that $R_{\alpha b_a+\beta b_b}(z)$ = $\alpha R_{ b_a}(z)+\beta R_{b_b}(z)$ when $\alpha + \beta = 1$ and $A$ is the same for all methods.
 
 We start with the definition of the RKM
-
 \begin{align}
 u_{n+1} &= u_n + \Delta t K (\alpha b_a+\beta b_b) \label{eq:u_n+1}  \\
 u_{n+1}^{sum} &= \alpha (u_n + \Delta t K b_a) + \beta (u_n + \Delta t K b_b) \label{eq:u_n+1_sum} \\
@@ -531,15 +518,12 @@ u_{n+1}^{sum} &= \alpha (u_n + \Delta t K b_a) + \beta (u_n + \Delta t K b_b) \l
 &= u_n + \Delta t K (\alpha b_a+\beta b_b) \\
 &=u_{n+1} 
 \end{align}
-
 Now we insert the Stability functions for \ref{eq:u_n+1} and \ref{eq:u_n+1_sum} which we already know to be equal. We get 
-
 \begin{align}
 u_{n+1} &= u_{n+1}^{sum} \\
 R_{\alpha b_a+\beta b_b}(z) u_n &= \alpha R_{\alpha b_a}(z) u_n + \beta R_{\beta b_b}(z) u_n \\
 &= (\alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z)) u_n
 \end{align}
-
 because this has to be true for all $u_n$ we get
 
 \begin{equation}
@@ -547,16 +531,14 @@ R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z)
 \end{equation}
 
 
-%(Todo:It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations can not happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient  condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
-
+%(Todo: It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods, the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations cannot happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
 
 
 \subsubsection{Stability of convex combination}
-If the new $b$ is chosen as a convex combination of $b$ it is easy to prove that the resulting  the Region of absolute stability is at least the Intersection of the region of absolute stability of the methods that define the convex combination. (Compare Section\,\ref{proof:convex_comb}). This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
+If the new $b$ is chosen as a convex combination of $b$ it is easy to prove that the resulting region of absolute stability is at least the Intersection of the regions of absolute stability of the methods that define the convex combination. This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
 
-With this we can proof that the convex combination of two methods is absolutely stable at the points where both original methods were absolutely stable.
-
-We want to show that $(|R_{b_a}(z)|  < 1) (|R_{b_b}(z)| < 1) \Rightarrow |R_{\chi b_a +(1- \chi) b_b}(z)| < 1$ with $\chi \in [0,1]$.
+We want to proof that the convex combination of two methods is absolutely stable at the points where both original methods were absolutely stable.
+This can be formulated as $(|R_{b_a}(z)|  < 1) (|R_{b_b}(z)| < 1) \Rightarrow |R_{\chi b_a +(1- \chi) b_b}(z)| < 1$ with $\chi \in [0,1]$.
 We write $\alpha = \chi$ and $\beta = 1-\chi$ for convenience.
 
 \begin{align}
@@ -569,9 +551,10 @@ We write $\alpha = \chi$ and $\beta = 1-\chi$ for convenience.
 \subsubsection{Stability of  Direct Adaptation}
 If the $b$ is adapted directly there is no such proof.
 A useful property of the resulting stability region is that it is similar to the stability region of the baseline method. 
-(Note: is it possible to give some statement like: If the stability regions of the rkm used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions)
+(Note: is it possible to give some statement like: If the stability regions of the RKM used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions)
 
-For most methods a small change of $b$ does not alter the stability function dramatically.
+For most methods, a small change of $b$ does not alter the stability function dramatically.
+(TODO: I am missing a piece here from ‘the derivative is finite’ to ‘is simmilar’)
 
 We would like to calculate the derivative of the border in respect to a change of $b$. 
 
@@ -584,7 +567,6 @@ The General Stability function of all embedded RKM that satisfy the Order Condit
 \begin{equation}\label{eq:gen_stabilityf}
 R(w,z) = (1-(w_1,\cdots,w_m))R_{b_{orig}}(z) + w_1 R_{b_1}(z) + \cdots + w_m R_{b_m}(z)
 \end{equation}
-
 The border is defined by the implicit function 
 \begin{equation}\label{eq:border}
 |R(w,u+iv)|^2 -1 = 0
@@ -595,13 +577,12 @@ We are only concerned with the expansion or contraction. Because of this we are 
 For a point $z_0= u_0 +i v_0 $ 
 with $ |R(w,z_0)|^2 -1 = 0 $ the gradient of
  $|R(w,u,v)|^2$ is calculated. 
-If the gradient does not vanish at $z = z_0$ Equation\,\ref{eq:border} Can be transformed in a function $\mathbb{R}^m \times \mathbb{R} \rightarrow \mathbb{R}$ depending on $w$ and a single variable $a$ by setting $z = z_0 + n a$. The complex number $n$ denotes the normal vector $\vec{n} = \frac{\nabla |R(w,u,v))|^2}{\left| \nabla |R(w,u,v))|^2 \right|}$ of the border of the stability region written in complex notation. This defines the function $a(w)$ with $|R(w,z_0 + n a(w))|^2 -1 = 0$. 
+If the gradient does not vanish at $z = z_0$ \eqref{eq:border} Can be transformed in a function $\mathbb{R}^m \times \mathbb{R} \rightarrow \mathbb{R}$ depending on $w$ and a single variable $a$ by setting $z = z_0 + n a$. The complex number $n$ denotes the normal vector $\vec{n} = \frac{\nabla |R(w,u,v))|^2}{\left| \nabla |R(w,u,v))|^2 \right|}$ of the border of the stability region written in complex notation. This defines the function $a(w)$ with $|R(w,z_0 + n a(w))|^2 -1 = 0$. 
 This implies that this approach is only applicable if the gradient does not vanish on the border of the stability function. This is not true in general but for the most common RKM.
 The derivative $\frac{\mathrm d}{\mathrm d w} (a(w))$ can be calculated using the implicit function theorem. The defining function is 
 \begin{equation}\label{eq:f(w,a)}
 f: \mathbb{R}^m \times \mathbb{R} \rightarrow \mathbb{R} f(a) = |R(w,z_0 + n a)|^2 -1 
 \end{equation}
-
 If explicit methods are used this function is known to be continuously differentiable because it can be written as a Polynomial of $w_1,\cdots,w_m,u$ and $v$. This is a necessary condition for the use of the of the Implicit function theorem. 
 It is also known by definition, that for the point $w=0$ and $z = z_0$ the equation $ |R(w,z_0)|^2 -1 = 0 $ is satisfied.
 For simplicity only the formulas for the derivative at the value $b = b_{orig}$ are given. This corresponds to $w_1 = \cdots = w_m = 0$.
@@ -612,10 +593,9 @@ The wanted derivative  is given by
  - \left[ J_{f,a}(w,a(w))  \right] ^{-1} 
    \left[ \frac{\partial f}{\partial w_j}(w,a(w)) \right]
 \end{equation}
-
 as long as the inverse of the Jacobian exists. This is true in most cases as it has been discussed above.
 
-The Jacobian of equation\,\ref{eq:f(w,a)} $J_{f,a}(w,a(w))$ evaluated at $w=0$ can be calculated using the directional derivative
+The Jacobian of \eqref{eq:f(w,a)} $J_{f,a}(w,a(w))$ evaluated at $w=0$ can be calculated using the directional derivative
 \begin{align*}
  J_{f,a}(b_{orig},a(w)) \Big|_{w=0} =& 
  \frac{\partial f}{\partial a} (w,a(w)) \Big|_{w=0} = 
@@ -637,7 +617,6 @@ The same process can be done for all points on the border of the stability regio
 As long as $\left[ J_{f,a}(w,a(w))  \right] > 0$ the derivative $\frac{\partial a}{\partial w_j} (w)$ is finite. This means that a small change the $b$ only leads to a small change of the stability region.
 
 
-
 \section{Implementation aspects of the Algorithm}\label{sec:imple}
 
 TODO: Discuss in this section aspects that are needed for implementation (and improve the usability) but do not concern the mathematical idea of the approach.
@@ -645,41 +624,37 @@ TODO: Discuss in this section aspects that are needed for implementation (and im
 \subsection{Positifity}
 
 
-For the further discussion we are concerned with a System of $m$ coupled ODEs. 
-In this setup  $u \in \mathbb{R}^m$.
+For the further discussion, we are concerned with a System of $m$ coupled ODEs. 
+In this setup $u \in \mathbb{R}^m$.
 Systems of ODEs with a high number of dimensions can appear when solving a PDE with the method of lines.
 
 To enshure that the solution is positive 
 
 \begin{align}
- u_i^{n+1} &\geq 0   \;   \forall_{i \in \{1, \cdots,m \}}  \\
- u_i^n + h \sum_{j=0}^{s-1} b_j k_i^j  &\geq 0   \;   \forall_{i \in \{1,\cdots,m \}}  
+ u_i^{n+1} &\geq 0   \;   \forall {i \in \{1, \cdots,m \}}  \\
+ u_i^n + h \sum_{j=0}^{s-1} b_j k_i^j  &\geq 0   \;   \forall {i \in \{1,\cdots,m \}}  
 \end{align}
-
 has to be fulfilled.
-This infers $m$ positivity constraints to the optimisation problem. These can be written as
+This infers $m$ positivity constraints to the optimization problem. These can be written as
 
 \begin{equation}
 u_i + \Delta t K  b \geq 0     
 \end{equation}
-
 where $K = \big[k^1 , \cdots k^{s-1}\big]$.
 
-This causes unnecessary many inequality constraints on the LP-Problem. To simplify the problem one want to reduce the number of positifity constraints by ignoring it for ODEs where there is no issue with positifity.
-
-The new positifity constraints can be formulated as
+This causes unnecessary many inequality constraints on the LP-Problem. To simplify the problem, one want to reduce the number of positivity constraints by ignoring it for ODEs where there is no issue with positivity.
+The new positivity constraints can be formulated as
 \begin{equation}
-u_i^n + \Delta b \sum_{j=0}^{s-1} b_j k_i^j  \geq 0   \;   \forall_{i \in h \subseteq \{1,\cdot,m \}} 
+u_i^n + \Delta b \sum_{j=0}^{s-1} b_j k_i^j  \geq 0   \;   \forall {i \in h \subseteq \{1,\cdot,m \}} 
 \end{equation}
-
 For this a set $h \subseteq \{1,\cdots,m \}$ that include all indecies that are needed for determining the $b$ has to be chosen.
 
 A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
-After the new $b$ and $u^{n+1}$ is computed using $h_0$, the algorithm has to check if the positifity of the other values $u_i | i \notin h_0 \subseteq \{1,\cdots,m \}$ is still meet. 
+After the new $b$ and $u^{n+1}$ is computed using $h_0$, the algorithm has to check if the positivity of the other values $u_i | i \notin h_0 \subseteq \{1,\cdots,m \}$ is still meet. 
 If the conditions is not meet a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP-Problem is solved again. This process id repeated until a solution is found that leads to a $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on the $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$. 
 
 This effect did not occur so far. 
-(Note: A approach on this would be to make a educated guess which indecies could get a problem with positifity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
+(Note: A approach on this would be to make a educated guess which indices could get a problem with positivity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
 
 When enforcing a maximum value the number of constraints can be reduced using the same technique. When both enforcing maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints. 
 Here it is important to update these sets simultaneously.  
@@ -688,12 +663,11 @@ Here it is important to update these sets simultaneously.
 (Todo: Maybe a flowchart and a description on how we stitch everything together.) 
 
 The algorithm on adapting the b consists of two main loops. The outer loop loops through all the $\theta$, staring with $\theta = 1$ down to the lowest $\theta$. The inner loop loops through the orders, starting with the highest Order down to the lowest Order. 
-Until a acceptable $b$ the algorithm tests combiantions of $\theta$ and $p$. At first the Order Conditions are constructed. On these a LP-Solver is invoiced. If the LP-Problem is infeasible the algorithm immediately tries the next combination. If the LP-Problem is feasible we test if the $b$ is acceptable. At first it is tested weather the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. (Note: because of the chosen objective function it can not be unbounded) As second test the deviation from the old solution (Compare Error estimation) is calculated. If the error is bigger than a set maximum error the $b$ is also rejected and the algorithm also switch to the next combination.
+Until an acceptable $b$ the algorithm tests combinations of $\theta$ and $p$. At first the Order Conditions are constructed. On these a LP-Solver is invoiced. If the LP-Problem is infeasible the algorithm immediately tries the next combination. If the LP-Problem is feasible we test if the $b$ is acceptable. At first it is tested weather the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. (Note: because of the chosen objective function it cannot be unbounded) As second test the deviation from the old solution (Compare Error estimation) is calculated. If the error is bigger than a set maximum error the $b$ is also rejected and the algorithm also switch to the next combination.
 As soon as the algorithm finds a suitable $b$ the loops are aborted and the $b$ is used for the update step.
-If all the combinations of $\theta$ and $p$ did not lead to a acceptable $b$ the step has to be rejected and a new set of stage values has to bee computed.
+If all the combinations of $\theta$ and $p$ did not lead to an acceptable $b$ the step has to be rejected and a new set of stage values has to be computed.
 
-(Note: It would also be possible to use another strategy for traversing all the combinations of $(p,\theta)$. Is it worth exploring these? Eg, a visect algorithm for $\Theta$ or linear approximations)
-
+(Note: It would also be possible to use another strategy for traversing all the combinations of $(p,\theta)$. Is it worth exploring these? Eg, a bisect algorithm for $\Theta$ or linear approximations)
 
 
 \section{Results of experiments}\label{sec:Numeric_Results}
@@ -703,14 +677,12 @@ If all the combinations of $\theta$ and $p$ did not lead to a acceptable $b$ the
 (Note: Should we discuss which solver is used. Probably it is not worth using space for some plot etc. on this... Maybe a short note?)
 
 \subsection{Applicable Problems}\label{sec:app_problem}
-The approach can be used with ODE systems $u' = f(t,u)$ that ensure  $u(t) \geq 0 \forall_t \forall_{  u_0 \geq 0}$ 
-
-This can be tested with the property 
+The approach can be used with ODE systems $u' = f(t,u)$ that ensure  $u(t) \geq 0 \forall t \forall {  u_0 \geq 0}$ 
+A sufficient condition is  
 \begin{equation}
-u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall_{u_c \geq 0} \forall_{t}
+u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall {u_c \geq 0} \forall {t}
 \end{equation}
-
-For problems where the exact solution is positive for certain $u_0$ but positifity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additional it is not certain if the computed solutions would be reasonable.
+For problems where the exact solution is positive for certain $u_0$ but positivity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additional it is not certain if the computed solutions would be reasonable.
 
 
 \subsection{Explicit methods}
