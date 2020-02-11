@@ -27,11 +27,12 @@ def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm =
     Return:
     sol:                Array with the solutions used for calculationg the errors
     err:                Array with errors
+    change:             Array, True if b was changed False otherwise
 
     """
     
     err = np.zeros_like(dt)
-    
+    change = np.zeros_like(dt,dtype=bool)
     sol = []
     
     
@@ -40,12 +41,13 @@ def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm =
         solver.dt = dt[i]
         status,t,u,b = RK_integrate(solver=solver,problem=problem,**Params)
         dif = refernce[:,i]-u[step]
+        change[i] = 'c' in status['b']
         if error == 'abs':
             err[i] = np.linalg.norm(dif,ord=Norm)
         elif error == 'rel':
             err[i] = np.linalg.norm(dif,ord=Norm)/np.linalg.norm(refernce[:,i],ord=Norm)
         elif error == 'grid': #Grid function Norm (LeVeque Appendix A.5)
-            error[i] = dx**(1/Norm)*np.linalg.norm(dif,ord=Norm)
+            err[i] = dx**(1/Norm)*np.linalg.norm(dif,ord=Norm)
         else:
             print('Error not defined')
             print(error)
@@ -59,7 +61,7 @@ def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm =
     plt.ylabel('Error')
     plt.xlabel('dt')
     
-    return sol,err
+    return sol,err,change
     
         
 
@@ -277,7 +279,7 @@ def show_status(status):
     #Number of step reqects
     print('Number of step reqects:');print(status['b'].count('r'))
 
-    fig, axs = plt.subplots(3,1)
+    fig, axs = plt.subplots(5,1)
 
     #plot on which timesteps the b was adabpted
 
@@ -286,6 +288,10 @@ def show_status(status):
 
     #plot the step reqects
     axs[0].eventplot(np.nonzero(np.array(status['b'])=='r'), colors='red', lineoffsets=-0.5,
+                    linelengths=0.5)
+
+    #plot step reqect caused by tol
+    axs[0].eventplot(np.nonzero(np.array(status['sc'])=='r'), colors='red', lineoffsets=-1.5,
                     linelengths=0.5)
 
     axs[0].set_xlim([0,len(status['b'])])
@@ -306,4 +312,12 @@ def show_status(status):
 
     axs[2].set_ylim([-0.1,1.1])
 
-    #plot number of conditions
+    #plot negative violations
+    axs[3].plot(np.array(status['old_min']),'x')
+    axs[3].plot(np.array(status['new_min']),'x')
+    axs[3].set_xlim([0,len(status['order'])])
+
+    #plot posifive violations
+    axs[4].plot(np.array(status['old_max']),'x')
+    axs[4].plot(np.array(status['new_max']),'x')
+    axs[4].set_xlim([0,len(status['order'])])

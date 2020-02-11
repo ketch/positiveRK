@@ -42,7 +42,7 @@ def solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,reduce = False,verbose_LP = False,mi
         5 : solver crashed
         6 : Trivial Problem
     l = Array with number of constraints
-    b: found b, if solver failed b_origg
+    b: found b, if solver failed b_orig
     
     """
     s = len(rkm.b)
@@ -435,6 +435,7 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
     """
     message = ''
     status = {}
+    change = None
 
     for i,the in enumerate(theta): #loop through all the sub-timesteps
         for p_new in p:     #loop through orders
@@ -460,7 +461,7 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
                     if verbose:    print('LP-Solve returned a b that leads to a false solution')
                     if verbose >= 2:    print(min(u_n-minval)); print(max(u_n-maxval)); print(u_n)
                 else:
-                    change = np.linalg.norm(K@(b-rkm.b))
+                    change = dt*np.linalg.norm(K@(b-rkm.b))
                     if change > tol_change: # to big adaption...
                         #do some error handling here
                         if verbose:    print('a to big adaptation to the solution by changing the b')
@@ -469,7 +470,7 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
                         if verbose: print('found new b')
                         return True, u_n,b, dt*the, message, change,p_new,the,status
 
-    return False, None,np.zeros_like(rkm.b)*np.nan, 0, message, None, 0, 0,status
+    return False, None,np.zeros_like(rkm.b)*np.nan, 0, message, change, 0, 0,status
 
 def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropts,verbose = False):
     """
@@ -500,6 +501,7 @@ def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,so
     """
     message = ''
     status = {}
+    change = None
     print('changed')
 
     for i,the in enumerate(theta): #loop through all the sub-timesteps
@@ -515,7 +517,7 @@ def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,so
                 w.extend([1/order]*len(rkm.b_hat[order]))
                 
             B = np.concatenate(B).T
-            if verbose: display(B)
+            if verbose >= 2: display(B)
             w = np.array(w)
 
             (status_LP,l,b) = solve_LP_convex(solver,B,w,rkm,u,K,dt,maxval = maxval,minval = minval,**solveropts)
@@ -531,7 +533,7 @@ def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,so
                     if verbose:    print('LP-Solve returned a b that leads to a false solution')
                     if verbose >= 2:    print(min(u_n-minval)); print(max(u_n-maxval)); print(u_n)
                 else:
-                    change = np.linalg.norm(K@(b-rkm.b))
+                    change = dt*np.linalg.norm(K@(b-rkm.b))
                     if change > tol_change: # to big adaption...
                         #do some error handling here
                         if verbose:    print('a to big adaptation to the solution by changing the b')
@@ -540,7 +542,7 @@ def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,so
                         if verbose: print('found new b')
                         return True, u_n,b, dt*the, message, change,p_new,the,status
 
-    return False, None,np.zeros_like(rkm.b)*np.nan, 0, message, None, 0, 0,status
+    return False, None,np.zeros_like(rkm.b)*np.nan, 0, message, change, 0, 0,status
 
 
 
@@ -793,7 +795,7 @@ def RK_integrate(solver = [], problem = [],stepsize_control = None, dumpK=False,
             #else:
             #    sc = stepsize_control.a_tol+u*stepsize_control.r_tol
             #error = np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat))/sc)/len(u)
-            error = np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat)))
+            error = dt*np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat)))
             status['error'].append(error)
             if error > stepsize_control.tol_reqect:
                 tol_met = False
