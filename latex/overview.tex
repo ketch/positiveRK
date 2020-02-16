@@ -1,21 +1,89 @@
-\documentclass{article}
+\documentclass[a4paper]{scrartcl}
+
 \usepackage[utf8]{inputenc}
+%\usepackage[USenglish]{babel}
+\usepackage{csquotes}
+
+%More margins for annotations
+%\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage[a4paper, top=3.5cm, bottom=3.5cm, left=3.5cm, right=3.5cm]{geometry}
+
+\usepackage[plainpages=false,pdfpagelabels,hidelinks,unicode]{hyperref}
+
 \usepackage{amsmath}
 \usepackage{amsfonts}
 
 \usepackage{graphicx}
 \usepackage{subcaption}
 
+% math packages
+\usepackage{amsmath}
+\numberwithin{equation}{section}
+\allowdisplaybreaks
+\usepackage{amssymb}
+\usepackage{commath}
+\usepackage{mathtools}
+\usepackage{bbm}
+\usepackage{nicefrac}
+
+\usepackage{siunitx}
+
+\usepackage{amsthm}
+\theoremstyle{plain}
+  \newtheorem{theorem}{Theorem}
+  \newtheorem{lemma}[theorem]{Lemma}
+  \newtheorem{corollary}[theorem]{Corollary}
+  \newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+  \newtheorem{definition}[theorem]{Definition}
+  \newtheorem{remark}[theorem]{Remark}
+  \newtheorem{example}[theorem]{Example}
+\numberwithin{theorem}{section}
+
+% definitions
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\CN}{\mathbb{C}}
+\renewcommand{\H}{\mathcal{H}}
+\renewcommand{\O}{\mathcal{O}}
+\newcommand{\dt}{{\Delta t}}
+\newcommand{\1}{\mathbbm{1}}
+\newcommand{\e}{\mathrm{e}}
+\newcommand{\scp}[2]{\left\langle{#1,\, #2}\right\rangle}
+\newcommand{\I}{\operatorname{I}}
+\newcommand{\lot}{\ell_{\mathrm{ot}}}
+
+%tikz
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows}
 \usetikzlibrary{calc}
 \usepackage{color}
 
-\usepackage[backend=biber,url  = false]{biblatex}
+% bibliography
+\usepackage[%
+%   backend=bibtex,bibencoding=ascii,
+  backend=biber,
+%   style=authoryear-comp, dashed=false,
+  style=numeric-comp,
+%   firstinits=true, uniquename=init, %abbreviate first names
+  giveninits=true, uniquename=init, %abbreviate first names
+  natbib=true,
+  url=false,
+  doi=true,
+  isbn=false,
+  backref=false,
+  maxnames=99,
+  ]{biblatex}
 \addbibresource{Bib_RK_optim.bib}
 
-\title{Positivity-preserving adaptive Runge-Kutta methods: results}
-\author{Stephan Nuesslein}
+\title{Positivity-Preserving Adaptive Runge-Kutta Methods}
+\author{Stephan Nüßlein}
+
+
+\makeatletter
+\hypersetup{pdfauthor={\@author}}
+\hypersetup{pdftitle={\@title}}
+\makeatother
 
 \begin{document}
 
@@ -44,7 +112,7 @@ There are multiple approaches to get positivity preserving numerical schemes.
 One method is the Strong Stability Preserving Runge Kutta (SSPRK). 
 The idea is to construct a RKM that can be written as convex combination of euler steps. 
 By this the stability properties of the forward euler step are carried over to the SSPRK.
-The same happens to the positivity properties. By this the positivity of the method is ensured for time steps $\Delta t$ with $\Delta t \leq R \Delta t_{FE}$, where $R$ depends on the used SSPRK and $\Delta t_{FE}$ is the forward euler time step \cite{gottlieb_strong_2011}. 
+The same happens to the positivity properties. By this the positivity of the method is ensured for time steps $\dt$ with $\dt \leq R \dt_{FE}$, where $R$ depends on the used SSPRK and $\dt_{FE}$ is the forward euler time step \cite{gottlieb_strong_2011}. 
 The Modified Patanka Runge Kutta (MPRK) are 
 based on the Patanka RKM. In these destruction Terms are scaled by the new solution. This preserves positivity but violates the mass conservation. The MPRK overcome this disadvantage by also scaling the production terms. This is done by solving a linear equation system \cite{kopecz_comparison_2019}.
 An approach to ensure positivity in a practical application is shown in \cite{shampine_non-negative_2005}. Ensuring the positivity is done by redefining the ODE outside the domain. Another technique used are event finding methods. This approach is implemented in the Matlab ODE Suite.
@@ -83,19 +151,19 @@ c &  A \\
 \end{align}
 the stage values $y^{(1)},\cdots,y^{(s)}$ are computed according to
 \begin{equation}
-y^{(j)} =  u^n + \Delta t \sum_{k = 1}^{s} a_{jk} f(t^n + \Delta t c_k,y^{(k)})  \quad j = 1,\cdots,s
+y^{(j)} =  u^n + \dt \sum_{k = 1}^{s} a_{jk} f(t^n + \dt c_k,y^{(k)})  \quad j = 1,\cdots,s
 \end{equation}
 Based on these values the next solution $u^{n+1}$ is computed by
 \begin{equation}
-u^{n+1} = u^n + \Delta t \sum_{j  = 1}^s f(t^n + \Delta t c_j,y^{(j)}) b_j .
+u^{n+1} = u^n + \dt \sum_{j  = 1}^s f(t^n + \dt c_j,y^{(j)}) b_j .
 \end{equation}
 The stage derivatives $f^{(1)},\cdots,f^{(s)}$ can be calculated with
 \begin{equation}
-f^{(j)} = f(t^n + \Delta t c_j,y^{(j)})
+f^{(j)} = f(t^n + \dt c_j,y^{(j)})
 \end{equation}
 The new solution can now be calculated with
 \begin{equation}\label{eq:Combination}
-u^{n+1} = u^n + \Delta t F b
+u^{n+1} = u^n + \dt F b
 \end{equation}
 where $F$ is a matrix containing the stage derivatives $f^{(1)},\cdots,f^{(s)}$.
 
@@ -128,42 +196,42 @@ To illustrate the use of the method we consider the following reaction equation 
 \begin{subequations}
 \label{eq:Reaction}
 \begin{align}
-u_1' &= 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\
-u_2' &= \frac{u_1u_2}{0.01+u_1}-0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\
-u_3' &= 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\
-u_4' &=0.05 u_2 + 0.02 u_3 0.003u_4
+u_1' &= 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\ 
+u_2' &= \frac{u_1u_2}{0.01+u_1}-0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\ 
+u_3' &= 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\ 
+u_4' &=0.05 u_2 + 0.02 u_3 0.003u_4 
 \end{align}
 \end{subequations}
 and the initial conditions
 \begin{equation}
 u(0) = (8,2,1,4)^T
 \end{equation}
-When solved with the Cash-Karp (CK5) method and $\Delta t = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem. 
+When solved with the Cash-Karp (CK5) method and $\dt = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem. 
 In Figure\,\ref{fig:exampleI} the obtained results are plotted with a dashed line. 
 At $t=1.905$ $u_1$ gets negative. This leads to a diverging solution.
 
 Now the $b$ are adapted. The results are also plotted in Figure\,\ref{fig:exampleI}. 
-All $u\geq0$ is now fulfilled. Because of this a qualitatively correct solution is obtained.
+All $u\geq0$ is now fulfilled. A qualitatively correct solution is obtained.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.75\textwidth]{plots/exampleI.pdf}
-    \caption{Numerical approxiamtion of Reaction Problem from \cite{kopecz_comparison_2019}. Computed with ck5 and $\Delta t = 0.005$. The dashed line are the reference solution without the adaption of the $b$. The lower plot are the weights $b$ }
+    \caption{Numerical approxiamtion of Reaction Problem from \cite{kopecz_comparison_2019}. Computed with ck5 and $\dt = 0.005$. The dashed line are the reference solution without the adaption of the $b$. The lower plot are the weights $b$ }
     \label{fig:exampleI}
 \end{figure}
 
 The used weights $b_1,\cdots,b_5$ are also plotted in Figure\,\ref{fig:exampleI}. 
-The used weights are equal the original weights for $t<1.905$. At $t=1.905$ the weights are first adapted to ensure the positivity of the solution. For $t>2.63$ the original set of weights lead to a positive solution. Because of this the used weights equal the original weights again.
+The used weights are equal the original weights for $t<1.905$. At $t=1.905$ the weights are first adapted to ensure the positivity of the solution. For $t>2.63$ the original set of weights lead to a positive solution. Because of this, the used weights equal the original weights again.
 
 
 \section{Details (TODO: better title)}\label{sec:LP-Problem}
 
 In the following section, it is explained how the approach can be written as a LP-Problem. 
 For this we have to consider which $b$ to choose. 
-Generally, any $b \in \mathbb{R}$ can be used. 
+Generally, any $b \in \R$ can be used. 
 A first requirement would be that the new solution is positive.
 We can further reduce this space by enforcing the Order Conditions. 
-By incorporating the Order Conditions, the space of $b$ is limited to a subspace of $\mathbb{R}$. %(Note: not linear because 0 is not in subspace)
+By incorporating the Order Conditions, the space of $b$ is limited to a subspace of $\R$. %(Note: not linear because 0 is not in subspace)
 Finally, we have to give a objective function to get the optimal $b$.
 
 
@@ -190,7 +258,7 @@ and the first order RKM with two stages
  & \frac{1}{2} & \frac{1}{2}\\
 \end{array}
 \end{align}
-If simulated with $\Delta t = 1$ the stage values are 
+If simulated with $\dt = 1$ the stage values are 
 \begin{equation}
 f^1 = \left(\begin{matrix}-5\\5\end{matrix}\right) \qquad f^2 = \left(\begin{matrix}10\\-10\end{matrix}\right)
 \end{equation}
@@ -201,7 +269,7 @@ b= \left(\begin{matrix}\frac{1}{2}\\ \frac{1}{2}\end{matrix}\right) + \alpha \le
 With this we have one degree of freedom for the choice of $b$. This is done by the parameter $\alpha$.
 If the general expression for $b$ is inserted in \eqref{eq:Combination} the general solution is 
 \begin{equation}
-u^{1} = u^0 + \Delta t  \left[f^1,f^2\right] b = \left(\begin{matrix}\frac{5}{2}\\- \frac{5}{2}\end{matrix}\right) \alpha  \left(\begin{matrix}-15\\15\end{matrix}\right)
+u^{1} = u^0 + \dt  \left[f^1,f^2\right] b = \left(\begin{matrix}\frac{5}{2}\\- \frac{5}{2}\end{matrix}\right) \alpha  \left(\begin{matrix}-15\\15\end{matrix}\right)
 \end{equation}
 The solution for the original RKM would be $u^{1} = \left(\frac{5}{2} ,- \frac{5}{2}\right)^T$ which contains a negative value. But by changing the parameter $\alpha$ and therefore changing the $b$ a positive solution can be reached.
 By a suitable choice of $\alpha \in \left[\frac{1}{6},\frac{7}{30}\right]$ any $u$ that complies with mass conservation and positivity can be reached. 
@@ -221,7 +289,7 @@ An objective function is also needed to make the choice unique. This should be d
 The Order Conditions for a RKM are a set of Equations depending on $a_{jl}$, $c_1,\cdots,c_s$ and $b_1,\cdots,b_s$. In these Equations $b_1,\cdots,b_s$ only appear linearly \cite{hairer_runge-kutta_1993}.
 If $a_{jl}$ and $c_1,\cdots,c_s$ are already known, the Order Conditions for the Order $p$ are an linear equations system and can be written as $Q b = r$. 
 
-The vector $b \in \mathbb{R}^s$ contains the weights and $Q$ is an $n \times s$ matrix, where $g$ is the number of Order Conditions. The vector $r$ contains the right hand side of the Order Conditions.
+The vector $b \in \R^s$ contains the weights and $Q$ is an $n \times s$ matrix, where $g$ is the number of Order Conditions. The vector $r$ contains the right hand side of the Order Conditions.
 
 If the $A$ of a preexisting RK-method is used, there is at least one solution for the linear equation system.
 In order to get an optimization problem, the equation system has to be underdetermined.
@@ -274,7 +342,7 @@ Also, an objective function is needed to determine the optimal $b$.
 The Direct Adaptation approach leads to two set of constraints on the $b$.
 The first set of constraints is the positivity and can be written as 
 \begin{equation}
-u_{n+1}=u_n+\Delta K \vec{b} \geq 0
+u_{n+1}=u_n+\dt K \vec{b} \geq 0
 \end{equation}
 The second set of constraints are the Order Conditions
 \begin{equation}
@@ -319,8 +387,8 @@ f_{obj} = ||b-b_{orig}||_1
 
 \subsubsection{Adaption of Timestep using the dense output formual}
 
-If the original step $\Delta t$ was too large and there is no suitable $b$, we would like to calculate a $u^{n+1}$ using the stage values instead of rejecting the step. For this the time step is reduced after calculation the stage values. This can be done using the Order Conditions for dense Output. These can be found in \cite{hairer_runge-kutta_1993}.
-We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \Delta t$ whereas $\Delta t$ is the time step used when calculating the stage values.
+If the original step $\dt$ was too large and there is no suitable $b$, we would like to calculate a $u^{n+1}$ using the stage values instead of rejecting the step. For this the time step is reduced after calculation the stage values. This can be done using the Order Conditions for dense Output. These can be found in \cite{hairer_runge-kutta_1993}.
+We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \dt$ whereas $\dt$ is the time step used when calculating the stage values.
 To calculate a reduced step the Order Conditions have to be adapted and a new $b_{orig}$ for the objective function (and more important the Error detection afterwards) has to be generated. 
 (TODO: the $b_{orig}$ is still a open question)
 
@@ -331,7 +399,7 @@ The dependency of $r(\theta)$ is nonlinear. This means that the maximum $\theta$
 
 \subsection{Convex combination of existing methods}\label{sec:convex}
 For some test problems (e.g. the Heat Equation solved with an implicit method of higher order), large distortions occur, even though a norm of the distortion of the b is used as an objective function. 
-For implicit methods, it is known that the backward euler steps lead to a positive solution for any $\Delta t$ \cite{hundsdorfer_numerical_2003}. The backward Euler is still only first Order but shows more exact results than a method of higher Order that is distorted by the adaption of the $b$, at least at some steps. 
+For implicit methods, it is known that the backward euler steps lead to a positive solution for any $\dt$ \cite{hundsdorfer_numerical_2003}. The backward Euler is still only first Order but shows more exact results than a method of higher Order that is distorted by the adaption of the $b$, at least at some steps. 
 A possible method to fix this is to generate the new b based on a convex combination of embedded methods of RKM. 
 
 \subsubsection{Constraints}
@@ -354,7 +422,7 @@ To ensure the that \eqref{eq:b_convex_def} yields a convex combination following
  \sum_{i=1}^d a_i = 1
 \end{equation}
 The positivity constraint changes to 
-$$u_{n+1}=u_n+\Delta t K B a \geq 0$$
+$$u_{n+1}=u_n+\dt K B a \geq 0$$
 where $a = [a_1,\cdots,a_d]^T$
 
 \subsubsection{Objective Function}
@@ -370,6 +438,8 @@ is used.  The $w_1,\cdots,w_d$ are weighting factors that determine which is the
 Because the optimal solution of the unconstrained problem has to be the original $b$ the weight $w_0$ corresponding to $b_{orig}$ should be the smallest $w$. This weight is simply set to $w_{b_{orig}} = 0$. For the other weights $w_i = \frac{1}{\mathrm{Order} \{b_i\}}$ is used.
 
 \subsubsection{Construction of Embedded Methods}
+(TODO: have a look on which of the ideas are still valid, maybe rewrite section completely)
+
 For methods with $s \geq p$ it is useful to have some degrees of freedom for the highest order. For this at least one $b$ that complies with the order Condition of the highest order and $b \neq b_{orig}$ has been introduced.
 These additional $b$ can be constructed by calculating a Span $S$ of the Kernel $\mathrm{ker} (Q)$ of the Order Condition Matrix $Q$. For every vector $s \in S$ one set of weights with $b = b_{orig} + a s$ and one with $b = b_{orig} - a s$ is added. The $a$ is a parameter that determines how big a change is allowed. 
 
@@ -429,11 +499,11 @@ For all methods with the number of stages equal to the order of the method, ther
 If the Classical RK4 method is used the Order has to reduced more because the RK4 method does not have embedded methods of order 3.
 Contrary to this methods with $s > p$ have degrees of freedom even without reducing the order. 
 
-Another important property is the stability region in comparison with the maximum $\Delta t$ that ensures positivity. For this approach to be useful the RK-method has to yield negative results for $\Delta t$ smaller than the biggest stable $\Delta t$.
+Another important property is the stability region in comparison with the maximum $\dt$ that ensures positivity. For this approach to be useful the RK-method has to yield negative results for $\dt$ smaller than the biggest stable $\dt$.
 
 (Note: up to this point I do not understand why this is happening. We only see it occur depending on the Problem-RKM combination)
 
-A third property is the existence of a positive solution. This corresponds to the question if there is an embedded first order method that ensures positivity. This is particularly interesting for Implicit methods, because the $\Delta t$ is not limited by the stability. 
+A third property is the existence of a positive solution. This corresponds to the question if there is an embedded first order method that ensures positivity. This is particularly interesting for Implicit methods, because the $\dt$ is not limited by the stability. 
 If we have an embedded first Order Method we can ensure that there is always a positive solution, which might be of first Order. 
 
 \subsection{Error detection and Approximation}
@@ -447,13 +517,13 @@ This gives raise to the question whether the new solution is reasonable.
 This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
  
 \subsubsection{Error Detection}
-For this approach is difficult to give some mathematically rigorous statement regarding the convergence of the method, because it only applies if the error of the original method causes the solution to get negative. This can only happen if the Truncation error is large enough. This requires $\Delta t \gg 0$ where lower coefficients of the Taylor Series are no longer sufficient to approximate the behavior. 
+For this approach is difficult to give some mathematically rigorous statement regarding the convergence of the method, because it only applies if the error of the original method causes the solution to get negative. This can only happen if the Truncation error is large enough. This requires $\dt \gg 0$ where lower coefficients of the Taylor Series are no longer sufficient to approximate the behavior. 
 One could say that the main idea of the adaption of $b$ is to alter the error in a certain way, so that the numerical solution gets 'better' in the sense that it leads to positive solutions. 
-The local error of a RKM $e(\Delta t) =u(t_0 + \Delta t) - u^1$ can be expressed using the Taylor series of the RKM and the Taylor series of the exact solution. % Hairer I P134
+The local error of a RKM $e(\dt) =u(t_0 + \dt) - u^1$ can be expressed using the Taylor series of the RKM and the Taylor series of the exact solution. % Hairer I P134
 
 \begin{align}\label{eq:Taylor_sol_ref}
-u(t_0 + \Delta t) &= u(t_0) + u'(t_0) \Delta t + \frac{u''(t_0)}{2} \Delta t^2 + \cdots + \frac{u^{(p)}(t_0)}{p!} \Delta t^p + \frac{u^{(p+1)}(t_0)}{(p+1)!} \Delta t^{p+1} + \cdots \\
-u^{n+1} &= u(t_0)  + v_1 \Delta t + \frac{v_2}{2} \Delta t^2 + \cdots + \frac{v_p}{p!} \Delta t^p + \frac{v_{p+1}}{(p+1)!} \Delta t^{p+1} + \cdots \\
+u(t_0 + \dt) &= u(t_0) + u'(t_0) \dt + \frac{u''(t_0)}{2} \dt^2 + \cdots + \frac{u^{(p)}(t_0)}{p!} \dt^p + \frac{u^{(p+1)}(t_0)}{(p+1)!} \dt^{p+1} + \cdots \\
+u^{n+1} &= u(t_0)  + v_1 \dt + \frac{v_2}{2} \dt^2 + \cdots + \frac{v_p}{p!} \dt^p + \frac{v_{p+1}}{(p+1)!} \dt^{p+1} + \cdots \\
 \end{align}
 
 The derivatives of $u(t)$ can be solely expressed with the partial derivatives of the RHS $f(t,u)$, whereas the coefficients $v_1,v_2,\cdots$ also depend on the RKM. 
@@ -463,7 +533,7 @@ Because the $b$ are chosen to ensure the Order Conditions the coefficients $v_1,
 The only remaining degrees of freedom are the coefficients $v_{p+1},v_{p+2},\cdots$.
 These can be adapted by changing the $b$.
 
-The main way is to ensure that the RKM with adapted b converges to the correct solution is to ensure that the $b$ approaches $b_{orig}$ for $\Delta t \to 0$. For this $b$ it is already known that the numeric solution converges to the exact solution.  
+The main way is to ensure that the RKM with adapted b converges to the correct solution is to ensure that the $b$ approaches $b_{orig}$ for $\dt \to 0$. For this $b$ it is already known that the numeric solution converges to the exact solution.  
 This is made sure by property of the Objective function that 
 \begin{equation}
 \mathrm{argmin}(f_{optim}(b)) = b_{orig}
@@ -472,11 +542,11 @@ This approximation is not very useful for real applications.
 To approximate the error of a new step we propose following approximation of the local error:
 
 \begin{align}
-err = |u(t^n)-u^n| &= |u(t^n) - (u^n_{b_{orig}+\Delta t K(b-b_{orig})})| \\
- &\leq \underbrace{|u(t^n)-u^n_{b_{orig}}|}_{\approx err_T}+\underbrace{|\Delta t K(b-b_{orig})|}_{= err_{adapt}}
+err = |u(t^n)-u^n| &= |u(t^n) - (u^n_{b_{orig}+\dt K(b-b_{orig})})| \\
+ &\leq \underbrace{|u(t^n)-u^n_{b_{orig}}|}_{\approx err_T}+\underbrace{|\dt K(b-b_{orig})|}_{= err_{adapt}}
 \end{align}
 
-After adapting the $b$ the Approximation Error is checked. If $|\Delta t K(b-b_{orig})|$ is larger than the tolerance the $b$ is rejected. 
+After adapting the $b$ the Approximation Error is checked. If $|\dt K(b-b_{orig})|$ is larger than the tolerance the $b$ is rejected. 
 
 \subsubsection{Steppsize Control}
 An important part of an RKM method is the ability to approximate the error of the solution to use it to control the step size. 
@@ -492,7 +562,7 @@ This type of error estimation is easy to implement because it can be easily inco
 \subsection{Stability Region}
 
 By adapting the $b$ the used RK Method is changed. This also alters the stability function and therefore changes the region of absolute stability. 
-It depends on the solved problem, the RKM and the used $\Delta t$ on how many steps the stability function is altered. For Problems where only a small number of step are affected a bigger change in the stability function would be acceptable. For Problems with require an adaptation of the weights for every step one needs to make sure that the resulting method is stable.
+It depends on the solved problem, the RKM and the used $\dt$ on how many steps the stability function is altered. For Problems where only a small number of step are affected a bigger change in the stability function would be acceptable. For Problems with require an adaptation of the weights for every step one needs to make sure that the resulting method is stable.
 
 
 The stability function of a RKM $R_b$ with the weights $b = \alpha b_1 + \beta b_2$ cn be calculated by adding the weighted stability functions $R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) $ where all stability functions have the same $A$ and $\alpha + \beta = 1$.
@@ -512,10 +582,10 @@ We want to prove that $R_{\alpha b_a+\beta b_b}(z)$ = $\alpha R_{ b_a}(z)+\beta 
 
 We start with the definition of the RKM
 \begin{align}
-u_{n+1} &= u_n + \Delta t K (\alpha b_a+\beta b_b) \label{eq:u_n+1}  \\
-u_{n+1}^{sum} &= \alpha (u_n + \Delta t K b_a) + \beta (u_n + \Delta t K b_b) \label{eq:u_n+1_sum} \\
-& = (\alpha + \beta) u_n + \Delta t \alpha K b_a + \Delta t \beta K b_b \\
-&= u_n + \Delta t K (\alpha b_a+\beta b_b) \\
+u_{n+1} &= u_n + \dt K (\alpha b_a+\beta b_b) \label{eq:u_n+1}  \\
+u_{n+1}^{sum} &= \alpha (u_n + \dt K b_a) + \beta (u_n + \dt K b_b) \label{eq:u_n+1_sum} \\
+& = (\alpha + \beta) u_n + \dt \alpha K b_a + \dt \beta K b_b \\
+&= u_n + \dt K (\alpha b_a+\beta b_b) \\
 &=u_{n+1} 
 \end{align}
 Now we insert the Stability functions for \ref{eq:u_n+1} and \ref{eq:u_n+1_sum} which we already know to be equal. We get 
@@ -571,17 +641,17 @@ The border is defined by the implicit function
 \begin{equation}\label{eq:border}
 |R(w,u+iv)|^2 -1 = 0
 \end{equation}
-This function can be viewed either as $\mathbb{R}^m \times  \mathbb{C} \rightarrow \mathbb{R}$ or $\mathbb{R}^m \times  \mathbb{R}^2 \rightarrow \mathbb{R}$.
+This function can be viewed either as $\R^m \times  \CN \rightarrow \R$ or $\R^m \times  \R^2 \rightarrow \R$.
 We are only concerned with the expansion or contraction. Because of this we are only interested in the change perpendicular to the Border of the stability region. 
 
 For a point $z_0= u_0 +i v_0 $ 
 with $ |R(w,z_0)|^2 -1 = 0 $ the gradient of
  $|R(w,u,v)|^2$ is calculated. 
-If the gradient does not vanish at $z = z_0$ \eqref{eq:border} Can be transformed in a function $\mathbb{R}^m \times \mathbb{R} \rightarrow \mathbb{R}$ depending on $w$ and a single variable $a$ by setting $z = z_0 + n a$. The complex number $n$ denotes the normal vector $\vec{n} = \frac{\nabla |R(w,u,v))|^2}{\left| \nabla |R(w,u,v))|^2 \right|}$ of the border of the stability region written in complex notation. This defines the function $a(w)$ with $|R(w,z_0 + n a(w))|^2 -1 = 0$. 
+If the gradient does not vanish at $z = z_0$ \eqref{eq:border} Can be transformed in a function $\R^m \times \R \rightarrow \R$ depending on $w$ and a single variable $a$ by setting $z = z_0 + n a$. The complex number $n$ denotes the normal vector $\vec{n} = \frac{\nabla |R(w,u,v))|^2}{\left| \nabla |R(w,u,v))|^2 \right|}$ of the border of the stability region written in complex notation. This defines the function $a(w)$ with $|R(w,z_0 + n a(w))|^2 -1 = 0$. 
 This implies that this approach is only applicable if the gradient does not vanish on the border of the stability function. This is not true in general but for the most common RKM.
 The derivative $\frac{\mathrm d}{\mathrm d w} (a(w))$ can be calculated using the implicit function theorem. The defining function is 
 \begin{equation}\label{eq:f(w,a)}
-f: \mathbb{R}^m \times \mathbb{R} \rightarrow \mathbb{R} f(a) = |R(w,z_0 + n a)|^2 -1 
+f: \R^m \times \R \rightarrow \R f(a) = |R(w,z_0 + n a)|^2 -1 
 \end{equation}
 If explicit methods are used this function is known to be continuously differentiable because it can be written as a Polynomial of $w_1,\cdots,w_m,u$ and $v$. This is a necessary condition for the use of the of the Implicit function theorem. 
 It is also known by definition, that for the point $w=0$ and $z = z_0$ the equation $ |R(w,z_0)|^2 -1 = 0 $ is satisfied.
@@ -625,7 +695,7 @@ TODO: Discuss in this section aspects that are needed for implementation (and im
 
 
 For the further discussion, we are concerned with a System of $m$ coupled ODEs. 
-In this setup $u \in \mathbb{R}^m$.
+In this setup $u \in \R^m$.
 Systems of ODEs with a high number of dimensions can appear when solving a PDE with the method of lines.
 
 To enshure that the solution is positive 
@@ -638,7 +708,7 @@ has to be fulfilled.
 This infers $m$ positivity constraints to the optimization problem. These can be written as
 
 \begin{equation}
-u_i + \Delta t K  b \geq 0     
+u_i + \dt K  b \geq 0     
 \end{equation}
 where $K = \big[k^1 , \cdots k^{s-1}\big]$.
 
@@ -697,7 +767,10 @@ When tested on the diffusion equation with an spike as initial data the $b$ is o
 
 \subsection{Stepsize control}
 
+Reaction Problem with step-size control
+
 \subsection{Dense Output}
+
 
 \section{Conclusion} \label{sec:conclusion}
 
