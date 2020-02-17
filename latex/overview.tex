@@ -565,81 +565,129 @@ By adapting the $b$ the used RK Method is changed. This also alters the stabilit
 It depends on the solved problem, the RKM and the used $\dt$ on how many steps the stability function is altered. For Problems where only a small number of step are affected a bigger change in the stability function would be acceptable. For Problems with require an adaptation of the weights for every step one needs to make sure that the resulting method is stable.
 
 
-The stability function of a RKM $R_b$ with the weights $b = \alpha b_1 + \beta b_2$ cn be calculated by adding the weighted stability functions $R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) $ where all stability functions have the same $A$ and $\alpha + \beta = 1$.
+\begin{figure}
+     \centering
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{plots/stab_ck5.pdf}
+         \caption{Cash-Karp 5}
+         \label{fig:stab_ck5}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.45\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{plots/stab_ex3.pdf}
+         \caption{Implicit Extrapolation 3}
+         \label{fig:stab_ex3}
+     \end{subfigure}
+        \caption{Change of stability region for direct adaptation(a) and for convex combination(b) (TODO: legend, axis, description in text)}
+        \label{fig:stab}
+\end{figure}
 
-Let $R_b(z)$ denote the stability function of a RKM method with the butcher tableau
 
-$$
-\begin{array}
-{c|c}
-c & A\\
-\hline
-& b^T
-\end{array}
-$$
 
-We want to prove that $R_{\alpha b_a+\beta b_b}(z)$ = $\alpha R_{ b_a}(z)+\beta R_{b_b}(z)$ when $\alpha + \beta = 1$ and $A$ is the same for all methods.
+\paragraph*{Version 1} $ $\\
 
-We start with the definition of the RKM
-\begin{align}
-u_{n+1} &= u_n + \dt K (\alpha b_a+\beta b_b) \label{eq:u_n+1}  \\
-u_{n+1}^{sum} &= \alpha (u_n + \dt K b_a) + \beta (u_n + \dt K b_b) \label{eq:u_n+1_sum} \\
-& = (\alpha + \beta) u_n + \dt \alpha K b_a + \dt \beta K b_b \\
-&= u_n + \dt K (\alpha b_a+\beta b_b) \\
-&=u_{n+1} 
-\end{align}
-Now we insert the Stability functions for \ref{eq:u_n+1} and \ref{eq:u_n+1_sum} which we already know to be equal. We get 
-\begin{align}
-u_{n+1} &= u_{n+1}^{sum} \\
-R_{\alpha b_a+\beta b_b}(z) u_n &= \alpha R_{\alpha b_a}(z) u_n + \beta R_{\beta b_b}(z) u_n \\
-&= (\alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z)) u_n
-\end{align}
-because this has to be true for all $u_n$ we get
-
+The stability function is defined as 
+\begin{equation}\label{eq:stab_func}
+R(z) = 1 + zb^T(I - zA)^{-1}e
+\end{equation}
+We can define a function $P(z)$
 \begin{equation}
-R_{\alpha b_a+\beta b_b}(z) = \alpha R_{\alpha b_a}(z) + \beta R_{\beta b_b}(z) 
+P(z) = R(z)-1 = z b^T (I - zA)^{-1}
+\end{equation}
+These Polynomials are $\in \mathcal{L}^\infty$. (Note: for all explicit methods this is always true, for implicit methods we have to exclude the poles $\{z | \det(I - zA) = 0\}$ or  $\{z | \det(I - zA) > \epsilon \}$ )
+We define $\mathcal{P}$ as all $P(z)$ for the class of $RKM_A$. 
+This is a vector space.
+Proof:
+\begin{multline}
+\alpha P_a(z) + \gamma P_c(z) =  \alpha z a^T (I - zA)^{-1} + \gamma z c^T (I - zA)^{-1} =\\
+z (\alpha a+ \gamma c)^T (I - zA)^{-1} = P_{\alpha a + \gamma c}(z) \in \mathcal{P}
+\end{multline}
+
+The $P(z)$ is a linear combination of the Polynomials
+\begin{subequations}
+\begin{align}
+p_1(z) &= z e_1^T (I - zA)^{-1}\\
+\vdots \\
+p_s(z) &= z e_s^T (I - zA)^{-1}
+\end{align}
+\end{subequations}
+whereas $e_1,\cdots,e_s$ is the standard basis of $\R^s$.
+These span $\mathcal{P}$. If $p_{e_1}(z),\cdots,p_{e_s}(z)$ are linearly independent $p_{e_1}(z),\cdots,p_{e_s}(z)$ are a basis of $\mathcal{P}$.
+
+With this results the stability function $R_b(z)$ of any RKM in $RKM_{(A)}$ can be calculated with 
+\begin{equation}
+R_b(z) = 1 + P_b(z) = 1 + \sum_{j = 1}^s b_s p_{e_1}
 \end{equation}
 
+
+
+
+\paragraph*{Version 2} $ $\\
+The stability function is defined as a function $\CN \to \CN$ with 
+\begin{equation}\label{eq:stab_func}
+R(z) = 1 + zb^T(I - zA)^{-1}e
+\end{equation}
+We can add $b$ as a second parameter and get a function $\CN \times \R^s \to \CN$ with
+\begin{equation}\label{eq:stab_func}
+R(z,b) = 1 + zb^T(I - zA)^{-1}e
+\end{equation}
+The stability function is a linear function in $b$.
+
+\paragraph*{Version 3} $ $\\
+(Ignore this topic, because the following sections also can work without it)
 
 %(Todo: It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods, the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations cannot happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
 
 
 \subsubsection{Stability of convex combination}
-If the new $b$ is chosen as a convex combination of $b$ it is easy to prove that the resulting region of absolute stability is at least the Intersection of the regions of absolute stability of the methods that define the convex combination. This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
+If the new $b$ is chosen as a convex combination of $b$ it is easy to prove properties of the stability region.
+The stability function $R_{\chi a + (1-\chi) c}(z)$ of a convex combination can be calculated by the weighted sum of the Stability functions $R_a(z)$ and $R_c(z)$
+
+Proof:
+\begin{multline}
+R_{\chi a + (1-\chi) c}(z) = R(z) = 1 + (\chi a + (1-\chi) c)^Tz(I - zA)^{-1}e \\
+= \chi + (1-\chi) + \chi a ^Tz(I - zA)^{-1}e + (1-\chi) c^Tz(I - zA)^{-1}e \\
+= \chi R_a(z) + (1-\chi) R_c(z)
+\end{multline}
+
+The resulting region of absolute stability is at least the Intersection of the regions of absolute stability of the methods that define the convex combination. This also means that if all the used embedded methods used to construct the new $b$ are A-Stable, the resulting method is also A-Stable.
 
 We want to proof that the convex combination of two methods is absolutely stable at the points where both original methods were absolutely stable.
 This can be formulated as $(|R_{b_a}(z)|  < 1) (|R_{b_b}(z)| < 1) \Rightarrow |R_{\chi b_a +(1- \chi) b_b}(z)| < 1$ with $\chi \in [0,1]$.
-We write $\alpha = \chi$ and $\beta = 1-\chi$ for convenience.
 
-\begin{align}
-|R_{\alpha b_a +\beta b_b}(z)| &= |\alpha R_{b_a}(z) + \beta R_{b_a}(z)| \leq |\alpha R_{b_a}(z)| + |\beta R_{b_a}(z)|\\
- &=| \alpha| \underbrace{|R_{b_a}(z)|}_{<1} + |\beta| \underbrace{|R_{b_a}(z)|}_{<1} < \alpha + \beta = 1
-\end{align}
+
+\begin{multline}
+|R_{\chi b_a +(1-\chi) b_b}(z)| = |\chi R_{b_a}(z) + (1-\chi) R_{b_a}(z)| \leq |\chi R_{b_a}(z)| + |(1-\chi) R_{b_a}(z)|\\
+ =| \chi| \underbrace{|R_{b_a}(z)|}_{<1} + |(1-\chi)| \underbrace{|R_{b_a}(z)|}_{<1} < \chi + (1-\chi)= 1
+\end{multline}
 
 
 
 \subsubsection{Stability of  Direct Adaptation}
 If the $b$ is adapted directly there is no such proof.
 A useful property of the resulting stability region is that it is similar to the stability region of the baseline method. 
-(Note: is it possible to give some statement like: If the stability regions of the RKM used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions)
+(Note: is it possible (or needed at all) to give some statement like: If the stability regions of the RKM used for multiple steps are similar, then the overall method is stable for the intersection of the stability regions.)
 
 For most methods, a small change of $b$ does not alter the stability function dramatically.
 (TODO: I am missing a piece here from ‘the derivative is finite’ to ‘is simmilar’)
 
 We would like to calculate the derivative of the border in respect to a change of $b$. 
 
-The stability function depending on the $b$ is expressed (Note: it is a bit complicated her because we cannot let it depend on the b directly, but only give b after a coordinate transformation, which also makes the expression easier because we can already introduce the order conditions here)
+The stability function depending on the $b$ is expressed 
+When adapting the $b$ we cannot change them independently but only in ways that comply with the order conditions
 $m$ is the number of dimensions of the Kernel of the Order Condition $m = \mathrm{dim}\{\mathrm{Ker} (Q) \}$
-The $b_1,\cdots,b_m$  are the Basis vectors of $\mathrm{Ker} (Q)$. By this we can get the vector $w$ by $w = \left[b_1,\cdots,b_m\right]^{-1}(b-b_{orig})$.
+The $b_1,\cdots,b_m$  are the Basis vectors of $\mathrm{Ker} (Q)$. With an coordinate Transformation we get the coordinate vector $\hat{b}$ with the Matrix $B = [b_1,\cdots,b_m]$ and $b = B \hat{b}$.
 
 The General Stability function of all embedded RKM that satisfy the Order Conditions $Q$ is given by 
 
 \begin{equation}\label{eq:gen_stabilityf}
-R(w,z) = (1-(w_1,\cdots,w_m))R_{b_{orig}}(z) + w_1 R_{b_1}(z) + \cdots + w_m R_{b_m}(z)
+R(\hat{b},z) = 1 +  (b_{orig} +B \hat{b})^T z(I - zA)^{-1}
 \end{equation}
 The border is defined by the implicit function 
 \begin{equation}\label{eq:border}
-|R(w,u+iv)|^2 -1 = 0
+|R(\hat{b},u+iv)|^2 -1 = 0
 \end{equation}
 This function can be viewed either as $\R^m \times  \CN \rightarrow \R$ or $\R^m \times  \R^2 \rightarrow \R$.
 We are only concerned with the expansion or contraction. Because of this we are only interested in the change perpendicular to the Border of the stability region. 
@@ -647,44 +695,44 @@ We are only concerned with the expansion or contraction. Because of this we are 
 For a point $z_0= u_0 +i v_0 $ 
 with $ |R(w,z_0)|^2 -1 = 0 $ the gradient of
  $|R(w,u,v)|^2$ is calculated. 
-If the gradient does not vanish at $z = z_0$ \eqref{eq:border} Can be transformed in a function $\R^m \times \R \rightarrow \R$ depending on $w$ and a single variable $a$ by setting $z = z_0 + n a$. The complex number $n$ denotes the normal vector $\vec{n} = \frac{\nabla |R(w,u,v))|^2}{\left| \nabla |R(w,u,v))|^2 \right|}$ of the border of the stability region written in complex notation. This defines the function $a(w)$ with $|R(w,z_0 + n a(w))|^2 -1 = 0$. 
-This implies that this approach is only applicable if the gradient does not vanish on the border of the stability function. This is not true in general but for the most common RKM.
-The derivative $\frac{\mathrm d}{\mathrm d w} (a(w))$ can be calculated using the implicit function theorem. The defining function is 
+If the gradient does not vanish at $z = z_0$ \eqref{eq:border} Can be transformed in a function $\R^m \times \R \rightarrow \R$ depending on $\hat{b}$ and a single variable $a$ by setting $z = z_0 + n a$. The complex number $n$ denotes the normal vector $\vec{n} = \frac{\nabla |R(\hat{b},u,v))|^2}{\left| \nabla |R(\hat{b},u,v))|^2 \right|}$ of the border of the stability region written in complex notation. This defines the function $a(\hat{b})$ with $|R(\hat{b},z_0 + n a(\hat{b}))|^2 -1 = 0$. 
+This implies that this approach is only applicable if the gradient does not vanish on the border of the stability function. This is not true in general but for the most common RKM. 
+The derivative $\frac{\mathrm d}{\mathrm d \hat{b}} (a(\hat{b}))$ can be calculated using the implicit function theorem. The defining function is 
 \begin{equation}\label{eq:f(w,a)}
-f: \R^m \times \R \rightarrow \R f(a) = |R(w,z_0 + n a)|^2 -1 
+f: \R^m \times \R \rightarrow \R f(\hat{b},a) = |R(\hat{b},z_0 + n a)|^2 -1 
 \end{equation}
-If explicit methods are used this function is known to be continuously differentiable because it can be written as a Polynomial of $w_1,\cdots,w_m,u$ and $v$. This is a necessary condition for the use of the of the Implicit function theorem. 
-It is also known by definition, that for the point $w=0$ and $z = z_0$ the equation $ |R(w,z_0)|^2 -1 = 0 $ is satisfied.
-For simplicity only the formulas for the derivative at the value $b = b_{orig}$ are given. This corresponds to $w_1 = \cdots = w_m = 0$.
+If explicit methods are used this function is known to be continuously differentiable because it can be written as a Polynomial of $\hat{b},u$ and $v$. This is a necessary condition for the use of the of the Implicit function theorem. 
+It is also known by definition, that for the point $b = b_{orig}$ and $z = z_0$ the equation $ |R(\hat{b},z_0)|^2 -1 = 0 $ is satisfied.
+For simplicity only the formulas for the derivative at the value $b = b_{orig}$ are given. This corresponds to $\hat{b} = 0$.
 The wanted derivative  is given by 
 
 \begin{equation}
- \frac{\partial a}{\partial w_j} (w) =
- - \left[ J_{f,a}(w,a(w))  \right] ^{-1} 
-   \left[ \frac{\partial f}{\partial w_j}(w,a(w)) \right]
+ \frac{\partial a}{\partial \hat{b}_j} (w) =
+ - \left[ \frac{\partial f}{\partial a} (\hat{b},a(\hat{b}))  \right] ^{-1} 
+   \left[ \frac{\partial f}{\partial \hat{b}_j}(\hat{b},a(\hat{b})) \right]
 \end{equation}
-as long as the inverse of the Jacobian exists. This is true in most cases as it has been discussed above.
+as long as $\frac{\partial f}{\partial a} \neq 0$ on the border of the region of absolute stability. This is true in most cases as it has been discussed above.
 
-The Jacobian of \eqref{eq:f(w,a)} $J_{f,a}(w,a(w))$ evaluated at $w=0$ can be calculated using the directional derivative
+The Derivative of \eqref{eq:f(w,a)} in respect to $a$ evaluated at $\hat{b}=0$ can be calculated using the directional derivative
 \begin{align*}
- J_{f,a}(b_{orig},a(w)) \Big|_{w=0} =& 
- \frac{\partial f}{\partial a} (w,a(w)) \Big|_{w=0} = 
- \nabla |R(w,a(w)|^2 \vec{n} \Big|_{w=0} \\
+ \frac{\partial f}{\partial a} \Big|_{\hat{b}=0} =& 
+ \frac{\partial f}{\partial a} (\hat{b},a(\hat{b})) \Big|_{\hat{b}=0} = 
+ \nabla |R(\hat{b},a(\hat{b})|^2 \vec{n} \Big|_{\hat{b}=0} \\
 =& \left| \nabla|R(0,z_0)|^2 \right| = \left| \nabla|R_{b_{orig}}(z_0)|^2 \right|
 \end{align*} 
 
-The derivative in respect to $w_j$ is 
-$ \frac{\partial f}{\partial w_j}(w,a(w)) \Big|_{w=0}$
+The derivative in respect to $\hat{b}_j$ is 
+$ \frac{\partial f}{\partial \hat{b}_j}(\hat{b},a(\hat{b})) \Big|_{\hat{b}=0}$
 this simplifies to 
-\begin{align*}\label{eq:derivative_to_b}
- \frac{\partial f}{\partial w_j}(w,a(w)) \Big|_{w=0} =&
-- 2 \underbrace{R_{b_{orig}}(z_0)R^*_{b_{orig}}(z_0)}_{=|R_{b_{orig}}(z_0)|^2=1} + R_{b_{orig}}(z_0)R^*_{b_v}(z) + R_{b_v}(z_0)R^*_{b_{orig}}(z_0) \\
-=& -2 + R_{b_{orig}}(z_0)R^*_{b_v}(z_0) + R_{b_v}(z_0)R^*_{b_{orig}}(z_0)
-\end{align*}
+\begin{multline}\label{eq:derivative_to_b}
+ \frac{\partial f}{\partial \hat{b}_j}(w,a(w)) \Big|_{\hat{b}=0} = 
+ \frac{\partial }{\partial \hat{b}}(R(\hat{b},z)R(\hat{b},z^*)) \\
+ = (B\hat{b})^T (I-zA)^{-1} R_{b_{orig}}(z^*) + (B\hat{b})^T (I-z^*A)^{-1} R_{b_{orig}}(z)
+\end{multline}
 using the fact that $z_0$ is on the border of the stability region.
-The derivative $-2 + R_{b_{orig}}(z_0)R^*_{b_v}(z_0) + R_{b_v}(z_0)R^*_{b_{orig}}(z_0)$ is known to be finite for explicit methods, because $R_{b_v}$ and $R_{b_{orig}}$ are Polynomials and $|z_0| < \infty$
+The derivative $(B\hat{b})^T (I-zA)^{-1} R_{b_{orig}}(z^*) (B\hat{b})^T (I-z^*A)^{-1} R_{b_{orig}}(z)$ is known to be finite for explicit methods, because it is a polynomial and $|z_0| < \infty$
 The same process can be done for all points on the border of the stability region. 
-As long as $\left[ J_{f,a}(w,a(w))  \right] > 0$ the derivative $\frac{\partial a}{\partial w_j} (w)$ is finite. This means that a small change the $b$ only leads to a small change of the stability region.
+As long as $\nabla|R(\hat{b},u+iv)|^2 \neq 0 \forall \hat{b} < \epsilon  \forall z$ the derivative $\frac{\partial a}{\partial \hat{b}_j} (\hat{b})$ is finite. This means that a small change the $b$ only leads to a small change of the stability region.
 
 
 \section{Implementation aspects of the Algorithm}\label{sec:imple}
