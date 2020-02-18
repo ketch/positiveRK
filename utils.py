@@ -42,16 +42,19 @@ def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm =
         status,t,u,b = RK_integrate(solver=solver,problem=problem,**Params)
         dif = refernce[:,i]-u[step]
         change[i] = 'c' in status['b']
-        if error == 'abs':
-            err[i] = np.linalg.norm(dif,ord=Norm)
-        elif error == 'rel':
-            err[i] = np.linalg.norm(dif,ord=Norm)/np.linalg.norm(refernce[:,i],ord=Norm)
-        elif error == 'grid': #Grid function Norm (LeVeque Appendix A.5)
-            err[i] = dx**(1/Norm)*np.linalg.norm(dif,ord=Norm)
+        if status['success']:
+            if error == 'abs':
+                err[i] = np.linalg.norm(dif,ord=Norm)
+            elif error == 'rel':
+                err[i] = np.linalg.norm(dif,ord=Norm)/np.linalg.norm(refernce[:,i],ord=Norm)
+            elif error == 'grid': #Grid function Norm (LeVeque Appendix A.5)
+                err[i] = dx**(1/Norm)*np.linalg.norm(dif,ord=Norm)
+            else:
+                print('Error not defined')
+                print(error)
+                raise ValueError
         else:
-            print('Error not defined')
-            print(error)
-            raise ValueError
+            err[i] = np.nan
         sol.append(u[step])
         
     plt.plot(dt,err,'o-')

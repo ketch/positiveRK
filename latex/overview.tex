@@ -807,12 +807,56 @@ For problems where the exact solution is positive for certain $u_0$ but positivi
 \subsection{Explicit methods}
 For most of the test problems problems with stability occur before getting negative values. This means that we need methods with large stability region.
 
+As test problem the PDE
+\begin{equation}
+\frac{\partial u}{\partial t} = -a \frac{\partial u}{\partial z} - K (u)
+\end{equation}
+is simulated with the method of lines on the domain $x = [0,1]$ with $N =100$ points. The Problem consists of a Advection part and an Exponential decay. At $x =0$ a inflow boundary with $u(0,t)=1$ is used. The initial condition is $u(x,0)=0$
+As semidiscretization an upwinding scheme is used. This leads to positivity preserving ODE
+\begin{equation}
+\frac{\mathrm d}{\mathrm d t} u_i = \frac{a}{\Delta x} \left( u_{i-1} - u_i \right) - K u_{i-1}
+\end{equation}
+The parameters are set to $a=1$ and $K=1$.
+For $\dt \leq 0.0082$ the unaltered method lead to positive solutions. For larger $\dt$ the original method leads to negative values and $b$ is altered. For $\dt >0.016$ the dp5 is no longer stable.
+In Figure\,\ref{fig:conv_expl} the convergence is plotted for the altered and unaltered method.
 
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.75]{plots/conv_adde.pdf}
+\caption{Convergence adapted dp5}
+\label{fig:conv_expl}
+\end{figure}
 
 \subsection{Implicit methods}
 Implicit methods seem like an advantageous choice for a couple of reasons.
 
-When tested on the diffusion equation with an spike as initial data the $b$ is only changed for the first step. The change of the $b$ can lead to reasonable changes of the hight of the maximum. 
+The method is tested on the diffusion equation 
+\begin{equation}
+\frac{\partial }{\partial t} = D \frac{\partial^2}{\partial x^2}
+\end{equation}
+with homogeneous Dirichlet boundary conditions on the domain $x = [-0.5,0.5]$ with $N=100$ points. The equation is semidiscreticed using the 3-point-scheme
+\begin{equation}
+\frac{\mathrm d}{\mathrm d t} u_i = \frac{d}{\Delta x^2} \left( u_{i-1} - 2u_i + u_{i+1} \right)
+\end{equation}
+As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion coefficient is$D=1$
+The ODE is solved using the implicit EX3 method. 
+For large (Note: better word for 'not small enough') $\dt$ the method computes negative values for $u^1$.
+These can be corrected by adapting the $b$. 
+If the direct adaptation approach is used the $u^1$ can show gliches/is nonphysical. 
+Alternatively the convex combination approach is used. A first order embedded method is added. The $u^1$ computed with the convex combination are physical.
+For both approaches the remaining steps can be computed with the standard $b$.
+
+In figure\,\ref{fig:conv_impl} the convergence is shown. For $\dt < \num{3e-5} $ the standard $b$ yields to a positive result. For larger $\dt$ the $b$ have to be adapted to ensure positivity.
+The EX3a shows similar convergence properties than the original method. 
+The EX3c has larger errors than the EX3a but leads to physical solutions for all time-steps. 
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.75]{plots/conv_heat.pdf}
+\caption{Convergence adapted ex3}
+\label{fig:conv_impl}
+\end{figure}
 
 \subsection{Stepsize control}
 
