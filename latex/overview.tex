@@ -59,6 +59,26 @@
 \usetikzlibrary{calc}
 \usepackage{color}
 
+% LP-Box
+\newcommand{\LPblock}[1]{
+\tikzstyle{textbox} = [draw=black, fill=white, very thick,
+    rectangle, rounded corners, inner sep=10pt, inner ysep=20pt]
+\tikzstyle{titlebox} =[fill=white,draw=black, text=black]
+\begin{center}
+\begin{tikzpicture}
+\node [textbox] (box){%
+\begin{minipage}{0.8\textwidth}
+\vspace{-0.3cm}
+{#1}
+\vspace{-0.3cm}
+\end{minipage}
+};
+\node[titlebox, right=10pt] at (box.north west) {LP};
+\end{tikzpicture}
+\end{center}
+}
+
+
 % bibliography
 \usepackage[%
 %   backend=bibtex,bibencoding=ascii,
@@ -88,6 +108,26 @@
 \begin{document}
 
 \maketitle
+
+\section*{Abstract}
+%(i) General motivation 
+Positivity preserving numerical methods are a ongoing topic in research. 
+(Note: Important?)
+%(ii) Specific problem 
+Many differential equations are known to preserve positivity. 
+This property is not preserved when calculating numerical approximations using most Runge Kutta Methods.
+%(iii) how you propose to solve the problem
+The main idea is to adapt the weights after calculating the stage derivatives. 
+Basically choosing the Runge Kutta Method after evaluating the right hand side. 
+The weights are chosen by solving a Linear Program. 
+%(iv) how you verified your idea and  important results and possible/important limitations
+In this research different ways to formulate the Linear Program were stated. 
+Properties of the adaptive Runge Kutta Methods were investigated analytically.
+It is possible to adapt explicit and diagonally implicit methods. 
+The adaptive Runge-Kutta Methods can be embedded in existing solver frameworks. 
+The behavior was tested numerical on test-cases for explicit and implicit Methods.
+
+
 
 \section{Introduction}
 
@@ -345,55 +385,34 @@ Both approaches are illustrated in figure\,\ref{fig:b_space}.
 
 When directly adapting the weights new weights that complies with the order conditions is chosen.   
 The weights $\tilde{b} = b + \Delta b$ consist of the weights of the original method $b$ and an adaption $\Delta b$. The adaption is $\Delta b \in \mathrm{ker}(Q)$. 
-In Figure\,\ref{fig:b_direct} this is drawn. The red line represents the subspace of weights that satisfies the order conditions. Both $b$ and $\tilde{b}$ are in this subspace. 
- 
-To run it as a LP a set of constraints is constructed.  
-Also, an objective function is needed to determine the optimal weights.
+This is drawn in Figure\,\ref{fig:b_direct}. The red line represents the subspace of weights that satisfie the order conditions. Both $b$ and $\tilde{b}$ are in this subspace. 
+The LP can be expressed as
+
+
+\LPblock{
+\begin{subequations}
+\begin{align}
+u^{n+1}&=u^n+\dt F \tilde{b} \geq 0 \label{eq:direct_pos}\\
+Q\tilde{b} &=r \label{eq:direct_Order} \\
+\min_{\tilde b}&( ||\tilde{b} -b ||_1) \label{eq:direct_obj} 
+\end{align}
+\end{subequations}
+}
+
 
 \subsubsection{Constraints}
 The Direct Adaptation approach leads to two sets of constraints on $b$.
-The first set of constraints is the positivity and can be written as 
-\begin{equation}
-u_{n+1}=u_n+\dt F \tilde{b} \geq 0
-\end{equation}
-The second set of constraints are the order conditions
-\begin{equation}
-Qb=r
-\end{equation}
-
-
-
-
+The first set of constraints is the positivity \eqref{eq:direct_pos}.
+The second set of constraints are the order conditions in \eqref{eq:direct_Order}.
 
 \subsubsection{Objective Function}
-Different types of objective functions have been tried. 
-
-\begin{description}
-
-\item[L1 norm] The optimization Problem optimizes for $min(|b-rkm.b|_1)$
-            
-\item[Quadrature]   The optimization Problem optimizes for $min(|b^Tq-r|)$
-                            where q is the quadrature condition of the next higher order 
-                            and r is the expected right hand side
-            
-\item[Hom. Order]    The optimization Problem optimizes for $min(|bTO|)$ where O are the homogenous Order Conditions of the next higher orders
-                            
- 
-\end{description}
-
-A reasonable property of the objective function would be that for the LP only constrained by the order condition the optimal solution is $b = b_{orig}$. 
-This can be achieved by $argmin(f_{optim}(b)) = b_{orig}$. 
+A reasonable property of the objective function would be that for the LP only constrained by the order condition the optimal solution is $\tilde{b} = b$. 
+This can be achieved by $argmin(f_{optim}(\tilde{b})) = b$. 
 In practice, this also means that there is no need to solve the optimization problem if no constraints are violated because the solution of this problem is already known. This is advantageous for performance reasons.
-The different approaches have been tested on a linear test problem from \cite{kopecz_unconditionally_2018}. The optimization problem was used at every step.
-The magnitude of the weights can get large if the order conditions are used as objective function.
-Large values of b can lead to numerical problems. Because $\sum_{i  = 1}^s b_i = 1$, an increase of $||b||$ leads to a combination of negative and positive values. Because the computation is done with a finite precision (and usually in floating point) large $||b||$ can lead to absorption effects.    
-By changing the weights the stability function is altered. This can lead to oscillations if the poles of the RHS are no longer in the stability region of the resulting method.
-For these reasons $||b-b_{orig}||$ seems like a good choice. The 1-Norm can be implemented the with Linear Programming using slack variables. We choose 
-
-\begin{equation}
-f_{obj} = ||b-b_{orig}||_1
-\end{equation}
- as objective function.
+Large values of b can lead to numerical problems. Because $\sum_{i  = 1}^s b_i = 1$, an increase of $||b||$ leads to a combination of negative and positive values. Because the computation is done with a finite precision (and usually in floating point) large $||b||$ can lead to numerical difficulties.    
+By changing the weights the stability function is altered. 
+For these reasons $||\tilde{b}-b||$ seems like a good choice. The 1-Norm can be implemented in a  LP using slack variables. We choose \eqref{eq:direct_obj}
+as objective function.
 
 
 
@@ -401,18 +420,31 @@ f_{obj} = ||b-b_{orig}||_1
 
 If the original step $\dt$ was too large and there is no suitable set of weights, the LP is infeasible. In this case we would like to calculate $u^{n+\theta}$ using the stage values instead of rejecting the step. For this the time step is reduced after calculation the stage values. This can be done using the order conditions for dense output. These can be found in \cite{hairer_solving_1993}.
 We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \dt$ whereas $\dt$ is the time step used when calculating the stage values.
-To calculate a reduced step the order conditions have to be adapted and a new $b_{orig}$ for the objective function (and more important the error detection afterwards) has to be generated. 
-(TODO: the $b_{orig}$ is still a open question)
-
+To calculate a reduced step the order conditions have to be adapted and a new $b(\theta)$ for the objective function has to be generated. 
 When adapting the Order Condition to a new $\theta$ the Order Condition Matrix $Q$ stays unchanged whereas the right hand side $r(\theta)$ depends on $\theta$.
 
 The dependency of $r(\theta)$ is nonlinear. This means that the maximum $\theta$ with suitable weights cannot be calculated by solving a LP. This means that different $\theta$ have to be tested. 
-(Note: we could include some algorithm to search for it)
+%(Note: we could include some algorithm to search for it)
 
 \subsection{Convex combination of existing methods}\label{sec:convex}
-For some test problems (e.g. the Heat Equation solved with an implicit method of higher order), large changes occur, even though a norm of $\Delta b$ is used as an objective function. A numerical example is given in Section\,\ref{sec:Numeric_Results}
+For some test problems (e.g. the Heat Equation solved with an implicit method of higher order), large changes occur, even though a norm of $\Delta b$ is used as an objective function. A numerical example is given in Section\,\ref{sec:Numeric_Results}.
 It is known that the backward Euler method lead to a positive solution for any $\dt$ \cite{hundsdorfer_numerical_2003}. The backward Euler is still only first Order but shows more exact results than a method of higher Order that is distorted by the adaption of the weights, at least at some steps. 
 A possible method to fix this is to generate the new b based on a convex combination of embedded methods. 
+The new weights are defined as 
+\begin{equation}\label{eq:b_convex_def}
+\tilde{b} = \sum_i^d g_i b_i = Bg
+\end{equation}
+where $B=\left[b_1,\cdots,b_d \right]$ is a matrix containing the embedded methods.  
+The LP is defined as
+\LPblock{
+\begin{subequations}
+\begin{align}
+ u^{n+1}&=u^n+\dt K B g \geq 0 \label{eq:Convex_pos}  \\
+ 0 \leq g_i &\leq 1  \forall {i \in \{1, \cdots d \}} \quad \sum_{i=1}^d g_i = 1 \label{eq:Convex_cvx} \\
+ \min_{g} &\left(\sum_i^d w_i g_i \right) \label{eq:Convex_obj}
+\end{align}
+\end{subequations}
+}
 
 \subsubsection{Constraints}
 At first a set of embedded methods of the RKM $b_1,\cdots,b_d$ is needed. 
@@ -420,32 +452,15 @@ If all the used weights complie with the order conditions the new method is also
 This is straightforward using
 $$ Q b = Q (\chi b_{\alpha} + (1-\chi) b_{\beta}) = \chi Q  b_{\alpha} + (1-\chi) Q b_{\beta} = \chi r + (1-\chi) r = r$$
 $b_{\alpha}$ and $b_{\beta}$ are the methods that are combined to $b$ using the parameter $\chi$. The Matrix $Q$ and the vector $r$ are the order conditions as defined in Section\,\ref{sec:OrderCond}.
-
-The new weights are defined as 
-\begin{equation}\label{eq:b_convex_def}
-b = \sum_i^d g_i b_i = Bg
-\end{equation}
-where $B=\left[b_1,\cdots,b_d \right]$ is a matrix containing the embedded methods.  
-To ensure that \eqref{eq:b_convex_def} yields to a convex combination the following constraints are enforced for the parameters $g_1,\cdots,g_d$.
-\begin{equation}
- 0 \leq g_i \leq 1  \forall {i \in \{1, \cdots d \}}
-\end{equation}
-\begin{equation}
- \sum_{i=1}^d g_i = 1
-\end{equation}
-The positivity constraint changes to 
-$$u_{n+1}=u_n+\dt K B g \geq 0$$
-where $g = [g_1,\cdots,g_d]^T$
+To ensure that \eqref{eq:b_convex_def} yields to a convex combination the constraints \eqref{eq:Convex_cvx} are enforced for the parameters $g_1,\cdots,g_d$.
+The positivity constraint changes to \eqref{eq:Convex_pos}
 
 \subsubsection{Objective Function}
 
-As an objective function,
-\begin{equation}
-f_{obj} = min \left(\sum_i^d w_i a_i \right)
-\end{equation}
+As an objective function \eqref{eq:Convex_obj}
 is used.  The $w_1,\cdots,w_d$ are weighting factors that determine which is the preferred $b_i$ to use.
 
-Because the optimal solution of the unconstrained problem has to be the original weights the weight $w_0$ corresponding to $b_{orig}$ should be the smallest $w$. This weight is simply set to $w_{b_{orig}} = 0$. For the other weights $w_i = \frac{1}{\mathrm{Order} \{b_i\}}$ is used.
+Because the optimal solution of the unconstrained problem has to be the original weights the weight corresponding to $b$ should be the smallest $w$. This weight is simply set to $w_{b} = 0$. For the other weights $w_i = \frac{1}{\mathrm{Order} \{b_i\}}$ is used. This prefers embeded methods of higher order.
 
 \subsubsection{Construction of Embedded Methods}
 
@@ -548,7 +563,7 @@ To approximate the error of a new step we propose following approximation of the
 
 \begin{align}
 err = |u(t^n)-u^n| &= |u(t^n) - (u^n_{b_{orig}+\dt K(b-b_{orig})})| \\
- &\leq \underbrace{|u(t^n)-u^n_{b_{orig}}|}_{\approx err_T}+\underbrace{|\dt K(b-b_{orig})|}_{= err_{adapt}}
+ &\leq \underbrace{|u(t^n)-u^n_{b_{orig}}|}_{\approx err_T}+\underbrace{|\dt K(b-b_{orig})|}_{= err_{adapt}} \label{eq:Err}
 \end{align}
 
 After adapting the weights the approximation error is checked. If $|\dt K(b-b_{orig})|$ is larger than the tolerance the weights are rejected. 
@@ -752,19 +767,19 @@ Systems of ODEs with a high number of dimensions can appear when solving a PDE w
 To ensure that the solution is positive 
 
 \begin{equation}
- u_i^{n+1} \geq 0   \;   \forall {i \in \{1, \cdots,m \}}  
+ u_i^{n+1} \geq 0   \quad   \forall {i \in \{1, \cdots,m \}}  
 \end{equation}
 has to be fulfilled.
 This infers $m$ positivity constraints to the optimization problem. These can be written as
 
 \begin{equation}
-u_i + \dt \sum_{j=0}^s F_{i,j}  b_j \geq 0 \forall {i \in \{1, \cdots,m \}}  
+u_i + \dt \sum_{j=0}^s F_{i,j}  b_j \geq 0 \quad \forall {i \in \{1, \cdots,m \}}  
 \end{equation}
 
 This causes unnecessarily many inequality constraints on the LP. To simplify the problem, one wants to reduce the number of positivity constraints by ignoring it for ODEs where there is no issue with positivity.
 The new positivity constraints can be formulated as
 \begin{equation}
-u_i + \dt \sum_{j=0}^s F_{i,j}  b_j  \geq 0   \;   \forall {i \in h \subseteq \{1,\cdots,m \}} 
+u_i + \dt \sum_{j=0}^s F_{i,j}  b_j  \geq 0 \quad   \forall {i \in h \subseteq \{1,\cdots,m \}} 
 \end{equation}
 For this a set $h$ that includes all indecies $i \in \{1,\cdots,m \}$ that are needed for determining the weights has to be chosen.
 
@@ -777,15 +792,20 @@ This worst case did not occur when runing the testproblems.
 When enforcing a maximum value the number of constraints can be reduced using the same technique. When nforcing both maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints. 
 In this case it is important to update these sets simultaneously.  
 
-\subsection{•}
+\subsection{Implemention}
 (Todo: Maybe a flowchart and a description on how we stitch everything together.) 
 
-The algorithm on adapting the b consists of two main loops. The outer loop loops through all the $\theta$, staring with $\theta = 1$ down to the lowest $\theta$. The inner loop loops through the orders, starting with the highest Order down to the lowest Order. 
-Until acceptable weights are found the algorithm tests combinations of $\theta$ and $p$. At first the Order Conditions are constructed. On these a LP-Solver is invoiced. If the LP is infeasible the algorithm immediately tries the next combination. If the LP is feasible we test if the $b$ is acceptable. At first it is tested weather the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. (Note: because of the chosen objective function it cannot be unbounded) As second test the deviation from the old solution (Compare Error estimation) is calculated. If the error is bigger than a set maximum error the $b$ is also rejected and the algorithm also switches to the next combination.
-As soon as the algorithm finds suitable weights the loops are aborted and the weights are used for the update step.
-If all the combinations of $\theta$ and $p$ did not lead to acceptable weights the step has to be rejected and a new set of stage values has to be computed.
+At fist the stagevaules and stagedeerivatives are calculated.
+After this $u^{n+1}$ is computed using the original weights. If the positivity is not violated, this solution is used to update the solution. 
+If $u^{n+1}$ contains negative values, the weights are adapted using the following algorithm.
+For this different orders are tried, stariting with the highest order that has degrees of Freedom for $\tilde{b}$. 
+At first the Order Conditions are constructed. On these a LP-Solver is invoiced. If the LP is infeasible the algorithm immediately reduces the order. If the LP is feasible we test if the solution is acceptable. At first it is tested weather the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. %(Note: because of the chosen objective function it cannot be unbounded) 
+Afterwards the adaption error is calculated using \eqref{eq:Err}. If the error is bigger than a set maximum error the $\tilde{b}$ is also rejected.
+If the new set of weights is requected in one of the tests the order is reduced.
+As soon as the algorithm finds suitable weights these are used to update the solution.
+If all acceptable orders are tried and no weights were found the step hast to be requected.
+If the reduction of stepsize is used this process is done first for $\theta = 1$. If no weights were found, the process is repeated for a smaler $\theta$. 
 
-(Note: It would also be possible to use another strategy for traversing all the combinations of $(p,\theta)$. Is it worth exploring these? Eg, a bisect algorithm for $\Theta$ or linear approximations)
 
 
 \section{Results of experiments}\label{sec:Numeric_Results}
@@ -857,15 +877,24 @@ The EX3c has larger errors than the EX3a but leads to physical solutions for all
 \label{fig:conv_impl}
 \end{figure}
 
+
 \subsection{Stepsize control}
 
-Reaction Problem with step-size control
-
-\subsection{Dense Output}
 
 
 \section{Conclusion} \label{sec:conclusion}
+It is possible to adapt the weights to enforce positivity for RKMs that are not positifity preserving.
+A main limitation is that the resulting Order has to be lower than the number of stages. 
+An error approximation for this method was given. 
+The region of absolute stability is altered by changing the weights. This effect can be predicted or controlled.
+Used with explicit methods the positivity for some test problmes could be recovered. 
+Because the time steps is limited by the stability it is only useful for a small interval of time steps.
+The adaptive method mainly interesting for diagonally implicit methods. 
+The times teps here are not limited by stability.
+Also the cost of solving the LP is not crucial factor. 
+If the negative values occurring are not to large, which can be expected for most computations, adapting the weights is a potential way to fix these.
 
+%also if exactnes is not the limiting factor but positivity 
 
 
 
