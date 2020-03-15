@@ -824,18 +824,48 @@ For problems where the exact solution is positive for certain $u_0$ but positivi
 
 
 \subsection{Explicit methods}
+When used with explicit methods 
+
+
+
+Cost of solving the LP significant (Depending on complexity of RHS)
+
+
 For most of the test problems with stability occur before getting negative values. This means that we need methods with large stability region.
 
-As test problem the PDE
+(Positifity of stagevaulues not esured, therefore the right had side has to be defined for negative values. If this is not ensured, the right hand side has to be defined for negative values.
+%All the following testproblems did not nead this modification.
+
+As first test problem we consider the PDE
 \begin{equation}
 \frac{\partial u}{\partial t} = -a \frac{\partial u}{\partial z} - K (u)
 \end{equation}
-is simulated with the method of lines on the domain $x = [0,1]$ with $N =100$ points. The Problem consists of a Advection part and an Exponential decay. At $x =0$ a inflow boundary with $u(0,t)=1$ is used. The initial condition is $u(x,0)=0$
+is simulated with the method of lines on the domain $x = [0,1]$ with $N =100$ points. The Problem consists of a Advection part and an Exponential decay. At $x=0$ a inflow boundary with $u(0,t)=1$ is used. The initial condition is $u(x,0)=0$
 As semidiscretization an upwinding scheme is used. This leads to positivity preserving ODE
 \begin{equation}
 \frac{\mathrm d}{\mathrm d t} u_i = \frac{a}{\Delta x} \left( u_{i-1} - u_i \right) - K u_{i-1}
 \end{equation}
 The parameters are set to $a=1$ and $K=1$.
+We use the Dorman-Prince 5 RKM and adapt the weights using the direct adaptation.
+In Figure\,\ref{fig:sol_AdDe} the results for $\Delta t = 0.02$ are plottet for different timesteps. We can see that the solution approaches a exponential function with $t \rightarrow \infty$.
+In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.6$ the weights are altered. For $t > 0.6$ the original weights lead to a positive solution.
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\includegraphics[width=1\textwidth]{plots/Advection_Decay.pdf}
+\label{fig:sol_AdDe}
+\caption{Solution of Advection Decay Problem}
+\end{subfigure}
+\\
+\begin{subfigure}[b]{0.45\textwidth}
+\includegraphics[width=1\textwidth]{plots/b_Advection_Decay.pdf}\\
+\label{fig:weights_AdDe}
+\caption{Weights used for Advecion Decay Problem}
+\end{subfigure}
+\end{figure}
+
+
+Next different timesteps are used.
 For $\dt \leq 0.0082$ the unaltered method leads to positive solutions. For a larger $\dt$ the original method leads to negative values and the weights are altered. For $\dt >0.016$ the dp5 is no longer stable.
 In Figure\,\ref{fig:conv_expl} the convergence is plotted for the altered and unaltered method.
 
@@ -847,11 +877,20 @@ In Figure\,\ref{fig:conv_expl} the convergence is plotted for the altered and un
 \caption{Convergence adapted dp5}
 \label{fig:conv_expl}
 \end{figure}
+TODO: Add converence bars and give exolaination
+
+
 
 \subsection{Implicit methods}
 Implicit methods seem like an advantageous choice for a couple of reasons.
+At first the cost of solving the LP is relativeley small compared to the cost of solving the stageequations.
+Second the timestep is not limited by the stability of the method.
+Therefore it is possible to use larger timesteps, that are more likely to lead to negative values.
+A very interesting calss of methods are the implicit extraploation methods. These are Diagonaly implict and $p < s$. This means that they allow for changes of the weights without a reduction of the order.
+Also all stegevalues are computed using a the BE method. This means that all intermedaite stages are nonnegative. 
+Also a embeded BE euler step is included. This ensures that an positive solution always exists, even if it is of first order. 
 
-The method is tested on the diffusion equation 
+We test the adaptive RKM on the diffusion equation 
 \begin{equation}
 \frac{\partial }{\partial t} = D \frac{\partial^2}{\partial x^2}
 \end{equation}
@@ -863,13 +902,50 @@ As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion 
 The ODE is solved using the implicit EX3 method. 
 For large (Note: better word for 'not small enough') $\dt$ the method computes negative values for $u^1$.
 These can be corrected by adapting the weights. 
-If the direct adaptation approach is used the $u^1$ can show gliches/is nonphysical. 
-Alternatively the convex combination approach is used. A first order embedded method is added. The $u^1$ computed with the convex combination are physical.
+The siolutions are computed using the direct adaptation and convex combination for $\dt = \num{1e-3}$
+The results for the direct adaptation are plotted in Figure\,\ref{fig:sol_Diff_a}. The used weights are plotted in Figure\,\ref{fig:weights_Diff_a}.
+The original solution for the first step are negative. Therefore the weights have to be changed.
+If we take a look at the solution after the first timestep at $t=0.001$ we can see that $x=0$ the solution is samler than the solution at the surrounding points. 
+This is not physical. 
+The next timesteps lead to physical solutions again.
+To prevent this glitch from happening we choose the weights based on a convex combiantion.
+A first order embedded method is added. The solution is shown in Figure\,\ref{fig:sol_Diff_c} and the weights are plotted in Figure\,\ref{fig:weights_Diff_c}.
+The weights for the first step are altered again.
+The weights obtained by the convex combination are different from the weighst obtained
+by taking the direct adaptation.
+The solution for $t=0.001$ computed with the convex combination is physical.
 For both approaches the remaining steps can be computed with the standard weights.
 
-In figure\,\ref{fig:conv_impl} the convergence is shown. For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity.
-The EX3a shows similar convergence properties than the original method. 
+\begin{figure}
+\centering
+\begin{subfigure}[b]{0.45\textwidth}
+\includegraphics[width=1\textwidth]{plots/Diff_Direct.pdf}\\
+\label{fig:sol_Diff_a}
+\caption{Solution of Diffusion for direct adaptation}
+\includegraphics[width=1\textwidth]{plots/b_Diff_Direct.pdf}\\
+\caption{Weights used for direct adaptation}
+\label{fig:weights_Diff_a}
+\end{subfigure}
+\begin{subfigure}[b]{0.45\textwidth}
+\includegraphics[width=1\textwidth]{plots/Diff_Convex.pdf}\\
+\label{fig:sol_Diff_c}
+\caption{Solution of Diffusion for convex combiantion}
+\includegraphics[width=1\textwidth]{plots/b_Diff_Convex.pdf}\\
+\label{fig:weights_Diff_c}
+\caption{Weights used for convex combination}
+\end{subfigure}
+\end{figure}
+
+
+In figure\,\ref{fig:conv_impl} the convergence is shown for the unalteres EX3 method, that potentially leads to negative vaules, the adaptive method with direct adaptation (EX3a) and the adapted method using convex combiantions (EX3c). 
+Also the BE method is plotted. It is only of 1st order but preserves positivity for all $\dt$.
+For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity.
+The EX3a shows similar convergence properties than the original method.
+This can be expected, because the adapted method is still of 3rd order.
 The EX3c has larger errors than the EX3a but leads to physical solutions for all time-steps. 
+This is no supprise because the adapted RKM used for the first step is only of 1st order.
+But the method still outperformes the BE 
+
 \begin{figure}[h]
 \centering
 \includegraphics[scale=0.75]{plots/conv_heat.pdf}
