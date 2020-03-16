@@ -824,19 +824,18 @@ For problems where the exact solution is positive for certain $u_0$ but positivi
 
 
 \subsection{Explicit methods}
-When used with explicit methods 
-
-
-
-Cost of solving the LP significant (Depending on complexity of RHS)
-
-
-For most of the test problems with stability occur before getting negative values. This means that we need methods with large stability region.
-
-(Positifity of stagevaulues not esured, therefore the right had side has to be defined for negative values. If this is not ensured, the right hand side has to be defined for negative values.
+First we want to test the adaptive RKM used with explicit methods. 
+When used with explicit methods the cost of solving the LP significant because the computation of the stagevalues only requires $s$ evaluations of the RHS.
+For most of the linear test problems tried the explicit methods jield to positive results. 
+When increasing the stepsize issues with stability occur before getting negative values. 
+An example therefore the ODE in in Section\,\ref{sec:example_lin}.
+Some nonlinear RHS may require very small timesteps to preserve positifity. 
+For these adapting the weights could be a possible way to solve them.
+An Exmample is the Reaction equation solved in Section\,\ref{sec:example_reac}.
+The positivity of stagevaulues is not esured, therefore the right had side has to be defined for negative values. If this is not the case, the right hand side has to be defined for negative values.
 %All the following testproblems did not nead this modification.
 
-As first test problem we consider the PDE
+As test problem the PDE
 \begin{equation}
 \frac{\partial u}{\partial t} = -a \frac{\partial u}{\partial z} - K (u)
 \end{equation}
@@ -853,23 +852,22 @@ In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.6$ 
 \centering
 \begin{subfigure}[b]{0.45\textwidth}
 \includegraphics[width=1\textwidth]{plots/Advection_Decay.pdf}
-\label{fig:sol_AdDe}
 \caption{Solution of Advection Decay Problem}
+\label{fig:sol_AdDe}
 \end{subfigure}
 \\
 \begin{subfigure}[b]{0.45\textwidth}
 \includegraphics[width=1\textwidth]{plots/b_Advection_Decay.pdf}\\
-\label{fig:weights_AdDe}
 \caption{Weights used for Advecion Decay Problem}
+\label{fig:weights_AdDe}
 \end{subfigure}
 \end{figure}
 
 
 Next different timesteps are used.
 For $\dt \leq 0.0082$ the unaltered method leads to positive solutions. For a larger $\dt$ the original method leads to negative values and the weights are altered. For $\dt >0.016$ the dp5 is no longer stable.
-In Figure\,\ref{fig:conv_expl} the convergence is plotted for the altered and unaltered method.
-
-
+For the ODE the refernce solution can be computed using the matrix exponential. 
+In Figure\,\ref{fig:conv_expl} the convergence for $t=0.5$ is plotted for the altered and unaltered method.
 
 \begin{figure}[h]
 \centering
@@ -877,9 +875,10 @@ In Figure\,\ref{fig:conv_expl} the convergence is plotted for the altered and un
 \caption{Convergence adapted dp5}
 \label{fig:conv_expl}
 \end{figure}
-TODO: Add converence bars and give exolaination
 
-
+The unaltered method has the order $p=5$. 
+The values marked with an cross denote the numerical experiments that required an adaption of the weights. 
+Even though the order is reduced most errors are still close to the error of the unaltered method.
 
 \subsection{Implicit methods}
 Implicit methods seem like an advantageous choice for a couple of reasons.
@@ -887,7 +886,7 @@ At first the cost of solving the LP is relativeley small compared to the cost of
 Second the timestep is not limited by the stability of the method.
 Therefore it is possible to use larger timesteps, that are more likely to lead to negative values.
 A very interesting calss of methods are the implicit extraploation methods. These are Diagonaly implict and $p < s$. This means that they allow for changes of the weights without a reduction of the order.
-Also all stegevalues are computed using a the BE method. This means that all intermedaite stages are nonnegative. 
+Also all stegevalues are computed using the BE method. This means that all intermedaite stages are nonnegative. 
 Also a embeded BE euler step is included. This ensures that an positive solution always exists, even if it is of first order. 
 
 We test the adaptive RKM on the diffusion equation 
@@ -902,7 +901,7 @@ As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion 
 The ODE is solved using the implicit EX3 method. 
 For large (Note: better word for 'not small enough') $\dt$ the method computes negative values for $u^1$.
 These can be corrected by adapting the weights. 
-The siolutions are computed using the direct adaptation and convex combination for $\dt = \num{1e-3}$
+The solutions are computed using the direct adaptation and convex combination for $\dt = \num{1e-3}$
 The results for the direct adaptation are plotted in Figure\,\ref{fig:sol_Diff_a}. The used weights are plotted in Figure\,\ref{fig:weights_Diff_a}.
 The original solution for the first step are negative. Therefore the weights have to be changed.
 If we take a look at the solution after the first timestep at $t=0.001$ we can see that $x=0$ the solution is samler than the solution at the surrounding points. 
@@ -920,19 +919,19 @@ For both approaches the remaining steps can be computed with the standard weight
 \centering
 \begin{subfigure}[b]{0.45\textwidth}
 \includegraphics[width=1\textwidth]{plots/Diff_Direct.pdf}\\
-\label{fig:sol_Diff_a}
 \caption{Solution of Diffusion for direct adaptation}
+\label{fig:sol_Diff_a}
 \includegraphics[width=1\textwidth]{plots/b_Diff_Direct.pdf}\\
 \caption{Weights used for direct adaptation}
 \label{fig:weights_Diff_a}
 \end{subfigure}
 \begin{subfigure}[b]{0.45\textwidth}
 \includegraphics[width=1\textwidth]{plots/Diff_Convex.pdf}\\
-\label{fig:sol_Diff_c}
 \caption{Solution of Diffusion for convex combiantion}
+\label{fig:sol_Diff_c}
 \includegraphics[width=1\textwidth]{plots/b_Diff_Convex.pdf}\\
-\label{fig:weights_Diff_c}
 \caption{Weights used for convex combination}
+\label{fig:weights_Diff_c}
 \end{subfigure}
 \end{figure}
 
@@ -944,7 +943,7 @@ The EX3a shows similar convergence properties than the original method.
 This can be expected, because the adapted method is still of 3rd order.
 The EX3c has larger errors than the EX3a but leads to physical solutions for all time-steps. 
 This is no supprise because the adapted RKM used for the first step is only of 1st order.
-But the method still outperformes the BE 
+But the adaptive method still outperformes the BE, even when acocunting for the higher cost per step.
 
 \begin{figure}[h]
 \centering
@@ -956,6 +955,74 @@ But the method still outperformes the BE
 
 \subsection{Stepsize control}
 
+Next we test the adaptive RKM on a more compelx problem. 
+For this we consider the advection-diffusion-production-destruction systems form \citep{kopecz_comparison_2019}. The system is defined by
+\begin{subequations}
+\label{eq:ADR}
+\begin{align}
+\frac{\partial u_1}{\partial t} &=-a \frac{\partial u_1}{\partial x} + d\frac{\partial^2 u_1}{\partial x ^2} + 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\ 
+\frac{\partial u_2}{\partial t} &=-a \frac{\partial u_2}{\partial x} + d\frac{\partial^2 u_2}{\partial x ^2}\frac{u_1u_2}{0.01+u_1} -0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\ 
+\frac{\partial u_3}{\partial t} &=-a \frac{\partial u_3}{\partial x} + d\frac{\partial^2 u_3}{\partial x ^2} + 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\ 
+\frac{\partial u_4}{\partial t} &=-a \frac{\partial u_4}{\partial x} + d\frac{\partial^2 u_4}{\partial x ^2} + 0.05 u_2 + 0.02 u_3 + 0.003u_4 
+\end{align}
+\end{subequations}
+
+With the parameters $    a=\num{1e-2} $ and $ d=\num{1e-6}$.
+The PDE is simulated on the doamin $x = [0,1]$ with $N=100$ points. Periodic boundarie conditions are used.
+The advecion part is semidiscreticed using a first order upwind sheme and the diffusion part is semidiscreticed using a 3-poin-scheme. This leads to a positivity preserving system of ODEs. 
+The computation is done using the EX3 method with direct adaptation.
+As stepsize control a PI-Control from\,\cite{hairer_solving_1996} is used. The Error was estimatet using \eqref{eq:Err}. The Tolerance was set to $Tol = 0.01$. 
+The final time is $t_{end} = 50$.
+The simulation required 264 steps. Of these 72 required a adaptation of the weights.
+The solutions for $t=9,t=18,t=27$ and $t=50$ are plotted in Figure\,\ref{fig:Sol_ADP}.
+In Figure\,\ref{fig:sol_ADP18} it can be seen that the reaction occurs in a small interfaces.
+Outside of this regions quantities are close to $0$. Therefore it is very likely that negative values orrur in the numerical approxiamtion.
+In Figure\,\ref{fig:sol_ADP27} it can be seen that at $T=27$ the two reaction interfaces merged. Afterwards the reaction stops and the behavoir is mainly controlled by the advection and diffusion part.
+
+In Figure\,\ref{fig:Stats_ADP} different vaules are plottet. 
+In the first subplot the stepsize is plotted. For $t<25$ the timesteps are small. After $t = 30$ the the stepsize increases, because the solution only evovlves slowly afterwards.
+In the second subplot the $min(u_1,u_2,u_3,u_4)$ is plotted for all timesteps that initaily lead to negative values. This value is computet before and after adapting the weights. 
+We can see that relativley large negative values occured at some timesteps.
+After the adaption of the weights all values are cloes to $0$. Therfor the adaption of weights succesfully preserved positifity.
+In the third subplot the approxiamted truncation error $err_T$ and the adaption errro $err_{adapt}$ are plotted.
+We can see that the adaption error is of a similar magnitude as the truncation error. Therefore the totoal error of the method is not increased drastically. 
+In the last subplots the weights are ploted. 
+We can see that the cahnges to the weights are only very small. The adapted RKM is still very close to the original RKM.
+
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{plots/ADP_sol_00.pdf}
+        \caption{$t=0$}
+        \label{fig:sol_ADP00}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{plots/ADP_sol_18.pdf}
+        \caption{$t=$}
+        \label{fig:sol_ADP18}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{plots/ADP_sol_27.pdf}
+        \caption{$t=$}
+        \label{fig:sol_ADP27}
+    \end{subfigure}
+	\begin{subfigure}[b]{0.49\textwidth}
+        \includegraphics[width=\textwidth]{plots/ADP_sol_50.pdf}
+        \caption{$t=$}
+        \label{fig:sol_ADP50}
+    \end{subfigure}
+
+    \caption{Solution of Advection-Diffusion-Reaction Problems at different times}\label{fig:Sol_ADP}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.85\textwidth]{plots/ADP_stepsize,b.pdf}
+\caption{Different statistics of computation of ADPD-Problem}
+\label{fig:Stats_ADP}
+\end{figure}
 
 
 \section{Conclusion} \label{sec:conclusion}
