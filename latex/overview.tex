@@ -1,4 +1,4 @@
-\documentclass[a4paper]{scrartcl}
+\documentclass[a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 %\usepackage[USenglish]{babel}
@@ -79,53 +79,37 @@
 }
 
 
-% bibliography
-\usepackage[%
-%   backend=bibtex,bibencoding=ascii,
-  backend=biber,
-%   style=authoryear-comp, dashed=false,
-  style=numeric-comp,
-%   firstinits=true, uniquename=init, %abbreviate first names
-  giveninits=true, uniquename=init, %abbreviate first names
-  natbib=true,
-  url=false,
-  doi=true,
-  isbn=false,
-  backref=false,
-  maxnames=99,
-  ]{biblatex}
-\addbibresource{Bib_RK_optim.bib}
-
 \title{Positivity-Preserving Adaptive Runge-Kutta Methods}
-\author{Nüßlein, Stephan and Ketcheson, David I.}
+\author{Stephan Nüßlein \and David I. Ketcheson}
 
 
 \makeatletter
-\hypersetup{pdfauthor={\@author}}
-\hypersetup{pdftitle={\@title}}
 \makeatother
 
 \begin{document}
 
 \maketitle
 
-\section*{Abstract}
+\begin{abstract}
 %(i) General motivation 
-Positivity preserving numerical methods are a ongoing topic in research. 
-(Note: Important?)
+Many important differential equations model quantities whose value
+must remain positive or stay in some bounded interval.
 %(ii) Specific problem 
-Many differential equations are known to preserve positivity. 
-This property is not preserved when calculating numerical approximations using most Runge Kutta Methods.
+These bounds may not be preserved when the model is solved numerically.
 %(iii) how you propose to solve the problem
-The main idea is to adapt the weights after calculating the stage derivatives. 
-Basically choosing the Runge Kutta Method after evaluating the right hand side. 
-The weights are chosen by solving a Linear Program. 
+We propose to ensure positivity or other bounds by applying Runge--Kutta
+integration in which the method weights are adapted in order to
+enforce the bounds.  The weights are chosen at each step after calculating the
+stage derivatives, in a way that also preserves (when possible) the order of
+accuracy of the method.  The choice of weights is given by the solution
+of a linear program (LP).
 %(iv) how you verified your idea and  important results and possible/important limitations
-In this research different ways to formulate the Linear Program were stated. 
-Properties of the adaptive Runge Kutta Methods were investigated analytically.
-It is possible to adapt explicit and diagonally implicit methods. 
-The adaptive Runge-Kutta Methods can be embedded in existing solver frameworks. 
-The behavior was tested numerical on test-cases for explicit and implicit Methods.
+We investigate different approaches to choosing the weights by considering
+different objective functions.  We also provide some analysis of the properties
+of Runge--Kutta methods with perturbed weights.  Numerical examples demonstrate
+the effectiveness of the approach, including application to both explicit and
+implicit methods.
+\end{abstract}
 
 
 
@@ -133,53 +117,81 @@ The behavior was tested numerical on test-cases for explicit and implicit Method
 
 
 Many physical processes can be described with differential equations. 
-The physical quantities that are involved in these processes often only make sense if they are positive or non-negative. 
-Concentrations or the number of particles have to be $\geq 0$.
-Other values may only make sense if they comply with other restrictions. An example of these would be probabilities or fractions which have to be $\geq 0$ and $\leq 1$.
-The ordinary differential equations (ODE) or partial differential equations (PDEs) are often too complex to solve them analytically and therefore require numerical methods to get an approximate solution.
-Numerical methods generally do not satisfy these restrictions on the solutions.
+The physical quantities that are involved in these processes often only make sense if they remain within certain bounds.
+For instance, concentrations must be non-negative (we will often say simply {\em positive} for short), while
+probabilities or mass fractions must remain in $[0,1]$.
+The ordinary differential equations (ODEs) or partial differential equations
+(PDEs) that model these quantities are often too complex to be solved
+analytically and therefore require numerical approximation.
+Numerical methods generally may not satisfy these bound constraints.
+In the present work, we develop an approach to ensuring positivity
+or other bound constraints using Runge--Kutta methods (RKMs) for the
+solution of ODEs or semi-discretized PDEs.
 
-The most common methods to solve ODEs are Runge–Kutta methods (RKMs). 
-With the method of lines (MOL) it is also possible to solve PDEs with RKMs.
-At first the PDE is discretized in space. The resulting semi-discrete problem is an ODE that can be solved with a RKM. 
-It is possible to semi-discretize PDEs in ways that preserve positivity\cite{kopecz_comparison_2019,kopecz_unconditionally_2018}.
+%It is possible to semi-discretize PDEs in ways that preserve positivity\cite{kopecz_comparison_2019,kopecz_unconditionally_2018}.
+We say an ODE
+\begin{align} \label{ode}
+    u'(t) & = f(t,u)
+\end{align}
+is positive if 
+\begin{align}
+    u(0)\ge 0 \implies u(t) \ge 0 \text{ for all } t>0.
+\end{align}
+Any RKM (or in fact any genearal linear method) that is unconditionally positivity preserving for all positive ODEs
+must have order $\le 1$ \cite{bolley_conservation_1978}. Notably, the (first-order)
+backward Euler method is unconditionally positivity preserving.
+For any higher order method, we expect positivity only under some restriction
+on the step size.
 
-Therefore, it is interesting to know how to use RKMs that preserve positivity.
-For RKMs some theoretical limitations are known. One is that any unconditionally positive RKM has an order $\leq 1$. \cite{hundsdorfer_numerical_2003,bolley_conservation_1978,horvath_positivity_1998}. The only well-known RKM that is unconditionally positive is the backward euler method, which is obviously of first order. 
-This causes restrictions on the step size for any RKM with a higher order.
+Several approaches to ensuring numerical positivity exist in the literature.
+One technique is to use event finding methods in order to stop when some quantity
+reaches zero and then proceed in some special way. This approach is implemented in the MATLAB ODE Suite.
+If positivity is preserved under a forward Euler step (with
+some step size restriction$\dt \le \dt_\text{FE}$), then any strong stability preserving Runge--Kutta (SSPRK)
+method will also preserve positivity (with a modified step size restriction)~\cite{gottlieb_strong_2011}.
+Specifically, the positivity of the method is ensured for time steps $\dt$ with
+$\dt \leq {\mathcal C} \dt_\text{FE}$, where ${\mathcal C}$ depends on the SSPRK method.
+The modified Patankar Runge Kutta (MPRK) methods represent another approach to ensuring
+positivity, for specific classes of ODEs.  MPRK methods introduce multiplicative
+factors within the Runge--Kutta stages to ensure positivity, but require the solution
+of a linear algebraic system; see e.g. \cite{kopecz_comparison_2019} and references therein.
+Yet another approach to ensure positivity in a practical application is shown in \cite{shampine_non-negative_2005},
+where the ODE is redefined outside the physical domain. 
+Finally, we mention diagonally split Runge-Kutta (DSRK) methods, which can be unconditionally
+positive and have order higher than one (they avoid the restriction mentioned above because
+they are not general linear methods \cite{horvath_positivity_1998}.  However, in practice such
+methods are less accurate than backward Euler for large step sizes \cite{macdonald2007}.
 
-There are multiple approaches to get positivity preserving numerical schemes.
-One method is the Strong Stability Preserving Runge Kutta (SSPRK). 
-The idea is to construct a RKM that can be written as convex combination of euler steps. 
-By this the stability properties of the forward euler step are carried over to the SSPRK.
-The same happens to the positivity properties. By this the positivity of the method is ensured for time steps $\dt$ with $\dt \leq R \dt_{FE}$, where $R$ depends on the used SSPRK and $\dt_{FE}$ is the forward Euler time step \cite{gottlieb_strong_2011}. 
-The Modified Patankar Runge Kutta (MPRK) are 
-based on the Patankar RKM. In these destruction Terms are scaled by the new solution. This preserves positivity but violates the mass conservation. The MPRK overcome this disadvantage by also scaling the production terms. This is done by solving a linear equation system \cite{kopecz_comparison_2019}.
-An approach to ensure positivity in a practical application is shown in \cite{shampine_non-negative_2005}. Ensuring the positivity is done by redefining the ODE outside the domain. Another technique used is event finding methods. This approach is implemented in the Matlab ODE Suite.
-Unconditionally positive method of order higher than 1 are the diagonally split Runge-Kutta (DSRK) methods \cite{horvath_positivity_1998}. These are no longer part of the general linear methods. This allows them to be positive and higher order. 
+The rather discouraging theoretical result of \cite{bolley_conservation_1978} shows that one
+should not hope to preserve positivity with a single method for every problem and every
+initial condition.  In the present work we take an approach based on the idea that for
+a particular problem and initial condition, there often exists a method of high order
+that is positivity preserving, at least for a single step.
+The main idea is to adaptively choose the weights $b$ of the RKM, after the
+the stage values are known, in a way that ensures positivity.  
+The selection of the weights requires the solution of a linear program (LP) at every
+step for which the numerical solution would otherwise be non-positive.
+This is a significant cost, but may in fact be an economical alternative to rejecting
+a step or using excessively small step sizes.
 
-In the following paper an approach is taken that does not overcome the order limitation but is based on the idea that in practical problems for many time steps positivity can be achieved with higher order methods.
-The main idea is to adapt the RKM after the computation of the stage values in a way that ensures positivity.  
-This means that the computed stage values can be used and don't have to be recomputed. With increasing complexity of the right-hand side, a step reject has a high cost. This makes the additional cost of adapting the RKM economical.
-The resulting weights should comply with the order conditions as far as possible.
-
-A common way to calculate two different solutions with one set of stage values is the usage of embedded methods for error approximation. 
-The idea of adapting the weights after calculating the stage values is used in \cite{ketcheson_spatially_2013}.
+The idea of using different weights within a RKM is not new; for instance it is
+the basis of error approximation using embedded RK pairs \cite{hairer_solving_1993}.
+The idea of adapting the weights after calculating the stage values has also been used,
+for instance in \cite{ketcheson_spatially_2013}.
 In this case it is used to adapt the properties of the time integrator for a method of lines solution of a PDE. With this approach, it is possible to have different properties of the RKM at different parts of the domain. 
-Other methods that adapts the weights are the relaxation Runge–Kutta (RRK) methods. 
-In these, the weights are scaled by a scalar relaxation parameter to conserve convex quantities. This can be used to conserve the energy or entropy \cite{ranocha_relaxation_2019,ketcheson_relaxation_2019}
+Another class of methods that adapt the weights at the end of a RK step
+are the relaxation Runge–Kutta (RRK) methods. 
+In these, the weights are scaled by a scalar relaxation parameter in order to guarantee
+conservation or monotonicity of a desired functional; e.g. to conserve or
+dissipate energy or entropy
+\cite{ketcheson_relaxation_2019,ranocha_relaxation_2019}.
 
 
-In this paper, an adaptation of the weights is done by solving a Linear program (LP).
-These are convex optimization problems where all constraints and the objective function are affine. These can incorporate both equality and inequality constraints. 
-LPs can be quite reliably solved with the Simplex method or with interior point methods. This can be done in reasonable time even for large problems. 
-\cite{boyd_convex_2004}
-
-The paper unfolds as follows. In section\,\ref{sec:main_idea} the main idea is explained. How the method can be written as LP is explained in section\,\ref{sec:LP}.
+The paper unfolds as follows. In Section\,\ref{sec:main_idea} the main idea is explained. How the method can be written as LP is explained in Section\,\ref{sec:LP}.
 Section\,\ref{sec:integration} describes how the new approach can be used with different RKM, how it can be integrated in a step size control and how the Region of absolute stability can be approximated.  
-In section\,\ref{sec:imple} further details that were used when implementing the algorithm are described.
-In section\,\ref{sec:Numeric_Results} Numerical results are given for multiple test problems.
-A conclusion is given in section\,\ref{sec:conclusion}.
+In Section\,\ref{sec:imple} further details that were used when implementing the algorithm are described.
+In Section\,\ref{sec:Numeric_Results} Numerical results are given for multiple test problems.
+A conclusion is given in Section\,\ref{sec:conclusion}.
 
 %(TODO: We know that we cannot work around the limitation from \cite{hundsdorfer_numerical_2003}, Where would be a good place to put this?)
 
@@ -956,7 +968,7 @@ But the adaptive method still outperformes the BE, even when acocunting for the 
 \subsection{Stepsize control}
 
 Next we test the adaptive RKM on a more compelx problem. 
-For this we consider the advection-diffusion-production-destruction systems form \citep{kopecz_comparison_2019}. The system is defined by
+For this we consider the advection-diffusion-production-destruction systems form \cite{kopecz_comparison_2019}. The system is defined by
 \begin{subequations}
 \label{eq:ADR}
 \begin{align}
@@ -1041,7 +1053,7 @@ If the negative values occurring are not to large, which can be expected for mos
 
 
 
-\printbibliography
-
+\bibliographystyle{apalike}
+\bibliography{Bib_RK_optim}
 
 \end{document}
