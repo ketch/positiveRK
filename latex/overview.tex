@@ -52,6 +52,8 @@
 \newcommand{\scp}[2]{\left\langle{#1,\, #2}\right\rangle}
 \newcommand{\I}{\operatorname{I}}
 \newcommand{\lot}{\ell_{\mathrm{ot}}}
+\newcommand{\ut}{\tilde{u}}
+\newcommand{\bt}{\tilde{b}}
 
 %tikz
 \usepackage{tikz}
@@ -134,7 +136,7 @@ We say an ODE
     u'(t) & = f(t,u)
 \end{align}
 is positive if 
-\begin{align}
+\begin{align} \label{continuous-positivity}
     u(0)\ge 0 \implies u(t) \ge 0 \text{ for all } t>0.
 \end{align}
 Any RKM (or in fact any genearal linear method) that is unconditionally positivity preserving for all positive ODEs
@@ -187,7 +189,7 @@ dissipate energy or entropy
 \cite{ketcheson_relaxation_2019,ranocha_relaxation_2019}.
 
 
-The paper unfolds as follows. In Section\,\ref{sec:main_idea} the main idea is explained. How the method can be written as LP is explained in Section\,\ref{sec:LP}.
+The paper unfolds as follows. In Section\,\ref{sec:main_idea} the main idea is explained. How the method can be written as a LP is explained in Section\,\ref{sec:LP}.
 Section\,\ref{sec:integration} describes how the new approach can be used with different RKM, how it can be integrated in a step size control and how the Region of absolute stability can be approximated.  
 In Section\,\ref{sec:imple} further details that were used when implementing the algorithm are described.
 In Section\,\ref{sec:Numeric_Results} Numerical results are given for multiple test problems.
@@ -196,8 +198,7 @@ A conclusion is given in Section\,\ref{sec:conclusion}.
 %(TODO: We know that we cannot work around the limitation from \cite{hundsdorfer_numerical_2003}, Where would be a good place to put this?)
 
 
-
-\section{Main Idea}\label{sec:main_idea}
+\section{Bound-preserving adaptive Runge--Kutta methods}\label{sec:main_idea}
 
 When computing the solution of an ODE $u ' = f(t,u) $ using a RKM with $s$ stages and the Butcher tableau
 \begin{align}
@@ -209,46 +210,61 @@ c &  A \\
 \end{align}
 the stage values $y_1,\cdots,y_s$ are computed according to
 \begin{equation}
-y_j =  u^n + \dt \sum_{k = 1}^{s} a_{jk} f(t^n + \dt c_k,y_k)  \quad j = 1,\cdots,s
+y_j =  u^n + \dt \sum_{k = 1}^{s} a_{jk} f(t^n + \dt c_k,y_k)  \quad j = 1,\cdots,s.
 \end{equation}
 Based on these values the next solution $u^{n+1}$ is computed by
-\begin{equation}
+\begin{equation} \label{eq:rkstep}
 u^{n+1} = u^n + \dt \sum_{j  = 1}^s f(t^n + \dt c_j,y_j) b_j .
 \end{equation}
-The stage derivatives $f_1,\cdots,f_s$ can be calculated with
-\begin{equation}
-f_j = f(t^n + \dt c_j,y_j)
-\end{equation}
-The new solution can now be calculated with
+Let $f_j = f(t^n + \dt c_j,y_j)$; then we can write \eqref{eq:rkstep} as
 \begin{equation}\label{eq:Combination}
 u^{n+1} = u^n + \dt F b
 \end{equation}
-where $F$ is a matrix containing the stage derivatives $F = \big[f(y_1) , \cdots f(y_s)\big]$.
+where the $j$th column of $F$ is $f_j$.
 
-The new solution $u^{n+1}$ does not comply with positivity for some cases. 
-So it might be advantageous to adapt \eqref{eq:Combination} in such a way that $u^{n+1}$ is positive, instead of rejecting the solution and computing a new set of stage values. This is done by adapting the weights.
-The original weights $b$ are replaced by the adapted weights $\tilde{b}$.
-With this adaptation we get
-\begin{equation}\label{eq:def_b_tilde}
-u^{n+1} = u^n + \dt F \tilde{b}
+We wish to impose the discrete analog of \eqref{continuous-positivity}; i.e.
+\begin{align} \label{positivity}
+    u^n\ge 0 \implies u{n+1} \ge 0,
+\end{align}
+or more general bound constraints
+\begin{align}
+    \alpha \le u^n\le \beta \implies \alpha \le u{n+1} \le \beta.
+\end{align}
+We will focus on the case of positivity while keeping in mind that
+the methodology extends to general bounds.
+The main idea of the present work is that if the new solution $u^{n+1}$ contains
+negative entries, we can replace the weights in \eqref{eq:Combination} with
+a set of modified weights $\bt$ such that the resulting solution is positive:
+\begin{equation}\label{eq:ut}
+\ut^{n+1} = u^n + \dt F \bt^n \ge 0.
 \end{equation}
-form \ref{eq:Combination}. 
-This equation is contains $\tilde{b}$ as second unknown alongside $u^{n+1}$. 
-First we have to determine the adapted weights to compute the new solution afterwards.
-For the computation of the stage derivatives only the $A$ has to be known. The weights are not needed for this computation. 
-Based on this observation we can define $(A,\bullet)$ as the set of RKMs that share the same $A$ and only differ in the weights.
-Calculating the stage derivatives can be considered as solving the ODE for all RKM in $(A,\bullet)$ at the same time.
-The idea is to choose one $(A,\tilde{b}) \in (A,\bullet)$ by fixing the weights. 
-Because the stage derivatives are already known, we can choose a $(A,\tilde{b})$, that leads to a positive $u^{n+1}$, if $(A,\tilde{b}) \in (A,\bullet) | u^{n+1} \geq 0$ exists.
-When altering the weights, the properties of a RKM are preserved. 
-Especially this approach preserves linear invariants like mass conservation, because it is a regular RKM. 
+Indeed, we can view \eqref{eq:ut} as a linear constraint on the choice of
+modified weights $\bt^n$.  Since we have already computed the intermediate stages,
+$F$ is a known, fixed matrix.  In order to ensure that the modified solution $\ut^{n+1}$
+is accurate, we can also constrain $\bt$ to satisfy the Runge--Kutta order conditions
+up to some order (ideally, the same order as the original method).  Observe that
+all of the order conditions are linear in the weights, so that these additional constraints
+take the form
+$$
+Qb = r
+$$
+for some fixed matrix $Q$ and vector $r$.
+By applying this technique at each step, we integrate \eqref{eq:ode} with a
+sequence of Runge--Kutta methods with coefficients $(A,\bt^n)$.  At any step
+for which the solution $u^n$ (produced by method $(A,b)$ is positive, we do not
+need to modify the weights and can simply accept this unmodified solution.
+Note that linear invariants (such as mass conservation) of the solution are
+automatically preserved in this approach, since at each step we use a Runge--Kutta
+method.
 
-As it can be seen in \eqref{eq:Combination} $u^{n+1}$ is a linear combination of the stage values and the previous solution $u^n$.
-Because the coefficients in $A$ are already fixed, the Order Conditions reduce to linear equations.
-This means that finding the weights can be done by solving a LP.
- 
-If there are no negative values in $u^{n+1}$ with the original weights, the method does not cause additional computational effort, because it only has to solve the LP if the regular RKM does not lead to a positive $u^{n+1}$. %(except for the test)
-
+We see that the choice of $\bt$ is subject to linear equality and inequality
+constraints.  If we choose a linear objective function, the resulting problem
+for finding the modified weights is a linear program.  Two important questions
+arise:
+\begin{itemize}
+    \item How should the objective function be chosen?
+    \item Does the resulting LP always have a solution?
+\end{itemize}
 
 
 \subsection{Example I}\label{sec:example_reac}
