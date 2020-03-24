@@ -249,7 +249,7 @@ $$
 Qb = r
 $$
 for some fixed matrix $Q$ and vector $r$.
-By applying this technique at each step, we integrate \eqref{eq:ode} with a
+By applying this technique at each step, we integrate \eqref{ode} with a
 sequence of Runge--Kutta methods with coefficients $(A,\bt^n)$.  At any step
 for which the solution $u^n$ (produced by method $(A,b)$ is positive, we do not
 need to modify the weights and can simply accept this unmodified solution.
@@ -259,13 +259,15 @@ method.
 
 We see that the choice of $\bt$ is subject to linear equality and inequality
 constraints.  If we choose a linear objective function, the resulting problem
-for finding the modified weights is a linear program.  Two important questions
-arise:
-\begin{itemize}
-    \item How should the objective function be chosen?
-    \item Does the resulting LP always have a solution?
-\end{itemize}
-
+for finding the modified weights is a linear program, which can be efficiently
+solved by standard algorithms.  A natural choice of objective function is
+$$
+\text{minimize } \|\bt - b\|_1.
+$$
+The resulting problem can be phrased as an LP by using slack variables.
+In general, this LP may not have a solution; we can relax the constraints
+by requiring a lower order of consistency than the design order of the
+method.  These choices and alternatives will be considered in Section \ref{sec:LP}.
 
 \subsection{Example I}\label{sec:example_reac}
 
@@ -285,11 +287,12 @@ and the initial conditions
 u(0) = (8,2,1,4)^T
 \end{equation}
 When solved with the Cash-Karp (CK5) method and $\dt = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem. 
-In Figure\,\ref{fig:exampleI} the obtained results are plotted with a dashed line. 
+In Figure\,\ref{fig:exampleI} the obtained results are plotted with dashed lines. 
 At $t=1.905$ the value of $u_1$ gets negative. This leads to a diverging solution.
 
-Now the weights are adapted. The results are also plotted in Figure\,\ref{fig:exampleI}. 
+Now the weights are adapted. The results are also plotted in Figure\,\ref{fig:exampleI}, with solid lines. 
 The positivity constraint is now fulfilled. A qualitatively correct solution is obtained.
+{\bf Need to mention here what the order is when the weights are adapted.}
 
 \begin{figure}[h]
     \centering
