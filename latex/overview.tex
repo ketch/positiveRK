@@ -54,6 +54,7 @@
 \newcommand{\lot}{\ell_{\mathrm{ot}}}
 \newcommand{\ut}{\tilde{u}}
 \newcommand{\bt}{\tilde{b}}
+\newcommand{\pt}{{\tilde{p}}}
 
 %tikz
 \usepackage{tikz}
@@ -305,16 +306,12 @@ The used weights are also plotted in Figure\,\ref{fig:exampleI}.
 The used weights are equal to the original weights for $t<1.905$. At $t=1.905$ the weights are first adapted to ensure the positivity of the solution. For $t>2.63$ the original set of weights lead to a positive solution. Because of this, the used weights equal the original weights again.
 
 
-\section{Adaptive RKM}\label{sec:LP}
+\section{Selection of modified weights}\label{sec:LP}
 
-In the following Section,  how the approach can be written as a LP. 
-For this we have to consider which weights to choose. 
-Generally, any $b \in \R^s$ can be used. 
-One requirement would be that the new solution is positive.
-We can further reduce this space by enforcing the order conditions. 
-By incorporating the order conditions, the space of possible weights is limited to a subset of $\R^s$. %(Note: not linear because 0 is not in subspace)
-Finally, we have to state an objective function to get the optimal weights.
-
+In this Section, we consider the formulation of the LP to choose
+the modified weights $\bt$.  In particular, we focus on the choice
+of objective function and how to relax the constraints to ensure that
+a feasible solution exists.
 
 \subsection{Example II}\label{sec:example_lin}
 
@@ -375,17 +372,21 @@ An objective function is also needed to make the choice unique. This should be d
 
 \subsection{Order Conditions}\label{sec:OrderCond}
 
-The order conditions for a RKM are a set of Equations depending on $A$, $c$ and $b$. In these Equations $b$ only appears linearly \cite{hairer_solving_1993}.
-If $A$ and $c$ are already known, the order conditions for the order $p$ are a linear equations system and can be written as $Q b = r$. 
-
-The vector $b \in \R^s$ contains the weights and $Q$ is an $g \times s$ matrix, where $g$ is the number of order conditions. The vector $r$ contains the right hand side of the order conditions.
-
-If the $A$ of a preexisting RK-method is used, there is at least one solution for the linear equation system.
-In order to get an optimization problem, the equation system has to be underdetermined.
-This implies that $\mathrm{rank}(Q) < s$. 
-Because the quadrature conditions are linearly independent, there are at least $p$ independent vectors in $Q$. This leads to the condition $p < s$.
-This implies that the number of stages has to be higher than the wanted order.
-
+The order conditions for an $s$-stage, order $p$ RKM are a set of equations depending on $A$, $b$ and
+$c$.  As mentioned already, if $A$ and $c$ are given, the order conditions are
+linear in $b$ and can be written as $Q_p b = r_p$, where
+and $Q_p\in{\mathbb R}^{s\times s}, r_p\in{\mathbb R}^s$ represent the set of all conditions up to
+and including order $p$.  It may not be possible to find modified weights
+that also satisfy the conditions of order $p$ and yield positivity, so
+in general the modified weights will be a solution of
+$$
+  Q_\pt \bt = r_\pt
+$$
+for some $\pt \le p$.   Since we have $s$ degrees of freedom $\bt_j$,  we need
+at a minimum to choose $\pt$ so that $\mathrm{rank}(Q_\pt) < s$. 
+Because the quadrature conditions are linearly independent, we have $\mathrm{rank}(Q_p)\ge p$,
+so we must take $\pt \le s$.  In general we may need to take $\pt$ even smaller
+in order to achieve positivity.
 
 
 \subsection{Formulation of the Optimization Problem}
@@ -451,7 +452,7 @@ as objective function.
 
 
 
-\subsubsection{Adaption of Timestep using the dense output formual}
+\subsubsection{Adaption of Timestep using the dense output formula}
 
 If the original step $\dt$ was too large and there is no suitable set of weights, the LP is infeasible. In this case we would like to calculate $u^{n+\theta}$ using the stage values instead of rejecting the step. The time step is reduced after calculation the stage values. This can be done using the order conditions for dense output. These can be found in \cite{hairer_solving_1993}.
 We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \dt$ whereas $\dt$ is the time step used when calculating the stage values.
