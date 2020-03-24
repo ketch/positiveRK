@@ -291,9 +291,8 @@ When solved with the Cash-Karp (CK5) method and $\dt = 0.005$ the approximated s
 In Figure\,\ref{fig:exampleI} the obtained results are plotted with dashed lines. 
 At $t=1.905$ the value of $u_1$ gets negative. This leads to a diverging solution.
 
-Now the weights are adapted. The results are also plotted in Figure\,\ref{fig:exampleI}, with solid lines. 
+Now the weights are adapted. The adapted weights are of 4th order. The results are also plotted in Figure\,\ref{fig:exampleI}, with solid lines. 
 The positivity constraint is now fulfilled. A qualitatively correct solution is obtained.
-{\bf Need to mention here what the order is when the weights are adapted.}
 
 \begin{figure}[h]
     \centering
@@ -1060,6 +1059,7 @@ The computation is done using the EX3 method with free adaptation.
 As step size control a PI-Control from\,\cite{hairer_solving_1996} is used. The Error was estimated using \eqref{eq:Err}. The Tolerance was set to $Tol = 0.01$.  
 The final time is $t_{end} = 50$. 
 The simulation required 264 steps. Of these, 72 required an adaptation of the weights. 
+All adapted weights are still of 3rd order.
 The solutions for $t=9,t=18,t=27$ and $t=50$ are plotted in Figure\,\ref{fig:Sol_ADP}. 
 In Figure\,\ref{fig:sol_ADP18} it can be seen that the reaction occurs in a small interfaces. 
 Outside of this regions quantities are close to $0$. Therefore, it is very likely that negative values occur in the numerical approximation. 
