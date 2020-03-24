@@ -389,15 +389,68 @@ so we must take $\pt \le s$.  In general we may need to take $\pt$ even smaller
 in order to achieve positivity.
 
 
-\subsection{Formulation of the Optimization Problem}
+\subsection{Choice of objective function and additional constraints}
+In the design of Runge--Kutta methods, weights are carefully chosen
+not only to satisfy the order conditions but also
+to give desirable properties such as a good region of absolute
+stability, small error coefficients, and so forth.
+Replacing these carefully-chosen weights $b$ with arbitary weights
+$\bt$ could lead to the loss of these desirable properties.
+In order to preserve good properties of the method, we use as
+objective function $\|\bt - b\|_1$.  This has the additional benefit
+of penalizing weights with large magnitude in general, avoiding
+large truncation or cancellation errors.  This also ensures that if
+no negative solution values appear, the solution of the LP is
+simply the original method weights.  Thus we have the following LP:
 
-There are two possible ways to write down the adaptation of the weights. The first way is to freely adapt the original weights $b$ by adding a correction $\Delta b$ that ensures positivity.
-This is the easiest way to adapt the weights. An advantageous property is that the step size can be reduced after calculating the stage values by using the dense output order conditions.  
-The free adaption is explained in more detail in Section\,\ref{sec:direct}.
+\LPblock{
+(Free adaptation) Given $F, p$, and $b$, find $\bt$ that minimizes $||\tilde{b} - b||_1$ subject to
+\begin{subequations}
+\begin{align}
+u^{n+1}&=u^n+\dt F \tilde{b} \geq 0 \label{eq:direct_pos}\\
+Q_\pt\tilde{b} &=r_\pt \label{eq:direct_Order}.
+\end{align}
+\end{subequations}
+}
 
-The second way to formulate a LP is to choose weights as a convex adaptation of a set of weights. This is more useful if some embedded methods with certain properties are known. 
-The convex adaptation also shows more predictable behavior because the resulting $u^{n+1}_b$ is also a convex adaptation of the solutions $u^{n+1}_{b_a},u^{n+1}_{b_b},\cdots$ 
-This is explained in more detail in Section\,\ref{sec:convex}
+Of course, there is still no guarantee that the modified weights
+will be close to the original method weights.  In some examples
+we have observed that large modifications of the weights can lead
+to inaccurate solutions even though the order conditions are satisfied.
+In order to avoid issues that might be caused by poor weights, we can
+additionally impose either or both of the following strategies:
+
+\begin{enumerate}
+    \item Select in advance a set of desirable weight vectors $b^1, b^2, \dots, b^m$
+        corresponding to known good methods,
+        and restrict the choice of $\bt$ to convex combinations of this set.
+    \item Require that $\|bt - b\|_1$ be small, rejecting the step if it is not.
+\end{enumerate}
+
+We discuss the first strategy here; the second is deferred to a later section.
+Ideally every element of the set of potential weight vectors would correspond to
+a method of the same order as the original method.   Due to linearity of the
+order conditions, any linear combination of such weights would also yield a 
+method of the same order.  On the other hand, 
+it is natural to include a weight vector corresponding to the forward Euler method
+(for explicit methods) or backward Euler method (for implicit methods), since
+these two methods guarantee positivity (unconditionally for backward Euler
+and conditionally for forward Euler).
+We can formulate an LP using the first strategy (restriction to a convex set)
+as follows.  Let $B$ denote the matrix with columns $b^1, b^2, \dots, b^m$ and let
+$g\in{\mathbb R}^m$.  The LP is then
+
+\LPblock{
+(Convex adaptation) Given $F, p$, and $b$, find $g$ that minimizes $||\tilde{b} - b||_1$ subject to
+\begin{subequations}
+\begin{align}
+\bt & = Bg \\
+0 & \le g_i \le 1 \\
+u^{n+1}&=u^n+\dt F \tilde{b} \geq 0 \label{eq:direct_pos}\\
+Q_\pt\tilde{b} &=r_\pt \label{eq:direct_Order}.
+\end{align}
+\end{subequations}
+}
 
 Both approaches are illustrated in figure\,\ref{fig:b_space}.
 
@@ -417,42 +470,8 @@ Both approaches are illustrated in figure\,\ref{fig:b_space}.
     \caption{Graphical representation of the two different approaches to adapt the weights}\label{fig:b_space}
 \end{figure}
 
-\subsection{Free Adaptation}\label{sec:direct}
 
-When freely adapting the weights, new weights that complie with the order conditions is chosen.   
-The weights $\tilde{b} = b + \Delta b$ consist of the weights of the original method $b$ and an adaption $\Delta b$. The adaption is $\Delta b \in \mathrm{ker}(Q)$. 
-This is drawn in Figure\,\ref{fig:b_direct}. The red line represents the subspace of weights that satisfy the order conditions. Both $b$ and $\tilde{b}$ are in this subspace. 
-The LP can be expressed as
-
-
-\LPblock{
-\begin{subequations}
-\begin{align}
-u^{n+1}&=u^n+\dt F \tilde{b} \geq 0 \label{eq:direct_pos}\\
-Q\tilde{b} &=r \label{eq:direct_Order} \\
-\min_{\tilde b}&( ||\tilde{b} -b ||_1) \label{eq:direct_obj} 
-\end{align}
-\end{subequations}
-}
-
-
-\subsubsection{Constraints}
-The free adaptation approach leads to two sets of constraints on $b$.
-The first set of constraints is the positivity \eqref{eq:direct_pos}.
-The second set of constraints are the order conditions in \eqref{eq:direct_Order}.
-
-\subsubsection{Objective Function}
-A reasonable property of the LP is that the optimal solution for the problem without positivity constraints is $\tilde{b} = b$. 
-This can be achieved by $argmin(f_{optim}(\tilde{b})) = b$. 
-In practice, this also means that there is no need to solve the optimization problem if no constraints are violated because the solution of this problem is already known. This is advantageous for performance reasons.
-Large values of b can lead to numerical problems. Because $\sum_{i  = 1}^s b_i = 1$, an increase of $||b||$ leads to a combination of negative and positive values. Because the computation is done with a finite precision (and usually in floating point) large $||b||$ can lead to numerical difficulties.    
-By changing the weights, the stability function is altered. 
-For these reasons $||\tilde{b}-b||$ seems like a good choice. The 1-Norm can be implemented in a  LP using slack variables. We choose \eqref{eq:direct_obj}
-as objective function.
-
-
-
-\subsubsection{Adaption of Timestep using the dense output formula}
+\subsection{Adaption of Timestep using the dense output formula}
 
 If the original step $\dt$ was too large and there is no suitable set of weights, the LP is infeasible. In this case we would like to calculate $u^{n+\theta}$ using the stage values instead of rejecting the step. The time step is reduced after calculation the stage values. This can be done using the order conditions for dense output. These can be found in \cite{hairer_solving_1993}.
 We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \dt$ whereas $\dt$ is the time step used when calculating the stage values.
