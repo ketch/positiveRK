@@ -423,7 +423,7 @@ additionally impose either or both of the following strategies:
     \item Select in advance a set of desirable weight vectors $b^1, b^2, \dots, b^m$
         corresponding to known good methods,
         and restrict the choice of $\bt$ to convex combinations of this set.
-    \item Require that $\|bt - b\|_1$ be small, rejecting the step if it is not.
+    \item Require that $\|\bt - b\|_1$ be small, rejecting the step if it is not.
 \end{enumerate}
 
 We discuss the first strategy here; the second is deferred to a later section.
@@ -437,7 +437,7 @@ these two methods guarantee positivity (unconditionally for backward Euler
 and conditionally for forward Euler).
 We can formulate an LP using the first strategy (restriction to a convex set)
 as follows.  Let $B$ denote the matrix with columns $b^1, b^2, \dots, b^m$ and let
-$g\in{\mathbb R}^m$.  The LP is then
+$g\in{\mathbb R}^m$.  The LP is then as follows:
 
 \LPblock{
 (Convex adaptation) Given $F, p$, and $b$, find $g$ that minimizes $||\tilde{b} - b||_1$ subject to
@@ -445,11 +445,15 @@ $g\in{\mathbb R}^m$.  The LP is then
 \begin{align}
 \bt & = Bg \\
 0 & \le g_i \le 1 \\
-u^{n+1}&=u^n+\dt F \tilde{b} \geq 0 \label{eq:direct_pos}\\
-Q_\pt\tilde{b} &=r_\pt \label{eq:direct_Order}.
+u^{n+1}&=u^n+\dt F \tilde{b} \geq 0 \label{eq:direct_pos}.
 \end{align}
 \end{subequations}
 }
+
+Note that we do not need to impose the order conditions here, since they will be
+satisfied by each of the methods and thus (by linearity) by the modified
+method.  The order of the modified method will in general be equal to the lowest
+order among the component methods.
 
 Both approaches are illustrated in figure\,\ref{fig:b_space}.
 
@@ -466,11 +470,14 @@ Both approaches are illustrated in figure\,\ref{fig:b_space}.
         \caption{Convex adaptation}
         \label{fig:b_convex}
     \end{subfigure}
-    \caption{Graphical representation of the two different approaches to adapt the weights}\label{fig:b_space}
+    \caption{Graphical representation of the two different approaches to adapt the weights, for
+    a two-stage method.}\label{fig:b_space}
 \end{figure}
 
 
 \subsection{Adaption of Timestep using the dense output formula}
+
+{\bf Need to also discuss relaxing the order conditions}
 
 If the original step $\dt$ was too large and there is no suitable set of weights, the LP is infeasible. In this case we would like to calculate $u^{n+\theta}$ using the stage values instead of rejecting the step. The time step is reduced after calculation the stage values. This can be done using the order conditions for dense output. These can be found in \cite{hairer_solving_1993}.
 We introduce $\theta \in (0,1]$. The new step taken has the length $\theta \dt$ whereas $\dt$ is the time step used when calculating the stage values.
@@ -479,42 +486,6 @@ When adapting the Order Condition to a new $\theta$ the Order Condition Matrix $
 
 The dependency of $r(\theta)$ is nonlinear. This means that the maximum $\theta$ with suitable weights cannot be calculated by solving a LP. This means that different $\theta$ have to be tested. 
 %(Note: we could include some algorithm to search for it)
-
-\subsection{Convex Adaptation of Existing Methods}\label{sec:convex}
-For some test problems (e.g. the Heat Equation solved with an implicit method of higher order), large changes occur, even though a norm of $\Delta b$ is used as an objective function. A numerical example is given in Section\,\ref{sec:Numeric_Results}.
-It is known that the backward Euler method leads to a positive solution for any $\dt$ \cite{hundsdorfer_numerical_2003}. The backward Euler is still only first Order but shows more exact results than a method of higher Order that is distorted by the adaption of the weights, at least at some steps. 
-A possible method to fix this is to generate the new b based on a convex adaptation of embedded methods. 
-The new weights are defined as 
-\begin{equation}\label{eq:b_convex_def}
-\tilde{b} = \sum_i^d g_i b_i = Bg
-\end{equation}
-where $B=\left[b_1,\cdots,b_d \right]$ is a matrix containing the embedded methods.  
-The LP is defined as
-\LPblock{
-\begin{subequations}
-\begin{align}
- u^{n+1}&=u^n+\dt K B g \geq 0 \label{eq:Convex_pos}  \\
- 0 \leq g_i &\leq 1  \forall {i \in \{1, \cdots d \}} \quad \sum_{i=1}^d g_i = 1 \label{eq:Convex_cvx} \\
- \min_{g} &\left(\sum_i^d w_i g_i \right) \label{eq:Convex_obj}
-\end{align}
-\end{subequations}
-}
-
-\subsubsection{Constraints}
-At first a set of embedded methods of the RKM $b_1,\cdots,b_d$ is needed. 
-If all the used weights complie with the order conditions, the new method is also of the same order.
-This is straightforward using
-$$ Q b = Q (\chi b_{\alpha} + (1-\chi) b_{\beta}) = \chi Q  b_{\alpha} + (1-\chi) Q b_{\beta} = \chi r + (1-\chi) r = r$$
-$b_{\alpha}$ and $b_{\beta}$ are the methods that are combined to $b$ using the parameter $\chi$. The Matrix $Q$ and the vector $r$ are the order conditions as defined in Section\,\ref{sec:OrderCond}.
-To ensure that \eqref{eq:b_convex_def} yields to a convex adaptation the constraints \eqref{eq:Convex_cvx} are enforced for the parameters $g_1,\cdots,g_d$.
-The positivity constraint changes to \eqref{eq:Convex_pos}
-
-\subsubsection{Objective Function}
-
-As an objective function \eqref{eq:Convex_obj}
-is used.  The $w_1,\cdots,w_d$ are weighting factors that determine which is the preferred $b_i$ to use.
-
-Because the optimal solution of the unconstrained problem has to be the original weights the weight corresponding to $b$ should be the smallest $w$. This weight is simply set to $w_{b} = 0$. For the other weights $w_i = \frac{1}{\mathrm{Order} \{b_i\}}$ is used. This prefers embeded methods of higher order.
 
 \subsubsection{Construction of Embedded Methods}
 
