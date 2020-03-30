@@ -131,7 +131,7 @@ integration in which the method weights are adapted in order to
 enforce the bounds.  The weights are chosen at each step after calculating the
 stage derivatives, in a way that also preserves (when possible) the order of
 accuracy of the method.  The choice of weights is given by the solution
-of a linear program (LP).
+of a linear program.
 %(iv) how you verified your idea and  important results and possible/important limitations
 We investigate different approaches to choosing the weights by considering
 different objective functions.  We also provide some analysis of the properties
@@ -354,7 +354,6 @@ a feasible solution exists.
 
 (Note: The primary goal here is to put the idea of changing the b into perspective. We have shown the general idea and how it works, now we want to discuss on what it does in practice. At first, we state it is good to preserve the order... Get to the Example ... and show that there is more to it)
 
-
 The main goal is to choose a method $(A,b)$ in such a way that $u^{n+1}$ resembles the solution of the ODE $u(t_{n+1})$.
 An obvious objective is to use a $(A,b)$ with a high order, but this is not enough.
 To get a better understanding for the method we consider the behavior of a simple problem.   
@@ -558,7 +557,7 @@ To fulfill $p<s$ the order has to be reduced drastically. Therefore, these metho
 As stated in \cite{norsett_attainable_1977} the highest achievable order of a diagonally implicit RKM is $s+1$. This condition is far closer to the condition required for the adaptation.
 Another important property is the number of degrees of freedom for the choice of the new weights.  
 These can be calculated using $s-\mathrm{rank}(Q)$. %$\mathrm{dim}(\mathrm{ker}(Q))$. 
-The number of degrees of freedom for different explicit methods are shown in Tables\,\ref{table:DOF_exp} and~\ref{table:DOF_imp}.
+The number of degrees of freedom for different explicit methods are shown in Table\,\ref{table:DOF_exp}.
  
 \begin{table}[h!]
 \centering    %Generated below============ 
@@ -596,49 +595,48 @@ Order & &1&2&3&4&5&6 \\
 
 
 For all methods with the number of stages equal to the order of the method, there are no degrees of freedom without reducing the order.  
-If the classical RK4 method is used the order has to be reduced more because the RK4 method does not have embedded methods of order 3.
+If the classical RK4 method is used the order has to be reduced more because the RK4 method does not have embedded methods of order~3.
 In contrast to this, methods with $s > p$ have degrees of freedom even without reducing the order.
 For Cash--Karp RK5 and Dormand--Prince RK5 the order has to be reduced to get degrees of freedom even though the number of stages is higher than the order.
 
- 
-In Table\,\ref{table:DOF_imp} same was done for implicit methods. 
+
+In Table\,\ref{table:DOF_imp}, the same properties of some implicit
+methods are reported.
 We can see that the fully implicit methods Lobatto~IIIC4 and Radau~IIA3 require a drastic reduction of the order as expected.
-The Diagonally implicit SDIRK 54 method only requires an order reduction of one to get one degree of freedom for the weights.  
+The diagonally implicit SDIRK 54 method only requires an order reduction of one to get one degree of freedom for the weights.
 The TR-BDF2 method even allows adaptations without reducing the order.  
 The Implicit-Euler extrapolation methods also exhibit degrees of freedom without a reduction of the order. 
 
 Another important property is the stability region. 
-The adaption of the weights does not solve issues with stability when used with a too big $\dt$. Therefore, the RK-method has to be stable for large $\dt$. 
+The adaption of the weights does not solve issues with stability when used with a too big $\dt$. Therefore, the RK method has to be stable for large $\dt$.
 
 %(Note: up to this point I do not understand why some methods perform better than other. We only see it occur depending on the Problem-RKM combination) 
 
-A third property is the existence of a positive solution. This corresponds to the question if there is an embedded first order method that ensures positivity. This is particularly interesting for implicit methods, because the $\dt$ is not limited by the stability.  
-If we have an embedded first order method, we can ensure that there is always a positive solution, which might be of first Order.  
+A third property is the existence of a positive solution. This corresponds to the question whether there is an embedded first order method that ensures positivity. This is particularly interesting for implicit methods, because the $\dt$ is not limited by the stability.
+If we have an embedded first order method, we can ensure that there is always a positive solution, which might be of first order.
 This is the case for the Im-Euler extrapolation methods, because they contain a chain of BE steps. 
 For explicit methods the FE method is always embedded, but a reduction of the step size might be required. 
 
 \subsection{Error detection and approximation}
 When changing the weights the solution $u^{n+1}$ is changed. 
-By incorporating the order conditions for a certain order the space of possible weights that can be chosen is limited to a linear Subspace. 
+By incorporating the order conditions for a certain order the space of possible weights that can be chosen is limited to a linear subspace.
 Now it is important to know if the new solution $u^{n+1}$ still resembles the solution of the ODE $u(t_{n+1})$. 
-This can be seen in example in Section~\ref{sec:example_lin}.
+This can be seen in the example in Section~\ref{sec:example_lin}.
 This gives rise to the question whether the new solution is reasonable.
 This also poses the problem on developing a system that can decide whether the new solution is acceptable or has to be rejected.
- 
-\subsubsection{Error detection and appproximation}
+
+
 For this approach it is difficult to give some mathematically rigorous statement regarding the convergence of the method, because it only applies if the error of the original method causes the solution to get negative. This can only happen if the truncation error is large enough. This requires $\dt \gg 0$ where lower coefficients of the Taylor series are no longer sufficient to approximate the behavior. 
 One could say that the main idea of the adaption of the weights alters the error in a certain way, so that the numerical solution gets 'better' in the sense that it leads to positive solutions. 
-The local error of an RKM $e(\dt) =u(t_0 + \dt) - u^1$ can be expressed using the Taylor series of the RKM and the Taylor series of the exact solution. % Hairer I P134
-
+The local error of an RKM $e(\dt) =u(t_0 + \dt) - u^1$ can be expressed using the Taylor series of the RKM and the Taylor series of the exact solution, % Hairer I P134
 \begin{align}\label{eq:Taylor_sol_ref}
-u(t_0 + \dt) &= u(t_0) + u'(t_0) \dt + \frac{u''(t_0)}{2} \dt^2 + \cdots + \frac{u^{(p)}(t_0)}{p!} \dt^p + \frac{u^{(p+1)}(t_0)}{(p+1)!} \dt^{p+1} + \cdots \\
-u^{n+1} &= u(t_0)  + v_1 \dt + \frac{v_2}{2} \dt^2 + \cdots + \frac{v_p}{p!} \dt^p + \frac{v_{p+1}}{(p+1)!} \dt^{p+1} + \cdots 
+u(t_0 + \dt) &= u(t_0) + u'(t_0) \dt + \frac{u''(t_0)}{2} \dt^2 + \cdots + \frac{u^{(p)}(t_0)}{p!} \dt^p + \frac{u^{(p+1)}(t_0)}{(p+1)!} \dt^{p+1} + \cdots, \\
+u^{n+1} &= u(t_0)  + v_1 \dt + \frac{v_2}{2} \dt^2 + \cdots + \frac{v_p}{p!} \dt^p + \frac{v_{p+1}}{(p+1)!} \dt^{p+1} + \cdots .
 \end{align}
-
 The derivatives of $u(t)$ can be solely expressed with the partial derivatives of the RHS $f(t,u)$, whereas the coefficients $v_1,v_2,\cdots$ also depend on the RKM. 
 In this case the RKM is fixed apart from the weights. 
 Therefore $v_1,v_2,\cdots$ are functions of $b$.
-Because the the weights are chosen to ensure the Order Conditions the coefficients $v_1,\cdots,v_p$ are fixed and equal the according derivatives. 
+Because the weights are chosen to ensure the order conditions, the coefficients $v_1,\cdots,v_p$ are fixed and equal the according derivatives.
 The only remaining degrees of freedom are the coefficients $v_{p+1},v_{p+2},\cdots$.
 These can be adapted by changing the weights.
 
@@ -648,16 +646,16 @@ These can be adapted by changing the weights.
 %\mathrm{argmin}(f_{optim}(b)) = b_{orig}
 %\end{equation}
 This approximation is not very useful for real applications. 
-To approximate the error of a new step we propose following approximation of the local error:
+To approximate the error of a new step we propose the following approximation of the local error:
 
 \begin{align}
-err = |u(t^n)-u^n| &= |u(t^n) - (u^n_{unadapted}+\dt K(\tilde{b}-b))| \\
- &\leq \underbrace{|u(t^n)-u^n_{unadapted}|}_{\approx err_T}+\underbrace{|\dt K(\tilde{b}-b)|}_{= err_{adapt}} \label{eq:Err}
+err = |u(t^{n+1})-u^{n+1}| &= |u(t^{n+1}) - (u^{n+1}_{unadapted}+\dt F(\tilde{b}-b))| \\
+ &\leq \underbrace{|u(t^{n+1})-u^{n+1}_{unadapted}|}_{\approx err_T}+\underbrace{|\dt F(\tilde{b}-b)|}_{= err_{adapt}} \label{eq:Err}
 \end{align}
 
 The total error is split up in the truncation error $err_T$ and the adaption error $err_{adapt}$ using the triangle inequality. 
 The truncation error can be estimated using the standard error estimators $err_T = | u^{n}_{b_{orig}} - u^{n}_{\hat{b}} |$. 
-After adapting the weights, the adaption error is calculated. If the adaption error is larger than the tolerance the weights are rejected.  
+After adapting the weights, the adaption error is calculated. If the adaption error is larger than the tolerance the weights are rejected.
 Both errors are added to get an approximation of the total error $err = err_T + err_{adapt}$.
 The truncation error and the adaption error never have the same direction.  
 Therefore, the triangle inequality becomes a strict inequality and the real error is always smaller than the estimate. (Note: as long as the Truncation error estimator is right) 
@@ -675,7 +673,7 @@ This type of error estimation is easy to implement because it can be easily inco
 By adapting the $b$ the used RK method is changed. This also alters the stability function and therefore changes the region of absolute stability.
 It depends on the solved problem, the RKM and the used $\dt$ by how many steps the stability function is altered. For problems where only a small number of steps are affected a bigger change in the stability function would be acceptable. For problems which require an adaptation of the weights for every step one needs to make sure that the resulting method is stable.
 
-In Figure\,\ref{fig:stab} the stabilit regions of adapted RKM are plotted. 
+In Figure\,\ref{fig:stab} the stability regions of adapted RKMs are plotted.
 In Figure\,\ref{fig:stab_ck5} the Dormand--Prince 5 method is freely adapted.
 The weights are taken form the example in Section~\ref{sec:Ex_expl}.
 
@@ -708,13 +706,18 @@ In Figure\,\ref{fig:stab_ex3} the stability regions of the BE-Extraplotaion 3 me
 
 The stability function is defined as 
 \begin{equation}\label{eq:stab_func}
-R(z) = 1 + zb^T(I - zA)^{-1}e
+R(z) = 1 + zb^T(I - zA)^{-1}e.
 \end{equation}
 We can define a function $P(z)$
 \begin{equation}
-P(z) = R(z)-1 = z b^T (I - zA)^{-1} e
+P(z) = R(z)-1 = z b^T (I - zA)^{-1} e.
 \end{equation}
 These rational functions are $\in \mathcal{L}^\infty$. (Note: for all explicit methods this is always true, for implicit methods we have to exclude the poles $\{z | \det(I - zA) = 0\}$ or  $\{z | \det(I - zA) > \epsilon \}$ )
+
+\todo{Note (HR)} No. They are polynomials or rational functions
+on the complex plane. Hence, they can only be bounded if they are
+constant.
+
 We define $\mathcal{P}$ as all $P(z)$ for the class of $RKM_A$. 
 This is a vector space.
 Proof:
@@ -745,11 +748,11 @@ R_b(z) = 1 + P_b(z) = 1 + \sum_{j = 1}^s b_s p_{e_1}
 \paragraph*{Version 2} $ $\\
 The stability function is defined as a function $\CN \to \CN$ with 
 \begin{equation}
-R(z) = 1 + zb^T(I - zA)^{-1}e
+R(z) = 1 + zb^T(I - zA)^{-1}e.
 \end{equation}
 We can add $b$ as a second parameter and get a function $\CN \times \R^s \to \CN$ with
 \begin{equation}
-R(z,b) = 1 + zb^T(I - zA)^{-1}e
+R(z,b) = 1 + zb^T(I - zA)^{-1}e.
 \end{equation}
 The stability function is a linear function in the weights.
 
@@ -760,26 +763,34 @@ The stability function is a linear function in the weights.
 
 
 \subsubsection{Stability of convex adaptation}
+
 If the new weights are chosen as a convex adaptation of weights it is easy to prove properties of the stability region.
-The stability function $R_{\chi b_a + (1-\chi) b_b}(z)$ of a convex adaptation can be calculated by the weighted sum of the stability functions $R_{b_a}(z)$ and $R_{b_b}(z)$
 
-Proof:
-\begin{multline}
-R_{\chi b_a + (1-\chi) b_b}(z) = R(z) = 1 + (\chi b_a + (1-\chi) b_b)^Tz(I - zA)^{-1}e \\
-= \chi + (1-\chi) + \chi b_a ^Tz(I - zA)^{-1}e + (1-\chi) b_b^Tz(I - zA)^{-1}e \\
-= \chi R_{b_a}(z) + (1-\chi) R_{b_b}(z)
-\end{multline}
+\begin{theorem}
+  The stability region of a Runge--Kutta method $(A,b)$ where
+  $b = \sum_{i} g_i b^i$ is a convex combination of
+  $b^1, \dots, b^m \in \R^s$ (i.e.\ $g_i \in [0,1]$, $\sum_i g_i = 1$),
+  contains at least the intersection of the stability regions of
+  the methods $(A,b^1), \dots, (A,b^m)$
+\end{theorem}
+\begin{proof}
+  Since the stability function is an affine-linear function of the
+  weights, $R_{\sum_i g_i b^i}(z) = \sum_i g_i R_{b^i}(z)$. Hence,
+  if $z$ is in the stability region of all methods $(A,b^1), \dots, (A,b^m)$,
+  \begin{equation}
+    | R_{\sum_i g_i b^i}(z) |
+    \le
+    \sum_i g_i | R_{b^i}(z) |
+    \le
+    1.
+  \end{equation}
+\end{proof}
 
-The resulting region of absolute stability is at least the intersection of the regions of absolute stability of the methods that define the convex adaptation. This also means that if all the used embedded methods used to construct the new weights are A-Stable, the resulting method is also A-Stable.
-
-We want to show that the convex adaptation of two methods is absolutely stable at the points where both original methods were absolutely stable.
-This can be formulated as $(|R_{b_a}(z)|  < 1) (|R_{b_b}(z)| < 1) \Rightarrow |R_{\chi b_a +(1- \chi) b_b}(z)| < 1$ with $\chi \in [0,1]$.
-
-
-\begin{multline}
-|R_{\chi b_a +(1-\chi) b_b}(z)| = |\chi R_{b_a}(z) + (1-\chi) R_{b_a}(z)| \leq |\chi R_{b_a}(z)| + |(1-\chi) R_{b_a}(z)|\\
- =| \chi| \underbrace{|R_{b_a}(z)|}_{<1} + |(1-\chi)| \underbrace{|R_{b_a}(z)|}_{<1} < \chi + (1-\chi)= 1
-\end{multline}
+\begin{remark}
+  This result is particularly important for implicit methods.
+  If all the used embedded methods used to construct the new weights
+  are A-Stable, the resulting method is also A-Stable.
+\end{remark}
 
 
 
@@ -795,10 +806,10 @@ We would like to calculate the derivative of the border in respect to a change o
 
 The stability function depending on the weights is expressed. 
 When adapting the weights we cannot change them independently but only in ways that comply with the order conditions.
-$m$ is the number of dimensions of the Kernel of the Order Condition $m = \mathrm{dim}\{\mathrm{Ker} (Q) \}$
-The $b_1,\cdots,b_m$  are the Basis vectors of $\mathrm{Ker} (Q)$. With a coordinate transformation we get the coordinate vector $\hat{b}$ with the Matrix $B = [b_1,\cdots,b_m]$ and $b = B \hat{b}$.
+$m$ is the number of dimensions of the kernel of the order condition $m = \mathrm{dim}\{\mathrm{Ker} (Q) \}$
+The $b_1,\cdots,b_m$  are the basis vectors of $\mathrm{Ker} (Q)$. With a coordinate transformation we get the coordinate vector $\hat{b}$ with the matrix $B = [b_1,\cdots,b_m]$ and $b = B \hat{b}$.
 
-The general stability function of all embedded RKM that satisfy the Order Conditions $Q$ is given by 
+The general stability function of all embedded RKM that satisfy the order conditions $Q$ is given by
 
 \begin{equation}\label{eq:gen_stabilityf}
 R(\hat{b},z) = 1 +  (b_{orig} +B \hat{b})^T z(I - zA)^{-1}
@@ -817,9 +828,9 @@ If the gradient does not vanish at $z = z_0$ \eqref{eq:border} can be transforme
 This implies that this approach is only applicable if the gradient does not vanish on the border of the stability function. This is not true in general but for the most common RKM. 
 The derivative $\frac{\mathrm d}{\mathrm d \hat{b}} (a(\hat{b}))$ can be calculated using the implicit function theorem. The defining function is 
 \begin{equation}\label{eq:f(w,a)}
-f: \R^m \times \R \rightarrow \R f(\hat{b},a) = |R(\hat{b},z_0 + n a)|^2 -1 
+f: \R^m \times \R \rightarrow \R,  f(\hat{b},a) = |R(\hat{b},z_0 + n a)|^2 -1
 \end{equation}
-If explicit methods are used this function is known to be continuously differentiable because it can be written as a polynomial of $\hat{b},u$ and $v$. This is a necessary condition for the use of the Implicit function theorem. 
+If explicit methods are used this function is known to be continuously differentiable because it can be written as a polynomial of $\hat{b},u$ and $v$. This is a necessary condition for the use of the implicit function theorem.
 It is also known by definition, that for the point $b = b_{orig}$ and $z = z_0$ the equation $ |R(\hat{b},z_0)|^2 -1 = 0 $ is satisfied.
 For simplicity only the formulas for the derivative at the value $b = b_{orig}$ are given. This corresponds to $\hat{b} = 0$.
 The wanted derivative is given by 
@@ -852,65 +863,101 @@ The derivative $(B\hat{b})^T (I-zA)^{-1} R_{b_{orig}}(z^*) (B\hat{b})^T (I-z^*A)
 The same process can be done for all points on the border of the stability region. 
 As long as $\nabla|R(\hat{b},u+iv)|^2 \neq 0 \forall \hat{b} < \epsilon  \forall z$ the derivative $\frac{\partial a}{\partial \hat{b}_j} (\hat{b})$ is finite. This means that a small change of the weights only leads to a small change of the stability region.
 
+\todo{TODO: Some better theorem?} %TODO
+\begin{lemma}
+  The stability function $R_{\bt}$ of an adapted RK method
+  satisfies
+  \begin{equation}
+    | R_{\bt}(z) |
+    \le
+    | R_{b}(z) |
+    + \| \bt - b \|_1 \| z (\I - z A)^{-1} e \|_\infty.
+  \end{equation}
+\end{lemma}
+\begin{proof}
+  Compute
+  \begin{equation}
+  \begin{aligned}
+    | R_{\bt}(z) |
+    &\le
+    | R_{b}(z) |
+    + | R_{\bt}(z) - R_{b}(z) |
+    =
+    | R_{b}(z) |
+    + | z (\bt - b) (\I - z A)^{-1} e
+    \\
+    &\le
+    | R_{b}(z) |
+    + \| \bt - b \|_1 \| z (\I - z A)^{-1} e \|_\infty.
+  \end{aligned}
+  \end{equation}
+\end{proof}
+This shows why the objective $\min \| \bt - b \|_1 \|$ is a good
+choice to control the change of the region of absolute stability,
+in particular for explicit methods for which
+$\| z (\I - z A)^{-1} e \|_\infty$ can be bounded by polynomial
+in $|z|$.
+
 
 \section{Implementation aspects of the algorithm}\label{sec:imple}
 
-TODO: Discuss in this Section aspects that are needed for implementation (and improve the usability) but do not concern the mathematical idea of the approach.
+\todo{TODO}: Discuss in this Section aspects that are needed for implementation (and improve the usability) but do not concern the mathematical idea of the approach. %TODO
 
 \subsection{Positivity}
 
 
-For the further discussion, we are concerned with a system of $m$ coupled ODEs. 
-In this setup $u \in \R^m$.
+For the further discussion, we are concerned with a system of
+$m$ coupled ODEs, i.e.\ $u \in \R^m$.
 Systems of ODEs with a high number of dimensions can appear when solving a PDE with the method of lines.
 
-To ensure that the solution is positive 
-
+To ensure that the solution is positive
 \begin{equation}
  u_i^{n+1} \geq 0   \quad   \forall {i \in \{1, \cdots,m \}}  
 \end{equation}
-has to be fulfilled.
-This infers $m$ positivity constraints to the optimization problem. These can be written as
-
+has to be fulfilled. These $m$ positivity constraints of the
+optimization problem can be written as
 \begin{equation}
-u_i + \dt \sum_{j=0}^s F_{i,j}  b_j \geq 0 \quad \forall {i \in \{1, \cdots,m \}}  
+u_i^n + \dt \sum_{j=0}^s F_{i,j}  b_j \geq 0 \quad \forall {i \in \{1, \cdots,m \}}
 \end{equation}
 
-This causes unnecessarily many inequality constraints on the LP. To simplify the problem, one wants to reduce the number of positivity constraints by ignoring it for ODEs where there is no issue with positivity.
-The new positivity constraints can be formulated as
+Imposing all of these constraints in the LP solver usually results
+in unnecessarily many constraints. In many cases, positivity is
+violated only for a subset $h \subseteq \{1, \dots, m\}$ of all
+components. This reduced set of positivity constraints can be
+formulated as
 \begin{equation}
-u_i + \dt \sum_{j=0}^s F_{i,j}  b_j  \geq 0 \quad   \forall {i \in h \subseteq \{1,\cdots,m \}} 
+u_i^n + \dt \sum_{j=0}^s F_{i,j}  b_j  \geq 0 \quad \forall i \in h \subseteq \{1,\cdots,m \}.
 \end{equation}
-For this a set $h$ that includes all indecies $i \in \{1,\cdots,m \}$ that are needed for determining the weights has to be chosen.
-
 A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
-After the new weights and $u^{n+1}$ is computed using $h_0$, the algorithm has to check if the positivity of the other values $u_i | i \notin h_0 \subseteq \{1,\cdots,m \}$ is still met. 
-If the condition is not met a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP is solved again. This process is repeated until a solution is found that leads to a $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on the $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$. 
+After the new weights and $u^{n+1}$ are computed using $h_0$, the algorithm has to check if the positivity of the other values $\{u_i | i \notin h_0 \subseteq \{1,\cdots,m \}\}$ is still satisfied.
+If the condition is not met a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP is solved again. This process is repeated until a solution is found that leads to $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$.
 This worst case did not occur when runing the testproblems. 
 %(Note: A approach on this would be to make a educated guess which indices could get a problem with positivity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
 
-When enforcing a maximum value the number of constraints can be reduced using the same technique. When enforcing both maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints. 
+When enforcing a maximum value, the number of constraints can be reduced using the same technique. When enforcing both maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints.
 In this case it is important to update these sets simultaneously.  
 
 \subsection{Implemention}
-(Todo: Maybe a flowchart and a description on how we stitch everything together.) 
+(\todo{TODO}: Maybe a flowchart and a description on how we stitch everything together.) %TODO
 
-At fist the stagevaules and stagedeerivatives are calculated.
+At fist the stage values $y_i$ and stage derivatives $f_i$ are calculated.
 After this $u^{n+1}$ is computed using the original weights. If the positivity is not violated, this solution is used to update the solution. 
 If $u^{n+1}$ contains negative values, the weights are adapted using the following algorithm.
-For this different orders are tried, stariting with the highest order that has degrees of Freedom for $\tilde{b}$. 
-At first the Order Conditions are constructed. On these a LP-Solver is invoiced. If the LP is infeasible the algorithm immediately reduces the order. If the LP is feasible we test if the solution is acceptable. At first it is tested weather the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. %(Note: because of the chosen objective function it cannot be unbounded) 
+For this different orders are tried, starting with the highest order that has degrees of freedom for $\tilde{b}$.
+At first the order conditions are constructed. On these an LP solver is invoiced. If the LP is infeasible the algorithm immediately reduces the order. If the LP is feasible we test if the solution is acceptable. At first it is tested whether the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. %(Note: because of the chosen objective function it cannot be unbounded)
 Afterwards the adaption error is calculated using \eqref{eq:Err}. If the error is bigger than a set maximum error the $\tilde{b}$ is also rejected.
-If the new set of weights is requected in one of the tests the order is reduced.
+If the new set of weights is rejected in one of the tests the order is reduced.
 As soon as the algorithm finds suitable weights these are used to update the solution.
-If all acceptable orders are tried and no weights were found the step hast to be requected.
-If the reduction of stepsize is used this process is done first for $\theta = 1$. If no weights were found, the process is repeated for a smaler $\theta$. 
+If all acceptable orders are tried and no weights were found the step hast to be rejected.
+If the reduction of stepsize is used this process is done first for $\theta = 1$. If no weights were found, the process is repeated for a smaller $\theta$.
 
 
 
-\section{Results of experiments}\label{sec:Numeric_Results}
+\section{Results of numerical experiments}\label{sec:Numeric_Results}
 
-(Note: Is here a good place to give a note on where supplementary code can be found?)
+The implementation of the algorithms described above and code to
+reproduce the numerical examples reported here can be found in
+\cite{repository}.
 
 (Note: Should we discuss which solver is used. Probably it is not worth using space for some plot etc. on this... Maybe a short note?)
 
