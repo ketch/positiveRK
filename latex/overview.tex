@@ -969,24 +969,25 @@ u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall {u_c \geq 0} 
 \end{equation}
 For problems where the exact solution is positive for certain $u_0$ but positivity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additionaly it is not certain if the computed solutions would be reasonable.
 
+\todo{Note (HR)} I think this should be moved to the beginning.
+
 
 \subsection{Explicit methods}\label{sec:Ex_expl}
 First we want to test the adaptive RKM used with explicit methods.  
-When used with explicit methods the cost of solving the LP significant because the computation of the stagederivatives only requires $s$ evaluations of the RHS. 
+When used with explicit methods the cost of solving the LP is significant because the computation of the stage derivatives only requires $s$ evaluations of the RHS.
 For most of the linear test problems tried, the explicit methods yield to positive results.  
 When increasing the step size, issues with stability occur before getting negative values.  
-An example therefore the ODE in in Section~\ref{sec:example_lin}.
+An example for this is the ODE in Section~\ref{sec:example_lin}.
 Some nonlinear RHS may require very small timesteps to preserve positivity.  
 For these, adapting the weights could be a possible way to solve them. 
 An example is the reaction equation solved in Section~\ref{sec:example_reac}.
-The positivity of stage values is not ensured, therefore the right hand side has to be defined for negative values. If this is not the case, the right hand side has to be defined for negative values. 
-%All the following testproblems did not nead this modification.
+Since the positivity of the stage values is not ensured, the right hand side has to be defined for negative values. If this is not the case, the right hand side has to be adapted accordingly.
 
 As test problem the PDE
 \begin{equation}
-\frac{\partial u}{\partial t} = -a \frac{\partial u}{\partial z} - K (u)
+\frac{\partial u}{\partial t} = -a \frac{\partial u}{\partial x} - K (u)
 \end{equation}
-is simulated with the method of lines on the domain $x = [0,1]$ with $N =100$ points. The problem consists of an Advection part and an Exponential decay. At $x=0$ a inflow boundary with $u(0,t)=1$ is used. The initial condition is $u(x,0)=0$.
+is simulated with the method of lines on the domain $x = [0,1]$ with $N =100$ points. The problem consists of an advection part and an exponential decay. At $x=0$ a inflow boundary with $u(0,t)=1$ is used. The initial condition is $u(x,0)=0$.
 As semidiscretization an upwinding scheme is used. This leads to positivity preserving ODE
 \begin{equation}
 \frac{\mathrm d}{\mathrm d t} u_i = \frac{a}{\Delta x} \left( u_{i-1} - u_i \right) - K u_{i-1}
@@ -997,17 +998,20 @@ In Figure\,\ref{fig:sol_AdDe} the results for $\Delta t = 0.02$ are plotted for 
 In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.6$ the weights are altered. For $t > 0.6$ the original weights lead to a positive solution.
 \begin{figure}
 \centering
-\begin{subfigure}[b]{0.45\textwidth}
+\begin{subfigure}[t]{0.45\textwidth}
+\centering
 \includegraphics[width=1\textwidth]{plots/Advection_Decay.pdf}
-\caption{Solution of Advection Decay Problem}
+\caption{Numerical solution.}
 \label{fig:sol_AdDe}
-\end{subfigure}
-\\
-\begin{subfigure}[b]{0.45\textwidth}
+\end{subfigure}%
+~
+\begin{subfigure}[t]{0.45\textwidth}
+\centering
 \includegraphics[width=1\textwidth]{plots/b_Advection_Decay.pdf}\\
-\caption{Weights used for Advecion Decay Problem}
+\caption{Adaptation of the weights used for }
 \label{fig:weights_AdDe}
 \end{subfigure}
+\caption{Numerical results for the advection decay problem.}
 \end{figure}
 
 
@@ -1032,20 +1036,20 @@ Implicit methods seem like an advantageous choice for a couple of reasons.
 Fistly the cost of solving the LP is relatively small compared to the cost of solving the stage equations. 
 Secondly the timestep is not limited by the stability of the method. 
 Therefore, it is possible to use larger timesteps, that are more likely to lead to negative values. 
-A very interesting class of methods are the implicit extrapolation methods. These are Diagonally implicit and $p < s$. This means that they allow for changes of the weights without a reduction of the order. 
+A very interesting class of methods are the implicit extrapolation methods. These are diagonally implicit and $p < s$. This means that they allow for changes of the weights without a reduction of the order.
 Also, all stage values are computed using the BE method. This means that all intermediate stages are positive.  
-Also, an embedded BE Euler step is included. This ensures that a positive solution always exists, even if it is of first order.  
+Also, an embedded BE step is included. This ensures that a positive solution always exists, even if it is of first order.
 We test the adaptive RKM on the diffusion equation 
 \begin{equation}
-\frac{\partial }{\partial t} = D \frac{\partial^2}{\partial x^2}
+\frac{\partial }{\partial t} u = D \frac{\partial^2}{\partial x^2} u
 \end{equation}
 with homogeneous Dirichlet boundary conditions on the domain $x = [-0.5,0.5]$ with $N=100$ points. The equation is semidiscreticed using the 3-point-scheme
 \begin{equation}
 \frac{\mathrm d}{\mathrm d t} u_i = \frac{d}{\Delta x^2} \left( u_{i-1} - 2u_i + u_{i+1} \right)
 \end{equation}
-As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion coefficient is $D=1$ 
+As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion coefficient is $D=1$.
 The ODE is solved using the implicit EX3 method.  
-For large (Note: better word for 'not small enough') $\dt$ the method computes negative values for $u^1$. 
+For large (\todo{TODO}: better word for 'not small enough') $\dt$ the method computes negative values for $u^1$.
 These can be corrected by adapting the weights.  
 The solutions are computed using the free adaptation and convex adaptation for $\dt = \num{1e-3}$.
 The results for the free adaptation are plotted in Figure\,\ref{fig:sol_Diff_a}. The used weights are plotted in Figure\,\ref{fig:weights_Diff_a}. 
@@ -1116,12 +1120,11 @@ For this, we consider the advection-diffusion-production-destruction systems fro
 \frac{\partial u_4}{\partial t} &=-a \frac{\partial u_4}{\partial x} + d\frac{\partial^2 u_4}{\partial x ^2} + 0.05 u_2 + 0.02 u_3 + 0.003u_4 
 \end{align}
 \end{subequations}
-
-With the parameters $a=\num{1e-2} $ and $ d=\num{1e-6}$. 
+with the parameters $a=\num{1e-2} $ and $ d=\num{1e-6}$.
 The PDE is simulated on the domain $x = [0,1]$ with $N=100$ points. Periodic boundary conditions are used. 
 The advection part is semidiscreticed using a first order upwind scheme and the diffusion part is semidiscreticed using a 3-point-scheme. This leads to a positivity preserving system of ODEs.  
 The computation is done using the EX3 method with free adaptation. 
-As step size control a PI-Control from\,\cite{hairer_solving_1996} is used. The Error was estimated using \eqref{eq:Err}. The Tolerance was set to $Tol = 0.01$.  
+As step size control a PI-control from\,\cite{hairer_solving_1996} is used. The error was estimated using \eqref{eq:Err}. The tolerance was set to $Tol = 0.01$.
 The final time is $t_{end} = 50$. 
 The simulation required 264 steps. Of these, 72 required an adaptation of the weights. 
 All adapted weights are still of 3rd order.
@@ -1149,40 +1152,41 @@ We can see that the changes to the weights are only very small. The adapted RKM 
     \end{subfigure}
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_18.pdf}
-        \caption{$t=$}
+        \caption{$t=18$}
         \label{fig:sol_ADP18}
     \end{subfigure}
     
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_27.pdf}
-        \caption{$t=$}
+        \caption{$t=27$}
         \label{fig:sol_ADP27}
     \end{subfigure}
 	\begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_50.pdf}
-        \caption{$t=$}
+        \caption{$t=50$}
         \label{fig:sol_ADP50}
     \end{subfigure}
-
-    \caption{Solution of Advection-Diffusion-Reaction Problems at different times}\label{fig:Sol_ADP}
+    \caption{Solution of advection-diffusion-reaction problem at different times.}\label{fig:Sol_ADP}
 \end{figure}
 
 \begin{figure}
 \centering
 \includegraphics[width=0.85\textwidth]{plots/ADP_stepsize,b.pdf}
-\caption{Different statistics of computation of ADPD-Problem}
+\caption{Different statistics of computation of the advection-diffusion-reaction problem.}
 \label{fig:Stats_ADP}
 \end{figure}
+
+\todo{Note (HR)} Should the minimum of $u$ in Figure~\ref{fig:Stats_ADP} be negative before the adaptation?
 
 
 \section{Conclusion} \label{sec:conclusion}
 It is possible to adapt the weights to enforce positivity for RKMs that are not positivity preserving. 
-One main limitation is that the resulting Order has to be lower than the number of stages.  
+One main limitation is that the resulting order has to be lower than the number of stages.
 An error approximation for this method was given.  
 The region of absolute stability is altered by changing the weights. This effect can be predicted or controlled. 
 Used with explicit methods the positivity for some test problems could be recovered.  
 Because the time step size is limited by the stability it is only useful for a small interval of time steps. 
-The adaptive method mainly interesting for diagonally implicit methods.  
+The adaptive method is mainly interesting for diagonally implicit methods.
 The times step size is not limited by stability. 
 Also, the cost of solving the LP is not a crucial factor.  
 If the negative values occurring are not too large, which can be expected for most computations, adapting the weights is a potential way to ensure positivity. 
