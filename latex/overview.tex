@@ -228,7 +228,10 @@ invariants can be very important. e.g.\ the total mass for a transport
 problem or in reaction systems. The property to preserve all linear
 invariants is shared by RRK methods and has been shown to be an
 important advantage compared to orthogonal projection methods
-\cite{ranocha2020relaxationHamiltonian}.
+\cite{ranocha2020relaxationHamiltonian}. Of course, it is also
+possible to enforce the preservation of linear invariants in projection
+methods, but these invariants have to be known explicitly
+\cite{sandu2001positive}.
 
 The paper unfolds as follows. In Section~\ref{sec:main_idea} the main idea is explained. How the method can be written as a LP is explained in Section~\ref{sec:LP}.
 Section~\ref{sec:integration} describes how the new approach can be used with different RKM, how it can be integrated in a step size control and how the region of absolute stability can be approximated.
@@ -310,6 +313,14 @@ The resulting problem can be phrased as an LP by using slack variables.
 In general, this LP may not have a solution; we can relax the constraints
 by requiring a lower order of consistency than the design order of the
 method.  These choices and alternatives will be considered in Section~\ref{sec:LP}.
+
+In contrast to other projection methods
+\cite{shampine1986conservation,sandu2001positive},
+minimizing the deviation of the weights instead of the deviation
+of the projected solution is computationally much more efficient
+for large systems, arising for example in the discretization of
+PDEs.
+
 
 \subsection{Example I}\label{sec:example_reac}
 
