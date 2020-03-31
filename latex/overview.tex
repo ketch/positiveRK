@@ -892,10 +892,12 @@ in $|z|$.
 
 \section{Implementation aspects of the algorithm}\label{sec:imple}
 
-\todo{TODO}: Discuss in this Section aspects that are needed for implementation (and improve the usability) but do not concern the mathematical idea of the approach. %TODO
+Having described the mathematical idea of our approach,
+we discuss some practical implementation details of the
+proposed algorithm in the following.
+
 
 \subsection{Positivity}
-
 
 For the further discussion, we are concerned with a system of
 $m$ coupled ODEs, i.e.\ $u \in \R^m$.
@@ -931,15 +933,27 @@ In this case it is important to update these sets simultaneously.
 \subsection{Implemention}
 (\todo{TODO}: Maybe a flowchart and a description on how we stitch everything together.) %TODO
 
-At fist the stage values $y_i$ and stage derivatives $f_i$ are calculated.
-After this $u^{n+1}$ is computed using the original weights. If the positivity is not violated, this solution is used to update the solution. 
+At first, the stage values $y_i$ and stage derivatives $f_i$ are calculated.
+Afterwards, $u^{n+1}$ is computed using the original weights $b$.
+If the positivity is not violated, this solution is used to update the solution.
 If $u^{n+1}$ contains negative values, the weights are adapted using the following algorithm.
-For this different orders are tried, starting with the highest order that has degrees of freedom for $\tilde{b}$.
-At first the order conditions are constructed. On these an LP solver is invoiced. If the LP is infeasible the algorithm immediately reduces the order. If the LP is feasible we test if the solution is acceptable. At first it is tested whether the new $u^{n+1}$ indeed complies with the constraints. This is necessary because sometimes the used LP-solvers incorrectly identify the problem as feasible. %(Note: because of the chosen objective function it cannot be unbounded)
-Afterwards the adaption error is calculated using \eqref{eq:Err}. If the error is bigger than a set maximum error the $\tilde{b}$ is also rejected.
-If the new set of weights is rejected in one of the tests the order is reduced.
-As soon as the algorithm finds suitable weights these are used to update the solution.
-If all acceptable orders are tried and no weights were found the step hast to be rejected.
+
+Start with the highest order $\tilde p$ such that there are degrees
+of freedom for the weights $\bt$. Apply an LP solver to the optimization
+problem with accuracy and positivity constraints.
+If the LP is infeasible, reduce the order $\tilde p$ by one.
+If the LP is feasible, test whether the solution is acceptable.
+At first, test whether the new $u^{n+1}$ satisfies the constraints.
+This is necessary because sometimes the applied LP solvers incorrectly
+identify the problem as feasible.
+Afterwards the adaption error is calculated using \eqref{eq:Err}.
+If the error is bigger than a given maximum error tolerance, the
+new weights $\bt$ are also rejected.
+If the new set of weights is rejected in one of the tests the order
+$\tilde p$ is reduced by one.
+As soon as the algorithm finds suitable weights, these are used to update the solution.
+If all acceptable orders are tried and no weights were found, the step hast to be rejected.
+
 If the reduction of stepsize is used this process is done first for $\theta = 1$. If no weights were found, the process is repeated for a smaller $\theta$.
 
 
@@ -948,15 +962,16 @@ If the reduction of stepsize is used this process is done first for $\theta = 1$
 
 The implementation of the algorithms described above and code to
 reproduce the numerical examples reported here can be found in
-\cite{repository}.
+\cite{repository}. We have used CVXPY to solve the LPs
+\cite{cvxpy, cvxpy_rewriting}.
+\todo{TODO: Which solver of CVXPY?} %TODO
 
-(Note: Should we discuss which solver is used. Probably it is not worth using space for some plot etc. on this... Maybe a short note?)
 
 \subsection{Applicable problems}\label{sec:app_problem}
 The approach can be used with ODE systems $u' = f(t,u)$ that ensure  $u(t) \geq 0 \forall t \forall {  u_0 \geq 0}$ 
 A sufficient condition is  
 \begin{equation}
-u_i=0 \Rightarrow f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0  \forall {u_c \geq 0} \forall {t}
+u_i=0 \implies f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0 \quad \forall {u_c \geq 0}\; \forall {t}
 \end{equation}
 For problems where the exact solution is positive for certain $u_0$ but positivity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additionaly it is not certain if the computed solutions would be reasonable.
 
@@ -974,17 +989,30 @@ For these, adapting the weights could be a possible way to solve them.
 An example is the reaction equation solved in Section~\ref{sec:example_reac}.
 Since the positivity of the stage values is not ensured, the right hand side has to be defined for negative values. If this is not the case, the right hand side has to be adapted accordingly.
 
-As test problem the PDE
+A test problem similar to \cite{shampine_non-negative_2005} is the PDE
 \begin{equation}
-\frac{\partial u}{\partial t} = -a \frac{\partial u}{\partial x} - K (u)
+\begin{aligned}
+  \frac{\partial u(t,x)}{\partial t}
+  &=
+  -a \frac{\partial u(t,x)}{\partial x} - K u(t,x),
+  && x \in (0, 1), t \in (0,1),
+  \\
+  u(t,0) &= 1,
+  && t \in (0,1],
+  \\
+  u(0,x) &= 0,
+  && x \in [0,1],
+\end{aligned}
 \end{equation}
-is simulated with the method of lines on the domain $x = [0,1]$ with $N =100$ points. The problem consists of an advection part and an exponential decay. At $x=0$ a inflow boundary with $u(0,t)=1$ is used. The initial condition is $u(x,0)=0$.
-As semidiscretization an upwinding scheme is used. This leads to positivity preserving ODE
+which consists of an advection part and an exponential decay.
+The numerical approximation uses the method of lines and a first order
+upwind finite difference semidiscretization with $N = 100$ points.
+This leads to the positivity preserving ODE
 \begin{equation}
-\frac{\mathrm d}{\mathrm d t} u_i = \frac{a}{\Delta x} \left( u_{i-1} - u_i \right) - K u_{i-1}
+\frac{\mathrm d}{\mathrm d t} u_i = \frac{a}{\Delta x} \left( u_{i-1} - u_i \right) - K u_{i-1}.
 \end{equation}
 The parameters are set to $a=1$ and $K=1$.
-We use the Dormand--Prince 5 RKM and adapt the weights using the free adaptation.
+We use the Dormand--Prince RK5 method and adapt the weights using the free adaptation.
 In Figure\,\ref{fig:sol_AdDe} the results for $\Delta t = 0.02$ are plotted for different timesteps. We can see that the solution approaches an exponential function with $t \rightarrow \infty$.
 In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.6$ the weights are altered. For $t > 0.6$ the original weights lead to a positive solution.
 \begin{figure}
@@ -992,14 +1020,14 @@ In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.6$ 
 \begin{subfigure}[t]{0.45\textwidth}
 \centering
 \includegraphics[width=1\textwidth]{plots/Advection_Decay.pdf}
-\caption{Numerical solution.}
+\caption{Numerical solution at different times.}
 \label{fig:sol_AdDe}
 \end{subfigure}%
 ~
 \begin{subfigure}[t]{0.45\textwidth}
 \centering
 \includegraphics[width=1\textwidth]{plots/b_Advection_Decay.pdf}\\
-\caption{Adaptation of the weights used for }
+\caption{Adaptation of the weights.}
 \label{fig:weights_AdDe}
 \end{subfigure}
 \caption{Numerical results for the advection decay problem.}
@@ -1007,14 +1035,14 @@ In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.6$ 
 
 
 Next, different timesteps are used.
-For $\dt \leq 0.0082$ the unaltered method leads to positive solutions. For a larger $\dt$ the original method leads to negative values and the weights are altered. For $\dt >0.016$ the dp5 is no longer stable.
+For $\dt \leq 0.0082$ the unaltered method leads to positive solutions. For a larger $\dt$ the original method leads to negative values and the weights are altered. For $\dt >0.016$ the baseline method is no longer stable.
 For the ODE, the reference solution can be computed using the matrix exponential. 
 In Figure\,\ref{fig:conv_expl} the convergence for $t=0.5$ is plotted for the altered and unaltered method.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[scale=0.75]{plots/conv_adde.pdf}
-\caption{Convergence adapted dp5}
+\includegraphics[scale=0.6]{plots/conv_adde.pdf}
+\caption{Convergence results of the adapted Dormand--Prince RK5.}
 \label{fig:conv_expl}
 \end{figure}
 
@@ -1024,32 +1052,36 @@ Even though the order is reduced, most errors are still close to the error of th
 
 \subsection{Implicit methods}
 Implicit methods seem like an advantageous choice for a couple of reasons. 
-Fistly the cost of solving the LP is relatively small compared to the cost of solving the stage equations. 
-Secondly the timestep is not limited by the stability of the method. 
-Therefore, it is possible to use larger timesteps, that are more likely to lead to negative values. 
+Firstly, the cost of solving the LP is relatively small compared to the cost of solving the stage equations.
+Secondly, the timestep is not limited by the stability of the method.
+Therefore, it is possible to use larger timesteps that are more likely to lead to negative values.
+
 A very interesting class of methods are the implicit extrapolation methods. These are diagonally implicit and $p < s$. This means that they allow for changes of the weights without a reduction of the order.
-Also, all stage values are computed using the BE method. This means that all intermediate stages are positive.  
+Also, all stage values are computed using the BE method. Hence, all intermediate stages are positive.
 Also, an embedded BE step is included. This ensures that a positive solution always exists, even if it is of first order.
-We test the adaptive RKM on the diffusion equation 
+
+We test the proposed adaptation algorithm on the diffusion equation
 \begin{equation}
 \frac{\partial }{\partial t} u = D \frac{\partial^2}{\partial x^2} u
 \end{equation}
-with homogeneous Dirichlet boundary conditions on the domain $x = [-0.5,0.5]$ with $N=100$ points. The equation is semidiscreticed using the 3-point-scheme
+with homogeneous Dirichlet boundary conditions on the domain $x = [-0.5,0.5]$ with $N=100$ points. The equation is semidiscretized using the 3-point-scheme
 \begin{equation}
 \frac{\mathrm d}{\mathrm d t} u_i = \frac{d}{\Delta x^2} \left( u_{i-1} - 2u_i + u_{i+1} \right)
 \end{equation}
 As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion coefficient is $D=1$.
-The ODE is solved using the implicit EX3 method.  
-For large (\todo{TODO}: better word for 'not small enough') $\dt$ the method computes negative values for $u^1$.
+
+The ODE is solved using the Im-Euler~3 extrapolation method.
+For large $\dt$ the method computes negative values for $u^1$.
 These can be corrected by adapting the weights.  
 The solutions are computed using the free adaptation and convex adaptation for $\dt = \num{1e-3}$.
-The results for the free adaptation are plotted in Figure\,\ref{fig:sol_Diff_a}. The used weights are plotted in Figure\,\ref{fig:weights_Diff_a}. 
+The results for the free adaptation are plotted in Figure\,\ref{fig:sol_Diff_a} and the corresponding change of the weights
+is shown in Figure\,\ref{fig:weights_Diff_a}.
 The original solution for the first step is negative. Therefore, the weights have to be changed. 
 If we take a look at the solution after the first timestep at $t=0.001$ we can see that at $x=0$ the solution is smaller than the solution at the surrounding points.  
 This is not physical.  
 The next timesteps lead to physical solutions again. 
 To prevent this glitch from happening we choose the weights based on a convex adaptation. 
-A first order embedded method is added. The solution is shown in Figure\,\ref{fig:sol_Diff_c} and the weights are plotted in Figure\,\ref{fig:weights_Diff_c}. 
+A first order embedded method is added. The solution is shown in Figure\,\ref{fig:sol_Diff_c} and the weights are visualized in Figure\,\ref{fig:weights_Diff_c}.
 The weights for the first step are altered again. 
 The weights obtained by the convex adaptation are different from the weights obtained 
 by taking the free adaptation. 
@@ -1058,42 +1090,49 @@ For both approaches, the remaining steps can be computed with the standard weigh
 \begin{figure}
 \centering
 \begin{subfigure}[b]{0.45\textwidth}
-\includegraphics[width=1\textwidth]{plots/Diff_Direct.pdf}\\
-\caption{Solution of Diffusion for free adaptation \newline $ $}
+\centering
+\includegraphics[width=1\textwidth]{plots/Diff_Direct.pdf}
+\caption{Solution using the free adaptation.}
 \label{fig:sol_Diff_a}
 \end{subfigure}
 \begin{subfigure}[b]{0.45\textwidth}
-\includegraphics[width=1\textwidth]{plots/Diff_Convex.pdf}\\
-\caption{Solution of Diffusion for convex adaptation}
+\centering
+\includegraphics[width=1\textwidth]{plots/Diff_Convex.pdf}
+\caption{Solution using the convex adaptation.}
 \label{fig:sol_Diff_c}
 \end{subfigure}
-
+\\
 \begin{subfigure}[b]{0.45\textwidth}
-\includegraphics[width=1\textwidth]{plots/b_Diff_Direct.pdf}\\
-\caption{Weights used for free adaptation}
+\centering
+\includegraphics[width=1\textwidth]{plots/b_Diff_Direct.pdf}
+\caption{Change of weights for free adaptation.}
 \label{fig:weights_Diff_a}
 \end{subfigure}
 \begin{subfigure}[b]{0.45\textwidth}
-\includegraphics[width=1\textwidth]{plots/b_Diff_Convex.pdf}\\
-\caption{Weights used for convex adaptation}
+\centering
+\includegraphics[width=1\textwidth]{plots/b_Diff_Convex.pdf}
+\caption{Change of weights for convex adaptation.}
 \label{fig:weights_Diff_c}
 \end{subfigure}
+\caption{Numerical results for the diffusion problem and the
+         adapted Im-Euler~3 extrapolation method.}
 \end{figure}
 
 
-In Figure\,\ref{fig:conv_impl} the convergence is shown for the unaltered EX3 method, that potentially leads to negative values, the adaptive method with free adaptation (EX3a) and the adapted method using convex adaptations (EX3c).  
+In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered Im-Euler~3 extrapolation method (ex3, potentially resulting in negative values), the adaptive method with free adaptation (ex3a) and the adapted method using convex adaptations (ex3c).
 Also, the BE method is plotted. It is only of 1st order but preserves positivity for all $\dt$. 
 For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity. 
-The EX3a shows similar convergence properties as the original method. 
+The ex3a shows similar convergence properties as the original method.
 This can be expected, because the adapted method is still of 3rd order. 
-The EX3c has larger errors than the EX3a but leads to physical solutions for all time-steps.  
-This is no surprise because the adapted RKM used for the first step is only of 1st order. 
+The ex3c has larger errors than the ex3a but leads to physical solutions for all time-steps.
+This is no surprise because the adapted RKM used for the first step is only of first order.
 But the adaptive method still outperforms the BE, even when accounting for the higher cost per step. 
 
 \begin{figure}[ht]
 \centering
 \includegraphics[scale=0.75]{plots/conv_heat.pdf}
-\caption{Convergence adapted ex3}
+\caption{Convergence result of baseline and adapted Im-Euler~3
+         extrapolation methods for the diffusion problem.}
 \label{fig:conv_impl}
 \end{figure}
 
@@ -1111,22 +1150,24 @@ For this, we consider the advection-diffusion-production-destruction systems fro
 \frac{\partial u_4}{\partial t} &=-a \frac{\partial u_4}{\partial x} + d\frac{\partial^2 u_4}{\partial x ^2} + 0.05 u_2 + 0.02 u_3 + 0.003u_4 
 \end{align}
 \end{subequations}
-with the parameters $a=\num{1e-2} $ and $ d=\num{1e-6}$.
+with parameters $a=\num{1e-2} $ and $ d=\num{1e-6}$.
 The PDE is simulated on the domain $x = [0,1]$ with $N=100$ points. Periodic boundary conditions are used. 
-The advection part is semidiscreticed using a first order upwind scheme and the diffusion part is semidiscreticed using a 3-point-scheme. This leads to a positivity preserving system of ODEs.  
-The computation is done using the EX3 method with free adaptation. 
+The advection part is semidiscretized using a first order upwind scheme and the diffusion part is semidiscretized using a 3-point-scheme. This leads to a positivity preserving system of ODEs.
+The computation is done using the Im-Euler~3 extrapolation
+method with free adaptation.
 As step size control a PI-control from\,\cite{hairer_solving_1996} is used. The error was estimated using \eqref{eq:Err}. The tolerance was set to $Tol = 0.01$.
-The final time is $t_{end} = 50$. 
+The final time is $t_{end} = 50$.
+
 The simulation required 264 steps. Of these, 72 required an adaptation of the weights. 
 All adapted weights are still of 3rd order.
 The solutions for $t=9,t=18,t=27$ and $t=50$ are plotted in Figure\,\ref{fig:Sol_ADP}. 
 In Figure\,\ref{fig:sol_ADP18} it can be seen that the reaction occurs in a small interfaces. 
-Outside of this regions quantities are close to $0$. Therefore, it is very likely that negative values occur in the numerical approximation. 
+Outside of this regions quantities are close to zero. Therefore, it is very likely that negative values occur in the numerical approximation.
 In Figure\,\ref{fig:sol_ADP27} it can be seen that at $T=27$ the two reaction interfaces merged. Afterwards the reaction stops and the behavior is mainly controlled by the advection and diffusion part.  
 
 In Figure\,\ref{fig:Stats_ADP} different values are plotted.  
 In the first subplot the step size is plotted. For $t<25$ the timesteps are small. After $t = 30$ the step size increases, because the solution only evolves slowly afterwards. 
-In the second subplot the $min(u_1,u_2,u_3,u_4)$ is plotted for all timesteps that initially lead to negative values. This value is computed before and after adapting the weights.  
+In the second subplot the minimum of $u_1,u_2,u_3,u_4$ is plotted for all timesteps that initially lead to negative values. This value is computed before and after adapting the weights.
 We can see that relatively large negative values occurred at some timesteps. 
 After the adaption of the weights, all values are close to $0$. Therefore, the adaption of weights successfully preserved positivity. 
 In the third subplot the approximated truncation error $err_T$ and the adaption errro $err_{adapt}$ are plotted. 
@@ -1138,23 +1179,23 @@ We can see that the changes to the weights are only very small. The adapted RKM 
     \centering
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_00.pdf}
-        \caption{$t=0$}
+        \caption{$t=0$.}
         \label{fig:sol_ADP00}
     \end{subfigure}
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_18.pdf}
-        \caption{$t=18$}
+        \caption{$t=18$.}
         \label{fig:sol_ADP18}
     \end{subfigure}
     
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_27.pdf}
-        \caption{$t=27$}
+        \caption{$t=27$.}
         \label{fig:sol_ADP27}
     \end{subfigure}
 	\begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_50.pdf}
-        \caption{$t=50$}
+        \caption{$t=50$.}
         \label{fig:sol_ADP50}
     \end{subfigure}
     \caption{Solution of advection-diffusion-reaction problem at different times.}\label{fig:Sol_ADP}
@@ -1167,7 +1208,7 @@ We can see that the changes to the weights are only very small. The adapted RKM 
 \label{fig:Stats_ADP}
 \end{figure}
 
-\todo{Note (HR)} Should the minimum of $u$ in Figure~\ref{fig:Stats_ADP} be negative before the adaptation?
+\todo{Note (HR)} Should the minimum of $u$ in Figure~\ref{fig:Stats_ADP} be negative before the adaptation? %TODO
 
 
 \section{Conclusion} \label{sec:conclusion}
