@@ -599,7 +599,7 @@ The number of degrees of freedom for different explicit methods are shown in Tab
 %   SDIRK(5,4)& s=5&4&3&1&0& - & -  \\
 %   TR-BDF2& s=3&2&1& - & - & - & -  \\
 %   Im-Euler 2& s=3&2&1& - & - & - & -  \\
-%   Im-Euler 3& s=6&5&4&2& - & - & -  \\
+%   Im-Euler~3& s=6&5&4&2& - & - & -  \\
 %   Im-Euler 4& s=10&9&8&6&3& - & -  \\
 %   \hline
 %   \end{tabular}
@@ -614,7 +614,7 @@ The number of degrees of freedom for different explicit methods are shown in Tab
     SDIRK(5,4) \cite[eq. (6.18)]{hairer_solving_1996}& 5&4&3&1&0& --- & ---  \\
     TR-BDF2 \cite{bank1985transient} & 3&2&1& --- & --- & --- & ---  \\
     Extrapolation Im-Euler 2& 3&2&1& --- & --- & --- & ---  \\
-    Extrapolation Im-Euler 3& 6&5&4&2& --- & --- & ---  \\
+    Extrapolation Im-Euler~3& 6&5&4&2& --- & --- & ---  \\
     Extrapolation Im-Euler 4& 10&9&8&6&3& --- & ---  \\
     \bottomrule
   \end{tabular*}
@@ -634,21 +634,21 @@ methods are reported.
 We can see that the fully implicit methods Lobatto~IIIC4 and Radau~IIA3 require a drastic reduction of the order as expected.
 The diagonally implicit SDIRK(5,4) method only requires an order reduction of one to get one degree of freedom for the weights.
 The TR-BDF2 method even allows adaptations without reducing the order.  
-The Implicit-Euler extrapolation methods also exhibit degrees of freedom without a reduction of the order. 
+The implicit Euler extrapolation methods also exhibit degrees of freedom without a reduction of the order.
 
 Another important property is the stability region. 
 The adaption of the weights does not solve issues with stability when used with a too big $\dt$. Therefore, the RK method has to be stable for large $\dt$.
 
 %(Note: up to this point I do not understand why some methods perform better than other. We only see it occur depending on the Problem-RKM combination) 
 
-A third property is the existence of a positive solution. This corresponds to the question whether there is an embedded first order method that ensures positivity. This is particularly interesting for implicit methods, because the $\dt$ is not limited by the stability.
+A third property is the existence of a positive solution. This corresponds to the question whether there is an embedded first order method that ensures positivity. This is particularly interesting for implicit methods, because $\dt$ can be unrestricted by stability requirements.
 If we have an embedded first order method, we can ensure that there is always a positive solution, which might be of first order.
 This is the case for the Im-Euler extrapolation methods, because they contain a chain of BE steps. 
 For explicit methods the FE method is always embedded, but a reduction of the step size might be required. 
 
 \subsection{Error detection and approximation}
 When changing the weights the solution $u^{n+1}$ is changed. 
-By incorporating the order conditions for a certain order the space of possible weights that can be chosen is limited to a linear subspace.
+By incorporating the order conditions for a certain order the space of possible weights that can be chosen is limited to an affine subspace.
 Now it is important to know if the new solution $u^{n+1}$ still resembles the solution of the ODE $u(t_{n+1})$. 
 This can be seen in the example in Section~\ref{sec:example_lin}.
 This gives rise to the question whether the new solution is reasonable.
@@ -686,8 +686,8 @@ The total error is split up in the truncation error $err_T$ and the adaption err
 The truncation error can be estimated using the standard error estimators $err_T = | u^{n}_{b_{orig}} - u^{n}_{\hat{b}} |$. 
 After adapting the weights, the adaption error is calculated. If the adaption error is larger than the tolerance the weights are rejected.
 Both errors are added to get an approximation of the total error $err = err_T + err_{adapt}$.
-The truncation error and the adaption error never have the same direction.  
-Therefore, the triangle inequality becomes a strict inequality and the real error is always smaller than the estimate. (Note: as long as the Truncation error estimator is right) 
+% The truncation error and the adaption error never have the same direction.
+% Therefore, the triangle inequality becomes a strict inequality and the real error is always smaller than the estimate. (Note: as long as the Truncation error estimator is right)
 %\subsubsection{Steppsize Control}
 %An important part of an RKM method is the ability to approximate the error of the solution to use it to control the step size. 
 %The truncation error $|u(t^n)-u^n_{b_{orig}}|$ is usually approximated with an standard error estimator $err_T = | u^{n}_{b_{orig}} - u^{n}_{\hat{b}} |$.
@@ -699,108 +699,73 @@ This type of error estimation is easy to implement because it can be easily inco
 
 \subsection{Stability region}
 
-By adapting the $b$ the used RK method is changed. This also alters the stability function and therefore changes the region of absolute stability.
-It depends on the solved problem, the RKM and the used $\dt$ by how many steps the stability function is altered. For problems where only a small number of steps are affected a bigger change in the stability function would be acceptable. For problems which require an adaptation of the weights for every step one needs to make sure that the resulting method is stable.
+Adapting the weights $b$ changes the RK method. Hence, the stability
+function is altered and the region of absolute stability varies.
+How often and how much the stability function is changed depends
+of course on the problem, the RKM, and the timestep $\dt$.
+For problems where only a small number of steps are affected, a bigger
+change in the stability function might be acceptable. For problems
+that require an adaptation of the weights for every step, one needs
+to make sure that the resulting method is stable.
 
-In Figure\,\ref{fig:stab} the stability regions of adapted RKMs are plotted.
-In Figure\,\ref{fig:stab_ck5} the Dormand--Prince 5 method is freely adapted.
-The weights are taken form the example in Section~\ref{sec:Ex_expl}.
-
-In Figure\,\ref{fig:stab_ex3} the stability regions of the BE-Extraplotaion 3 method and the embedded chain of three BE steps is plotted. Additionally the stability regions of convex combinations of these two methods are plotted.
+The stability regions of adapted RKMs are visualized in
+Figure\,\ref{fig:stab}.
+In Figure\,\ref{fig:stab_dp5} the Dormand--Prince RK5 method is freely adapted.
+The weights are taken from the example in Section~\ref{sec:Ex_expl}.
+In Figure\,\ref{fig:stab_ex3} the stability regions of the Im-Euler~3
+extrapolation method and the embedded chain of three BE steps are
+plotted. Additionally the stability regions of convex combinations
+of these two methods are shown.
 
 \begin{figure}
      \centering
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
          \includegraphics[width=\textwidth]{plots/stab_dp5.pdf}
-         \caption{Dormand--Prince 5\\
-         with $\tilde{b}$ form \ref{fig:weights_AdDe}
-         }
-         \label{fig:stab_ck5}
+         \caption{Dormand--Prince RK5 with free adaptation
+                   of the weights $\bt$ as in the example in Figure~\ref{fig:weights_AdDe}.}
+         \label{fig:stab_dp5}
      \end{subfigure}
      \hfill
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
          \includegraphics[width=\textwidth]{plots/stab_ex3.pdf}
-         \caption{Implicit Extrapolation 3 and embedded chain of three BE steps with convex combinations of both weights}
+         \caption{Im-Euler~3 extrapolation method and embedded chain
+                  of three BE steps with convex combinations of both
+                  weights.}
          \label{fig:stab_ex3}
      \end{subfigure}
-        \caption{Change of stability region for free adaptation(a) and for convex adaptation(b)}
+        \caption{Change of stability region for the free adaptation and
+                 the convex adaptation of the weights.}
         \label{fig:stab}
 \end{figure}
 
 
-
-\paragraph*{Version 1} $ $\\
-
-The stability function is defined as 
-\begin{equation}\label{eq:stab_func}
-R(z) = 1 + zb^T(I - zA)^{-1}e.
-\end{equation}
-We can define a function $P(z)$
+The stability function is defined as a function $\CN \to \CN$ with
 \begin{equation}
-P(z) = R(z)-1 = z b^T (I - zA)^{-1} e.
+R(z) = 1 + zb^T(I - zA)^{-1}e,
 \end{equation}
-These rational functions are $\in \mathcal{L}^\infty$. (Note: for all explicit methods this is always true, for implicit methods we have to exclude the poles $\{z | \det(I - zA) = 0\}$ or  $\{z | \det(I - zA) > \epsilon \}$ )
-
-\todo{Note (HR)} No. They are polynomials or rational functions
-on the complex plane. Hence, they can only be bounded if they are
-constant.
-
-We define $\mathcal{P}$ as all $P(z)$ for the class of $RKM_A$. 
-This is a vector space.
-Proof:
-\begin{multline}
-\alpha P_a(z) + \gamma P_c(z) =  \alpha z a^T (I - zA)^{-1} e + \gamma z c^T (I - zA)^{-1} e=\\
-z (\alpha a+ \gamma c)^T (I - zA)^{-1} e= P_{\alpha a + \gamma c}(z) \in \mathcal{P}
-\end{multline}
-
-The $P(z)$ is a linear combination of the rational functions
-\begin{subequations}
-\begin{align}
-p_1(z) &= z e_1^T (I - zA)^{-1}\\
-\vdots \\
-p_s(z) &= z e_s^T (I - zA)^{-1}
-\end{align}
-\end{subequations}
-whereas $e_1,\cdots,e_s$ is the standard basis of $\R^s$.
-These span $\mathcal{P}$. If $p_{e_1}(z),\cdots,p_{e_s}(z)$ are linearly independent $p_{e_1}(z),\cdots,p_{e_s}(z)$ are a basis of $\mathcal{P}$.
-
-With this results the stability function $R_b(z)$ of any RKM in $RKM_{(A)}$ can be calculated with 
+where $e = (1, \dots, 1)^T \in \R^s$.
+We can add $b$ as a second parameter and get a function
+$R\colon \R^s \times \CN  \to \CN$ with
 \begin{equation}
-R_b(z) = 1 + P_b(z) = 1 + \sum_{j = 1}^s b_s p_{e_1}
+R_b(z) = 1 + zb^T(I - zA)^{-1}e.
 \end{equation}
+The stability function is an affine-linear function of the weights.
 
-
-
-
-\paragraph*{Version 2} $ $\\
-The stability function is defined as a function $\CN \to \CN$ with 
-\begin{equation}
-R(z) = 1 + zb^T(I - zA)^{-1}e.
-\end{equation}
-We can add $b$ as a second parameter and get a function $\CN \times \R^s \to \CN$ with
-\begin{equation}
-R(z,b) = 1 + zb^T(I - zA)^{-1}e.
-\end{equation}
-The stability function is a linear function in the weights.
-
-\paragraph*{Version 3} $ $\\
-(Ignore this topic, because the following Sections also can work without it)
-
-%(Todo: It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods, the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations cannot happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
+%TODO: It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods, the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations cannot happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
 
 
 \subsubsection{Stability of convex adaptation}
 
-If the new weights are chosen as a convex adaptation of weights it is easy to prove properties of the stability region.
-
+If the new weights are chosen by convex adaptation of given weights,
+it is easy to prove some properties of the stability region.
 \begin{theorem}
   The stability region of a Runge--Kutta method $(A,b)$ where
   $b = \sum_{i} g_i b^i$ is a convex combination of
   $b^1, \dots, b^m \in \R^s$ (i.e.\ $g_i \in [0,1]$, $\sum_i g_i = 1$),
   contains at least the intersection of the stability regions of
-  the methods $(A,b^1), \dots, (A,b^m)$
+  the methods $(A,b^1), \dots, (A,b^m)$.
 \end{theorem}
 \begin{proof}
   Since the stability function is an affine-linear function of the
@@ -815,12 +780,9 @@ If the new weights are chosen as a convex adaptation of weights it is easy to pr
   \end{equation}
 \end{proof}
 
-\begin{remark}
-  This result is particularly important for implicit methods.
-  If all the used embedded methods used to construct the new weights
-  are A-Stable, the resulting method is also A-Stable.
-\end{remark}
-
+This result is particularly important for implicit methods.
+If all the embedded methods used to construct the new weights
+are A-stable, the resulting method is also A-stable.
 
 
 \subsubsection{Stability of free adaptation}
@@ -924,7 +886,7 @@ As long as $\nabla|R(\hat{b},u+iv)|^2 \neq 0 \forall \hat{b} < \epsilon  \forall
 This shows why the objective $\min \| \bt - b \|_1 \|$ is a good
 choice to control the change of the region of absolute stability,
 in particular for explicit methods for which
-$\| z (\I - z A)^{-1} e \|_\infty$ can be bounded by polynomial
+$\| z (\I - z A)^{-1} e \|_\infty$ can be bounded by a polynomial
 in $|z|$.
 
 
