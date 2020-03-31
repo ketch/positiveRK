@@ -54,6 +54,9 @@
   ]{biblatex}
 \addbibresource{Bib_RK_optim.bib}
 
+\usepackage{booktabs}
+\usepackage{multirow}
+
 % load hyperref after amsmath to get rid of stupid ``destination with the same identifier...'' warnings
 \usepackage[plainpages=false,pdfpagelabels,hidelinks,unicode]{hyperref}
 
@@ -561,37 +564,63 @@ The number of degrees of freedom for different explicit methods are shown in Tab
  
 \begin{table}[h!]
 \centering    %Generated below============ 
-\begin{tabular}{|l c|c c c c c c |} 
- \hline 
-Order & &1&2&3&4&5&6 \\ 
- \hline Classical RK4& s=4&3&2&0&0& - & -  \\ 
- SSPRK(10,4)& s=10&9&8&6&4& - & -  \\ 
- Cash-Karp RK5(4)6& s=6&5&4&2&1&0& -  \\ 
- Dormand-Prince RK5(4)7& s=7&6&5&3&1&0& -  \\ 
- \hline 
- \end{tabular}
- \caption{Degrees of freedom for the choice of the weights for some explicit methods.} %Generated above============
- \label{table:DOF_exp}
- \end{table}
+% \begin{tabular}{|l c|c c c c c c |}
+%  \hline
+% Order & &1&2&3&4&5&6 \\
+%  \hline Classical RK4& s=4&3&2&0&0& - & -  \\
+%  SSPRK(10,4)& s=10&9&8&6&4& - & -  \\
+%  Cash-Karp RK5(4)6& s=6&5&4&2&1&0& -  \\
+%  Dormand-Prince RK5(4)7& s=7&6&5&3&1&0& -  \\
+%  \hline
+%  \end{tabular}
+  \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lr*6c@{}}
+    \toprule
+    Method & $s$ & \multicolumn{6}{c}{Order $\tilde p$} \\
+    & & 1 & 2 & 3 & 4 & 5 & 6 \\
+    \midrule
+    Classical RK4 \cite{kutta1901beitrag} & 4 & 3 & 2 & 0 & 0 & --- & --- \\
+    SSPRK(10,4) \cite{ketcheson2008highly} & 10&9&8&6&4& --- & ---\\
+    Cash--Karp RK5(4)6 \cite{cash1990variable} & 6&5&4&2&1&0& --- \\
+    Dormand--Prince RK5(4)7 \cite{prince1981high}& 7&6&5&3&1&0& --- \\
+    \bottomrule
+  \end{tabular*}
+  \caption{Degrees of freedom for the choice of the weights for some explicit methods.} %Generated above============
+  \label{table:DOF_exp}
+\end{table}
  
- \begin{table}[h!]
+\begin{table}[h!]
 \centering   %Generated below============ 
-\begin{tabular}{|l c|c c c c c c |} 
- \hline 
-Order & &1&2&3&4&5&6 \\ 
- \hline Implicit Euler& s=1&0& - & - & - & - & -  \\ 
- Lobatto~IIIC4& s=4&3&2&1&0&0&0 \\
- Radau~IIA3& s=3&2&1&0&0&0& -  \\
- SDIRK 54& s=5&4&3&1&0& - & -  \\ 
- TR-BDF2& s=3&2&1& - & - & - & -  \\ 
- Im-Euler 2& s=3&2&1& - & - & - & -  \\ 
- Im-Euler 3& s=6&5&4&2& - & - & -  \\ 
- Im-Euler 4& s=10&9&8&6&3& - & -  \\ 
- \hline 
- \end{tabular}
- \caption{Degrees of freedom for the choice of the weights for some implicit methods.} %Generated above============
- \label{table:DOF_imp}
- \end{table}
+%   \begin{tabular}{|l c|c c c c c c |}
+%   \hline
+%   Order & &1&2&3&4&5&6 \\
+%   \hline Implicit Euler& s=1&0& - & - & - & - & -  \\
+%   Lobatto~IIIC4& s=4&3&2&1&0&0&0 \\
+%   Radau~IIA3& s=3&2&1&0&0&0& -  \\
+%   SDIRK(5,4)& s=5&4&3&1&0& - & -  \\
+%   TR-BDF2& s=3&2&1& - & - & - & -  \\
+%   Im-Euler 2& s=3&2&1& - & - & - & -  \\
+%   Im-Euler 3& s=6&5&4&2& - & - & -  \\
+%   Im-Euler 4& s=10&9&8&6&3& - & -  \\
+%   \hline
+%   \end{tabular}
+   \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lr*6c@{}}
+    \toprule
+    Method & $s$ & \multicolumn{6}{c}{Order $\tilde p$} \\
+    & & 1 & 2 & 3 & 4 & 5 & 6 \\
+    \midrule
+    Implicit Euler& 1&0& --- & --- & --- & --- & ---  \\
+    Lobatto~IIIC4 \cite{chipman1971stable} & 4&3&2&1&0&0&0 \\
+    Radau~IIA3 \cite{ehle1969pade} & 3&2&1&0&0&0& ---  \\
+    SDIRK(5,4) \cite[eq. (6.18)]{hairer_solving_1996}& 5&4&3&1&0& --- & ---  \\
+    TR-BDF2 \cite{bank1985transient} & 3&2&1& --- & --- & --- & ---  \\
+    Extrapolation Im-Euler 2& 3&2&1& --- & --- & --- & ---  \\
+    Extrapolation Im-Euler 3& 6&5&4&2& --- & --- & ---  \\
+    Extrapolation Im-Euler 4& 10&9&8&6&3& --- & ---  \\
+    \bottomrule
+  \end{tabular*}
+  \caption{Degrees of freedom for the choice of the weights for some implicit methods.} %Generated above============
+  \label{table:DOF_imp}
+\end{table}
 
 
 For all methods with the number of stages equal to the order of the method, there are no degrees of freedom without reducing the order.  
@@ -603,7 +632,7 @@ For Cash--Karp RK5 and Dormand--Prince RK5 the order has to be reduced to get de
 In Table\,\ref{table:DOF_imp}, the same properties of some implicit
 methods are reported.
 We can see that the fully implicit methods Lobatto~IIIC4 and Radau~IIA3 require a drastic reduction of the order as expected.
-The diagonally implicit SDIRK 54 method only requires an order reduction of one to get one degree of freedom for the weights.
+The diagonally implicit SDIRK(5,4) method only requires an order reduction of one to get one degree of freedom for the weights.
 The TR-BDF2 method even allows adaptations without reducing the order.  
 The Implicit-Euler extrapolation methods also exhibit degrees of freedom without a reduction of the order. 
 
