@@ -12,30 +12,32 @@ import matplotlib.pyplot as plt
 from RKimple import RK_integrate
 
 
-def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm = 2,Params = {}):
+def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm = 2,Params = {},get_order=False):
     """"
     Parameters:
-    problem:            Problem Objects 
+    problem:            Problem Objects
     solver:             Solver object
     dt:                 dt array with dts
-    reference:          Array with reference solutions to compare the computet solution against 
+    reference:          Array with reference solutions to compare the computet solution against
     error:              Definition of error computation, one of 'abs','rel','grid'
     dx:                 Discretisation for grid norm
     Norm:               Norm to use for Error calculation ||u-u'||_Norm
     Params:             Parameters for time integrator
-    
+    get_order:          If True: also returns list with lowest orders
+
     Return:
     sol:                Array with the solutions used for calculationg the errors
     err:                Array with errors
     change:             Array, True if b was changed False otherwise
 
     """
-    
+
     err = np.zeros_like(dt)
     change = np.zeros_like(dt,dtype=bool)
+    order = np.zeros_like(dt)
     sol = []
-    
-    
+
+
     for i in range(dt.size):
         print('dt='+str(dt[i]))
         solver.dt = dt[i]
@@ -53,29 +55,39 @@ def plot_convergence(problem,solver,dt,refernce,step=1,error='abs',dx='1',Norm =
                 print('Error not defined')
                 print(error)
                 raise ValueError
+
+            orders = np.array(status['order'])[np.array(status['order'])!=None]
+            if len(orders)>0:
+                order[i]=np.min(orders)
+            else:
+                order[i] = np.nan
         else:
             err[i] = np.nan
+            order[i] = np.nan
         sol.append(u[step])
-        
+
     plt.plot(dt,err,'o-')
     plt.yscale('log')
     plt.xscale('log')
     plt.grid()
     plt.ylabel('Error')
     plt.xlabel('dt')
-    
-    return sol,err,change
-    
-        
+
+    if get_order:
+        return sol,err,change,order
+    else:
+        return sol,err,change
+
+
 
 def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
-    
+
     """"
     The function searchs for the upper bound of dt that sattisfies a condition.
     A bisect search approach is used
 
     Parameters:
-    problem:            Problem Objects 
+    problem:            Problem Objects
     solver:             Solver object
     dt_start:           dt to start with
 
@@ -91,10 +103,10 @@ def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
     dt_sol:             The wanted dt
     dt:                 Array with the tried timesteps
     val:                Array with information if the condition was fullfiled for the timesteps
-    
+
     """
     #Check the settings for the integator
-    
+
 
     if cond in ['dt_pos','dt_stable']:
         solver.b_fixed = True
@@ -111,10 +123,10 @@ def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
     run = 0 # number of iteration
 
     while True:
-        #calculate new timestep 
+        #calculate new timestep
         if run == 0:
             dt_new = dt_start
-        elif len(dt[~val]) == 0: #No failed run so far 
+        elif len(dt[~val]) == 0: #No failed run so far
             dt_new = 2*dt[-1]
         else:
             if val[-1] == False: #Last try failed
@@ -123,7 +135,7 @@ def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
                 inter = (dt[-1], min(dt[~val])) #between last run and lowest failed run
 
             dt_new = 0.5 * np.sum(inter)
-            
+
         dt = np.append(dt,dt_new)
 
         #run integration
@@ -144,7 +156,7 @@ def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
                 val_new = True
             else:
                 val_new = False
-        
+
         elif cond == 'dt_stable':
             n_start = np.linalg.norm(u[0])
             n_end = np.linalg.norm(u[-1])
@@ -156,7 +168,7 @@ def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
         else:
             print('no knwn conition')
             raise ValueError
-        
+
         val = np.append(val,val_new)
         print(val_new)
 
@@ -176,7 +188,7 @@ def find_dt(problem,solver,dt_start,cond = '',tol = 0.001,Params = {}):
             dt_sol = 0
             break
 
-    return (dt_sol,dt,val) 
+    return (dt_sol,dt,val)
 
 
 def findall_dt(problem,solver,dt_start,tol = 0.001,Params = {}):
@@ -187,13 +199,13 @@ def findall_dt(problem,solver,dt_start,tol = 0.001,Params = {}):
 
 
     Parameters:
-    problem:            Problem Objects 
+    problem:            Problem Objects
     solver:             Solver object, if solver is tuple of Solver object search for all
     dt_start:           dt to start with
     tol:                the toleranc for dt
-    
+
     Params:             Parameters for time integrator
-    
+
     Returns:
     dt:                 dict with the dt's
     """
@@ -245,14 +257,14 @@ def plot_times(methods,dt,effective = False,title = ''):
         dt_pos.append(dt[i]['dt_pos'])
         dt_stable.append(dt[i]['dt_stable'])
         dt_feasible.append(dt[i]['dt_feasible'])
-    
+
 
     stages = np.array(stages)
     dt_pos = np.array(dt_pos)
     dt_stable = np.array(dt_stable)
     dt_feasible = np.array(dt_feasible)
-  
-    
+
+
     x = np.arange(len(labels))  # the label locations
     width = 0.1  # the width of the bars
 
@@ -264,7 +276,7 @@ def plot_times(methods,dt,effective = False,title = ''):
     else:
         rects1 = ax.bar(x - width, dt_pos, width, label='dt_pos')
         rects2 = ax.bar(x , dt_stable, width, label='dt_stable')
-        rects3 = ax.bar(x + width, dt_feasible, width, label='dt_feasible')    
+        rects3 = ax.bar(x + width, dt_feasible, width, label='dt_feasible')
 
     ax.set_title(title)
     ax.set_xticks(x)
@@ -299,7 +311,7 @@ def show_status(status):
 
     axs[0].set_xlim([0,len(status['b'])])
 
-    #plot the resulting order 
+    #plot the resulting order
 
     axs[1].plot([-1,len(status['b'])+1],[status['Solver'].rkm.order(),status['Solver'].rkm.order()],color = 'black')
     axs[1].plot(np.array(status['order']),'x',color = 'blue')
