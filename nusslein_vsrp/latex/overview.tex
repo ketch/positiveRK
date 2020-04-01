@@ -366,18 +366,23 @@ a feasible solution exists.
 
 \subsection{Example II}\label{sec:example_lin}
 
-(Note: The primary goal here is to put the idea of changing the b into perspective. We have shown the general idea and how it works, now we want to discuss on what it does in practice. At first, we state it is good to preserve the order... Get to the Example ... and show that there is more to it)
+The main goal is to choose a method $(A,b)$ such that $u^{n+1}$
+approximates the solution of the ODE $u(t_{n+1})$.
+An obvious objective while modifying the Runge--Kutta coefficients
+is to retain a high order of accuracy, but this is not enough.
+To get a better understanding for the method we consider the
+behavior for a simple problem.
 
-The main goal is to choose a method $(A,b)$ in such a way that $u^{n+1}$ resembles the solution of the ODE $u(t_{n+1})$.
-An obvious objective is to use a $(A,b)$ with a high order, but this is not enough.
-To get a better understanding for the method we consider the behavior of a simple problem.   
-
-We take the linear, positivity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
-
+We take the linear, positivity preserving ODE
+\cite{kopecz_unconditionally_2018}
 \begin{equation}
-u'(t) = L u(t) \qquad L = \left[\begin{matrix}- 5 & 1\\5 & -1\end{matrix}\right] 
+  u'(t) = L u(t),
+  \quad
+  u(0) = \begin{pmatrix} 1 \\ 0 \end{pmatrix},
+  \qquad
+  L = \begin{pmatrix} -5 & 1 \\ 5 & -1\end{pmatrix},
 \end{equation}
-and use the three stage and third order SSP method (SSP33)
+and use the three stage, third order SSP method SSP(3,3)
 \begin{align}
 \begin{array}{c|ccc}
 0 &  &  & \\
@@ -387,44 +392,69 @@ and use the three stage and third order SSP method (SSP33)
  & \nicefrac{1}{6} & \nicefrac{1}{6} & \nicefrac{2}{3}\\
 \end{array}
 \end{align}
-The matrix $L$ has the eigenvalues $\lambda_1 = -6,\lambda_2=0$. The real stability interval of the SSP33 method includes $[-2.5,0]$. The method is absolut stable for this problem with $\dt = \frac{1}{3}$.
-The stage derivatives are
+of \cite{shu1988efficient}.
+The matrix $L$ has the eigenvalues zero and $-6$ and its operator
+norm is $2 \sqrt{13}$.
+The real stability interval of SSP33 includes $[-2.5,0]$. Hence,
+it seems reasonable\footnote{A more careful analysis following
+\cite{ranocha2018L2stability} shows that the method is not
+absolutely stable for this problem and choice of $\dt$ since
+$L$ is not normal.} to choose $\dt = \nicefrac{1}{3}$.
+The corresponding stage derivatives are
 \begin{equation}
-f(y_1)=\left(\begin{matrix}-5\\5\end{matrix}\right),\qquad f(y_2)=\left(\begin{matrix}5\\-5\end{matrix}\right),\qquad f(y_3)=\left(\begin{matrix}-5\\5\end{matrix}\right).
+  f(y_1) = \begin{pmatrix} -5 \\ 5 \end{pmatrix},\quad
+  f(y_2) = \begin{pmatrix} 5 \\ -5 \end{pmatrix},\quad
+  f(y_3) = \begin{pmatrix} -5 \\ 5 \end{pmatrix}.
 \end{equation}
 The values of the next step using the standard weights is
 \begin{equation}
-u_n=\left(\begin{matrix} \nicefrac{-1}{9}\\ \nicefrac{10}{9}\end{matrix}\right)
+  u^1 = \begin{pmatrix} \nicefrac{-1}{9} \\ \nicefrac{10}{9} \end{pmatrix}.
 \end{equation}
-The new solution contains negative values. 
-Therefore, we want to adapt the weights to ensure positivity. 
-All weights that comply with the order condition for the first and second order can be expressed as
+Since the first component of the new solution is negative,
+we want to adapt the weights to ensure positivity.
+All weights that comply with the constraints for first and second
+order of accuracy can be expressed as
 \begin{equation}
-\bt=\begin{pmatrix}\nicefrac{1}{6}\\ \nicefrac{1}{6}\\ \nicefrac{2}{3}\end{pmatrix}+\alpha \begin{pmatrix}\nicefrac{1}{2}\\\nicefrac{1}{2}\\-1\end{pmatrix}.
+  \bt =
+  \begin{pmatrix}
+    \nicefrac{1}{6} \\
+    \nicefrac{1}{6} \\
+    \nicefrac{2}{3}
+  \end{pmatrix}
+  + \alpha \begin{pmatrix}
+    \nicefrac{1}{2} \\
+    \nicefrac{1}{2} \\
+    -1
+  \end{pmatrix},
+  \qquad
+  \alpha \in \R.
 \end{equation}
 We have one degree of freedom for the choice of the weights,
 parameterized by $\alpha$.
-If the general expression for the weights is inserted in \eqref{eq:Combination} the general solution is 
+If the general expression for the weights is inserted in
+\eqref{eq:Combination} the general solution is
 \begin{equation}
-u^{1} = u^0 + \dt  \left(f_1, f_2, f_3\right) \bt =
-\begin{pmatrix} \nicefrac{-1}{9}\\\nicefrac{10}{9}\end{pmatrix}
-+\alpha \begin{pmatrix}\nicefrac{5}{3}\\ \nicefrac{-5}{3}\end{pmatrix}
+  u^{1}
+  =
+  u^0 + \dt \left(f_1, f_2, f_3\right) \bt
+  =
+  \begin{pmatrix}
+    \nicefrac{-1}{9} \\
+    \nicefrac{10}{9}
+  \end{pmatrix}
+  +\alpha \begin{pmatrix}
+    5 \\
+    -5
+  \end{pmatrix}.
 \end{equation}
-By changing the parameter $\alpha$, the weights and the solution are altered.
-With a suitable choice of $\alpha \in \left[\nicefrac{1}{15},\nicefrac{2}{3}\right]$ any $u$ that complies with mass conservation and positivity can be reached.
-By adding additional constraints on the weights, the choice of $\alpha$ can be narrowed down. 
+By changing the parameter $\alpha$, the weights and the new
+solution are altered. With a suitable choice of
+$\alpha \in \left[ \nicefrac{1}{45}, \nicefrac{2}{9} \right]$,
+any $u$ that complies with mass conservation and positivity can
+be reached.
+By adding additional constraints on the weights, the choice of
+$\alpha$ can be narrowed down.
 An objective function is also needed to make the choice unique. This should be designed in a way to prefer weights that are close to the original weights.
-
-%This gives raise to the question whether the new solution is reasonable.
-%This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
-
-\todo{Note (HR)} %TODO
-This example has to be fixed.
-Since the matrix is not normal, eigenvalue analysis
-and classical linear stability theory do not apply. By a direct
-computation, we can see that SSP33 is absolutely stable for this
-initial condition and the first step for $\dt \lesssim 0.309$
-but not for $\dt = \nicefrac{1}{3}$.
 
 
 \subsection{Order conditions}\label{sec:OrderCond}
