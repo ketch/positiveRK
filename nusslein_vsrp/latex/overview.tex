@@ -1007,13 +1007,12 @@ If the reduction of stepsize is used this process is done first for $\theta = 1$
 
 The implementation of the algorithms described above and code to
 reproduce the numerical examples reported here can be found in
-\cite{repository}. \todo{TODO: New reopsitory with DOI} %TODO
+\cite{repository}. \todo{TODO: New repository with DOI} %TODO
 The methods are implemented in Python using NumPy/SciPy
-\cite{virtanen2019scipy}, NodePy \cite{nodepy08}, and
+\cite{virtanen2020scipy}, NodePy \cite{nodepy08}, and
 Matplotlib \cite{hunter2007matplotlib} for the visualizations.
-We have used CVXPY to solve the LPs \cite{cvxpy, cvxpy_rewriting}.
-\todo{TODO: Which solver of CVXPY?} %TODO
-
+We have used MOSEK \cite{mosek} via CVXPY to solve the LPs
+\cite{cvxpy, cvxpy_rewriting}.
 
 
 \subsection{Applicable problems}\label{sec:app_problem}
