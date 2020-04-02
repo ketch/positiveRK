@@ -137,7 +137,8 @@ accuracy of the method.  The choice of weights is given by the solution
 of a linear program.
 %(iv) how you verified your idea and  important results and possible/important limitations
 We investigate different approaches to choosing the weights by considering
-different objective functions.  We also provide some analysis of the properties
+adding further constraints.
+We also provide some analysis of the properties
 of Runge--Kutta methods with perturbed weights.  Numerical examples demonstrate
 the effectiveness of the approach, including application to both explicit and
 implicit methods.
@@ -462,8 +463,8 @@ An objective function is also needed to make the choice unique. This should be d
 The order conditions for an $s$-stage, order $p$ RKM are a set of equations depending on $A$, $b$ and
 $c$.  As mentioned already, if $A$ and $c$ are given, the order conditions are
 linear in $b$ and can be written as $Q_p b = r_p$, where
-and $Q_p\in{\mathbb R}^{s\times s}, r_p\in{\mathbb R}^s$ represent the set of all conditions up to
-and including order $p$.  It may not be possible to find modified weights
+$Q_p\in{\mathbb R}^{v\times s}, r_p\in{\mathbb R}^v$ represent the set of all conditions up to
+and including order $p$. Here $v$ is the number of order conditions. It may not be possible to find modified weights
 that also satisfy the conditions of order $p$ and yield positivity, so
 in general the modified weights will be a solution of
 $$
@@ -533,6 +534,7 @@ $g\in{\mathbb R}^m$.  The LP is then as follows:
 \begin{align}
 \bt & = Bg, \\
 0 & \le g_i \le 1, \\
+\sum_i g_i &= 1 \\
 u^{n+1}&=u^n+\dt F \tilde{b} \geq 0.
 \end{align}
 \end{subequations}
@@ -670,7 +672,8 @@ The number of degrees of freedom for different explicit methods are shown in Tab
 
 For all methods with the number of stages equal to the order of the method, there are no degrees of freedom without reducing the order.  
 If the classical RK4 method is used the order has to be reduced more because the RK4 method does not have embedded methods of order~3.
-In contrast to this, methods with $s > p$ have degrees of freedom even without reducing the order.
+In contrast to this, some methods with $s > p$ have degrees of freedom even without reducing the order.
+An example of this is SSPRK(10,4), that has 4 degrees of freedom for $\pt = p$.
 For Cash--Karp RK5 and Dormand--Prince RK5 the order has to be reduced to get degrees of freedom even though the number of stages is higher than the order.
 
 
@@ -781,7 +784,8 @@ of these two methods are shown.
          \label{fig:stab_ex3}
      \end{subfigure}
         \caption{Change of stability region for the free adaptation and
-                 the convex adaptation of the weights.}
+                 the convex adaptation of the weights. 
+                 Regions with $|R(z)| \leq 1$ are hatched for the original methods.}
         \label{fig:stab}
 \end{figure}
 
@@ -976,7 +980,6 @@ When enforcing a maximum value, the number of constraints can be reduced using t
 In this case it is important to update these sets simultaneously.  
 
 \subsection{Implemention}
-(\todo{TODO}: Maybe a flowchart and a description on how we stitch everything together.) %TODO
 
 At first, the stage values $y_i$ and stage derivatives $f_i$ are calculated.
 Afterwards, $u^{n+1}$ is computed using the original weights $b$.
