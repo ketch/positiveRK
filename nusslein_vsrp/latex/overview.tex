@@ -137,7 +137,8 @@ accuracy of the method.  The choice of weights is given by the solution
 of a linear program.
 %(iv) how you verified your idea and  important results and possible/important limitations
 We investigate different approaches to choosing the weights by considering
-different objective functions.  We also provide some analysis of the properties
+adding further constraints.
+We also provide some analysis of the properties
 of Runge--Kutta methods with perturbed weights.  Numerical examples demonstrate
 the effectiveness of the approach, including application to both explicit and
 implicit methods.
@@ -366,18 +367,23 @@ a feasible solution exists.
 
 \subsection{Example II}\label{sec:example_lin}
 
-(Note: The primary goal here is to put the idea of changing the b into perspective. We have shown the general idea and how it works, now we want to discuss on what it does in practice. At first, we state it is good to preserve the order... Get to the Example ... and show that there is more to it)
+The main goal is to choose a method $(A,b)$ such that $u^{n+1}$
+approximates the solution of the ODE $u(t_{n+1})$.
+An obvious objective while modifying the Runge--Kutta coefficients
+is to retain a high order of accuracy, but this is not enough.
+To get a better understanding for the method we consider the
+behavior for a simple problem.
 
-The main goal is to choose a method $(A,b)$ in such a way that $u^{n+1}$ resembles the solution of the ODE $u(t_{n+1})$.
-An obvious objective is to use a $(A,b)$ with a high order, but this is not enough.
-To get a better understanding for the method we consider the behavior of a simple problem.   
-
-We take the linear, positivity preserving ODE from \cite{kopecz_unconditionally_2018} with $u = [u_1,u_2]^T$ with the initial conditions $u_0 = [1,0]^T$ and
-
+We take the linear, positivity preserving ODE
+\cite{kopecz_unconditionally_2018}
 \begin{equation}
-u'(t) = L u(t) \qquad L = \left[\begin{matrix}- 5 & 1\\5 & -1\end{matrix}\right] 
+  u'(t) = L u(t),
+  \quad
+  u(0) = \begin{pmatrix} 1 \\ 0 \end{pmatrix},
+  \qquad
+  L = \begin{pmatrix} -5 & 1 \\ 5 & -1\end{pmatrix},
 \end{equation}
-and use the three stage and third order SSP method (SSP33)
+and use the three stage, third order SSP method SSP(3,3)
 \begin{align}
 \begin{array}{c|ccc}
 0 &  &  & \\
@@ -387,44 +393,69 @@ and use the three stage and third order SSP method (SSP33)
  & \nicefrac{1}{6} & \nicefrac{1}{6} & \nicefrac{2}{3}\\
 \end{array}
 \end{align}
-The matrix $L$ has the eigenvalues $\lambda_1 = -6,\lambda_2=0$. The real stability interval of the SSP33 method includes $[-2.5,0]$. The method is absolut stable for this problem with $\dt = \frac{1}{3}$.
-The stage derivatives are
+of \cite{shu1988efficient}.
+The matrix $L$ has the eigenvalues zero and $-6$ and its operator
+norm is $2 \sqrt{13}$.
+The real stability interval of SSP33 includes $[-2.5,0]$. Hence,
+it seems reasonable\footnote{A more careful analysis following
+\cite{ranocha2018L2stability} shows that the method is not
+absolutely stable for this problem and choice of $\dt$ since
+$L$ is not normal.} to choose $\dt = \nicefrac{1}{3}$.
+The corresponding stage derivatives are
 \begin{equation}
-f(y_1)=\left(\begin{matrix}-5\\5\end{matrix}\right),\qquad f(y_2)=\left(\begin{matrix}5\\-5\end{matrix}\right),\qquad f(y_3)=\left(\begin{matrix}-5\\5\end{matrix}\right).
+  f(y_1) = \begin{pmatrix} -5 \\ 5 \end{pmatrix},\quad
+  f(y_2) = \begin{pmatrix} 5 \\ -5 \end{pmatrix},\quad
+  f(y_3) = \begin{pmatrix} -5 \\ 5 \end{pmatrix}.
 \end{equation}
 The values of the next step using the standard weights is
 \begin{equation}
-u_n=\left(\begin{matrix} \nicefrac{-1}{9}\\ \nicefrac{10}{9}\end{matrix}\right)
+  u^1 = \begin{pmatrix} \nicefrac{-1}{9} \\ \nicefrac{10}{9} \end{pmatrix}.
 \end{equation}
-The new solution contains negative values. 
-Therefore, we want to adapt the weights to ensure positivity. 
-All weights that comply with the order condition for the first and second order can be expressed as
+Since the first component of the new solution is negative,
+we want to adapt the weights to ensure positivity.
+All weights that comply with the constraints for first and second
+order of accuracy can be expressed as
 \begin{equation}
-\bt=\begin{pmatrix}\nicefrac{1}{6}\\ \nicefrac{1}{6}\\ \nicefrac{2}{3}\end{pmatrix}+\alpha \begin{pmatrix}\nicefrac{1}{2}\\\nicefrac{1}{2}\\-1\end{pmatrix}.
+  \bt =
+  \begin{pmatrix}
+    \nicefrac{1}{6} \\
+    \nicefrac{1}{6} \\
+    \nicefrac{2}{3}
+  \end{pmatrix}
+  + \alpha \begin{pmatrix}
+    \nicefrac{1}{2} \\
+    \nicefrac{1}{2} \\
+    -1
+  \end{pmatrix},
+  \qquad
+  \alpha \in \R.
 \end{equation}
 We have one degree of freedom for the choice of the weights,
 parameterized by $\alpha$.
-If the general expression for the weights is inserted in \eqref{eq:Combination} the general solution is 
+If the general expression for the weights is inserted in
+\eqref{eq:Combination} the general solution is
 \begin{equation}
-u^{1} = u^0 + \dt  \left(f_1, f_2, f_3\right) \bt =
-\begin{pmatrix} \nicefrac{-1}{9}\\\nicefrac{10}{9}\end{pmatrix}
-+\alpha \begin{pmatrix}\nicefrac{5}{3}\\ \nicefrac{-5}{3}\end{pmatrix}
+  u^{1}
+  =
+  u^0 + \dt \left(f_1, f_2, f_3\right) \bt
+  =
+  \begin{pmatrix}
+    \nicefrac{-1}{9} \\
+    \nicefrac{10}{9}
+  \end{pmatrix}
+  +\alpha \begin{pmatrix}
+    5 \\
+    -5
+  \end{pmatrix}.
 \end{equation}
-By changing the parameter $\alpha$, the weights and the solution are altered.
-With a suitable choice of $\alpha \in \left[\nicefrac{1}{15},\nicefrac{2}{3}\right]$ any $u$ that complies with mass conservation and positivity can be reached.
-By adding additional constraints on the weights, the choice of $\alpha$ can be narrowed down. 
+By changing the parameter $\alpha$, the weights and the new
+solution are altered. With a suitable choice of
+$\alpha \in \left[ \nicefrac{1}{45}, \nicefrac{2}{9} \right]$,
+any $u$ that complies with mass conservation and positivity can
+be reached.
+By adding additional constraints on the weights, the choice of
+$\alpha$ can be narrowed down.
 An objective function is also needed to make the choice unique. This should be designed in a way to prefer weights that are close to the original weights.
-
-%This gives raise to the question whether the new solution is reasonable.
-%This also poses the problem on developing a system that can decide if the new solution is has to be rejected. 
-
-\todo{Note (HR)} %TODO
-This example has to be fixed.
-Since the matrix is not normal, eigenvalue analysis
-and classical linear stability theory do not apply. By a direct
-computation, we can see that SSP33 is absolutely stable for this
-initial condition and the first step for $\dt \lesssim 0.309$
-but not for $\dt = \nicefrac{1}{3}$.
 
 
 \subsection{Order conditions}\label{sec:OrderCond}
@@ -432,8 +463,8 @@ but not for $\dt = \nicefrac{1}{3}$.
 The order conditions for an $s$-stage, order $p$ RKM are a set of equations depending on $A$, $b$ and
 $c$.  As mentioned already, if $A$ and $c$ are given, the order conditions are
 linear in $b$ and can be written as $Q_p b = r_p$, where
-and $Q_p\in{\mathbb R}^{s\times s}, r_p\in{\mathbb R}^s$ represent the set of all conditions up to
-and including order $p$.  It may not be possible to find modified weights
+$Q_p\in{\mathbb R}^{v\times s}, r_p\in{\mathbb R}^v$ represent the set of all conditions up to
+and including order $p$. Here $v$ is the number of order conditions. It may not be possible to find modified weights
 that also satisfy the conditions of order $p$ and yield positivity, so
 in general the modified weights will be a solution of
 $$
@@ -503,6 +534,7 @@ $g\in{\mathbb R}^m$.  The LP is then as follows:
 \begin{align}
 \bt & = Bg, \\
 0 & \le g_i \le 1, \\
+\sum_i g_i &= 1 \\
 u^{n+1}&=u^n+\dt F \tilde{b} \geq 0.
 \end{align}
 \end{subequations}
@@ -640,7 +672,8 @@ The number of degrees of freedom for different explicit methods are shown in Tab
 
 For all methods with the number of stages equal to the order of the method, there are no degrees of freedom without reducing the order.  
 If the classical RK4 method is used the order has to be reduced more because the RK4 method does not have embedded methods of order~3.
-In contrast to this, methods with $s > p$ have degrees of freedom even without reducing the order.
+In contrast to this, some methods with $s > p$ have degrees of freedom even without reducing the order.
+An example of this is SSPRK(10,4), that has 4 degrees of freedom for $\pt = p$.
 For Cash--Karp RK5 and Dormand--Prince RK5 the order has to be reduced to get degrees of freedom even though the number of stages is higher than the order.
 
 
@@ -751,7 +784,8 @@ of these two methods are shown.
          \label{fig:stab_ex3}
      \end{subfigure}
         \caption{Change of stability region for the free adaptation and
-                 the convex adaptation of the weights.}
+                 the convex adaptation of the weights. 
+                 Regions with $|R(z)| \leq 1$ are hatched for the original methods.}
         \label{fig:stab}
 \end{figure}
 
@@ -946,7 +980,6 @@ When enforcing a maximum value, the number of constraints can be reduced using t
 In this case it is important to update these sets simultaneously.  
 
 \subsection{Implemention}
-(\todo{TODO}: Maybe a flowchart and a description on how we stitch everything together.) %TODO
 
 At first, the stage values $y_i$ and stage derivatives $f_i$ are calculated.
 Afterwards, $u^{n+1}$ is computed using the original weights $b$.
@@ -977,9 +1010,12 @@ If the reduction of stepsize is used this process is done first for $\theta = 1$
 
 The implementation of the algorithms described above and code to
 reproduce the numerical examples reported here can be found in
-\cite{repository}. \todo{TODO: New reopsitory with DOI} %TODO
-We have used CVXPY to solve the LPs \cite{cvxpy, cvxpy_rewriting}.
-\todo{TODO: Which solver of CVXPY?} %TODO
+\cite{repository}. \todo{TODO: New repository with DOI} %TODO
+The methods are implemented in Python using NumPy/SciPy
+\cite{virtanen2020scipy}, NodePy \cite{nodepy08}, and
+Matplotlib \cite{hunter2007matplotlib} for the visualizations.
+We have used MOSEK \cite{mosek} via CVXPY to solve the LPs
+\cite{cvxpy, cvxpy_rewriting}.
 
 
 \subsection{Applicable problems}\label{sec:app_problem}
@@ -989,8 +1025,6 @@ A sufficient condition is
 u_i=0 \implies f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0 \quad \forall {u_c \geq 0}\; \forall {t}
 \end{equation}
 For problems where the exact solution is positive for certain $u_0$ but positivity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additionaly it is not certain if the computed solutions would be reasonable.
-
-\todo{Note (HR)} I think this should be moved to the beginning.
 
 
 \subsection{Explicit methods}\label{sec:Ex_expl}
@@ -1056,7 +1090,7 @@ In Figure\,\ref{fig:conv_expl} the convergence for $t=0.5$ is plotted for the al
 
 \begin{figure}[ht]
 \centering
-\includegraphics[scale=0.6]{plots/conv_adde.pdf}
+\includegraphics[width=0.8\textwidth]{plots/conv_adde.pdf}
 \caption{Convergence results of the adapted Dormand--Prince RK5.}
 \label{fig:conv_expl}
 \end{figure}
@@ -1145,7 +1179,7 @@ But the adaptive method still outperforms the BE, even when accounting for the h
 
 \begin{figure}[ht]
 \centering
-\includegraphics[scale=0.75]{plots/conv_heat.pdf}
+\includegraphics[width=0.8\textwidth]{plots/conv_heat.pdf}
 \caption{Convergence result of baseline and adapted Im-Euler~3
          extrapolation methods for the diffusion problem.}
 \label{fig:conv_impl}
@@ -1223,8 +1257,6 @@ We can see that the changes to the weights are only very small. The adapted RKM 
 \label{fig:Stats_ADP}
 \end{figure}
 
-\todo{Note (HR)} Should the minimum of $u$ in Figure~\ref{fig:Stats_ADP} be negative before the adaptation? %TODO
-
 
 \section{Conclusion} \label{sec:conclusion}
 It is possible to adapt the weights to enforce positivity for RKMs that are not positivity preserving. 
@@ -1239,7 +1271,6 @@ Also, the cost of solving the LP is not a crucial factor.
 If the negative values occurring are not too large, which can be expected for most computations, adapting the weights is a potential way to ensure positivity. 
 
 %also if exactnes is not the limiting factor but positivity 
-
 
 
 \printbibliography
