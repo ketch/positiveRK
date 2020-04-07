@@ -399,7 +399,7 @@ norm is $2 \sqrt{13}$.
 The real stability interval of SSP33 includes $[-2.5,0]$. Hence,
 it seems reasonable\footnote{A more careful analysis following
 \cite{ranocha2018L2stability} shows that the method is not
-absolutely stable for this problem and choice of $\dt$ since
+monotone (energy stable) for this problem and choice of $\dt$ since
 $L$ is not normal.} to choose $\dt = \nicefrac{1}{3}$.
 The corresponding stage derivatives are
 \begin{equation}
@@ -973,7 +973,7 @@ u_i^n + \dt \sum_{j=0}^s F_{i,j}  b_j  \geq 0 \quad \forall i \in h \subseteq \{
 A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
 After the new weights and $u^{n+1}$ are computed using $h_0$, the algorithm has to check if the positivity of the other values $\{u_i | i \notin h_0 \subseteq \{1,\cdots,m \}\}$ is still satisfied.
 If the condition is not met a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP is solved again. This process is repeated until a solution is found that leads to $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$.
-This worst case did not occur when runing the testproblems. 
+This worst case did not occur when running the test problems.
 %(Note: A approach on this would be to make a educated guess which indices could get a problem with positivity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
 
 When enforcing a maximum value, the number of constraints can be reduced using the same technique. When enforcing both maximum and minimum values two separate sets of active constraints $k_{min}$ and $k_{max}$ are used. The set $k_{max}$ denotes the active maximum constraints and the set $k_{min}$ denotes the active minimum constraints.
@@ -1024,7 +1024,7 @@ A sufficient condition is
 \begin{equation}
 u_i=0 \implies f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0 \quad \forall {u_c \geq 0}\; \forall {t}
 \end{equation}
-For problems where the exact solution is positive for certain $u_0$ but positivity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additionaly it is not certain if the computed solutions would be reasonable.
+For problems where the exact solution is positive for certain $u_0$ but positivity is not preserved for all $u_0 \geq 0$ tests did not show promising results. Additionally, it is not certain whether the computed solutions would be reasonable.
 
 
 \subsection{Explicit methods}\label{sec:Ex_expl}
