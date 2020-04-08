@@ -85,6 +85,11 @@
 \newcommand{\pt}{{\tilde{p}}}
 \newcommand{\todo}[1]{{\Large{\color{red}{#1}}}}
 
+%pseudocode
+\usepackage[boxed]{algorithm}
+\usepackage{algpseudocode}
+
+
 %tikz
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows}
@@ -981,13 +986,16 @@ In this case it is important to update these sets simultaneously.
 
 \subsection{Implemention}
 
+In this section an algorithm to update the solution $u^n$ using the adaptive RKM is proposed.
+The pseudocode is given in Algorithm\,\ref{alg:Adaption}.
+t
 At first, the stage values $y_i$ and stage derivatives $f_i$ are calculated.
 Afterwards, $u^{n+1}$ is computed using the original weights $b$.
 If the positivity is not violated, this solution is used to update the solution.
 If $u^{n+1}$ contains negative values, the weights are adapted using the following algorithm.
 
-Start with the highest order $\tilde p$ such that there are degrees
-of freedom for the weights $\bt$. Apply an LP solver to the optimization
+Start with $\tilde{p}$ equal to the highest order $p_{start}$ such that there are degrees of freedom for the weights $\bt$. 
+Apply an LP solver to the optimization
 problem with accuracy and positivity constraints.
 If the LP is infeasible, reduce the order $\tilde p$ by one.
 If the LP is feasible, test whether the solution is acceptable.
@@ -1004,7 +1012,29 @@ If all acceptable orders are tried and no weights were found, the step hast to b
 
 If the reduction of stepsize is used this process is done first for $\theta = 1$. If no weights were found, the process is repeated for a smaller $\theta$.
 
-
+\begin{algorithm}
+\begin{algorithmic}[1]
+\State Caclculate Stagedrivatives
+\State $u^{n+1}=\Delta t Fb$
+\If {$u^{n+1} \geq 0$} 
+        \State Update and End
+\Else
+	\ForAll{$\tilde p \in [p_{start}:p_{min}]$} 
+		\State Solve LP
+		\If {LP Feasible}
+			\State caclulate $err_{adapt}$
+			\If {$err_{adapt} < tol$}
+				\State $u^{n+1}=\Delta t F \tilde b$
+				\State Update and End
+			\EndIf 
+		\EndIf
+	\EndFor
+	\State Reject step and End
+\EndIf 
+\end{algorithmic}
+\caption{Adaption of weights}
+\label{alg:Adaption}
+\end{algorithm}
 
 \section{Results of numerical experiments}\label{sec:Numeric_Results}
 
