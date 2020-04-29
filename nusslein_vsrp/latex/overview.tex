@@ -129,10 +129,10 @@
 \maketitle
 
 \begin{abstract}
-%(i) General motivation 
+%(i) General motivation
 Many important differential equations model quantities whose value
 must remain positive or stay in some bounded interval.
-%(ii) Specific problem 
+%(ii) Specific problem
 These bounds may not be preserved when the model is solved numerically.
 %(iii) how you propose to solve the problem
 We propose to ensure positivity or other bounds by applying Runge--Kutta
@@ -155,7 +155,7 @@ implicit methods.
 \section{Introduction}
 
 
-Many physical processes can be described with differential equations. 
+Many physical processes can be described with differential equations.
 The physical quantities that are involved in these processes often only make sense if they remain within certain bounds.
 For instance, concentrations must be non-negative (we will often say simply {\em positive} for short), while
 probabilities or mass fractions must remain in $[0,1]$.
@@ -172,14 +172,14 @@ We say an ODE
 \begin{align} \label{ode}
     u'(t) & = f(t,u)
 \end{align}
-is positive if 
+is positive if
 \begin{align} \label{continuous-positivity}
     u(0)\ge 0 \implies u(t) \ge 0 \text{ for all } t>0.
 \end{align}
-A sufficient condition for positivity of an ODE is 
+A sufficient condition for positivity of an ODE is
 \begin{equation} \label{eq:condition_ODE_pos}
-u_i=0 \implies f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0 \quad \forall {u_c \geq 0}\; \forall {t} 
-\end{equation} 
+u_i=0 \implies f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0 \quad \forall {u_c \geq 0}\; \forall {t}
+\end{equation}
 For such ODEs a step using the forward Euler method will lead to a positive result for small $\dt$.
 A step using the backward Euler method will lead to a positive result for any $\dt$.
 Any RKM (or in fact any general linear method) that is unconditionally positivity preserving for all positive ODEs
@@ -201,7 +201,7 @@ positivity, for specific classes of ODEs.  MPRK methods introduce multiplicative
 factors within the Runge--Kutta stages to ensure positivity, but require the solution
 of a linear algebraic system; see e.g.\ \cite{kopecz_comparison_2019} and references therein.
 Yet another approach to ensure positivity in a practical application is shown in \cite{shampine_non-negative_2005},
-where the ODE is redefined outside the physical domain. 
+where the ODE is redefined outside the physical domain.
 Finally, we mention diagonally split Runge--Kutta (DSRK) methods, which can be unconditionally
 positive and have order higher than one (they avoid the restriction mentioned above because
 they are not general linear methods \cite{horvath_positivity_1998}.  However, in practice such
@@ -213,7 +213,7 @@ initial condition.  In the present work we take an approach based on the idea th
 a particular problem and initial condition, there often exists a method of high order
 that is positivity preserving, at least for a single step.
 The main idea is to adaptively choose the weights $b$ of the RKM, after the
-the stage values are known, in a way that ensures positivity.  
+the stage values are known, in a way that ensures positivity.
 The selection of the weights requires the solution of a linear program (LP) at every
 step for which the numerical solution would otherwise be non-positive.
 This is a significant cost, but may in fact be an economical alternative to rejecting
@@ -223,9 +223,9 @@ The idea of using different weights within an RKM is not new; for instance it is
 the basis of error approximation using embedded RK pairs \cite{hairer_solving_1993}.
 The idea of adapting the weights after calculating the stage values has also been used,
 for instance in \cite{ketcheson_spatially_2013}.
-In this case it is used to adapt the properties of the time integrator for a method of lines solution of a PDE. With this approach, it is possible to have different properties of the RKM at different parts of the domain. 
+In this case it is used to adapt the properties of the time integrator for a method of lines solution of a PDE. With this approach, it is possible to have different properties of the RKM at different parts of the domain.
 Another class of methods that adapt the weights at the end of an RK step
-are the relaxation Runge--Kutta (RRK) methods. 
+are the relaxation Runge--Kutta (RRK) methods.
 In these, the weights are scaled by a scalar relaxation parameter in order to guarantee
 conservation or monotonicity of a desired functional; e.g. to conserve or
 dissipate energy or entropy
@@ -341,21 +341,21 @@ To illustrate the usage of the method we consider the following reaction equatio
 \begin{subequations}
 \label{eq:Reaction}
 \begin{align}
-u_1' &= 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\ 
-u_2' &= \frac{u_1u_2}{0.01+u_1}-0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\ 
-u_3' &= 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\ 
-u_4' &=0.05 u_2 + 0.02 u_3 + 0.003u_4 
+u_1' &= 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\
+u_2' &= \frac{u_1u_2}{0.01+u_1}-0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\
+u_3' &= 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\
+u_4' &=0.05 u_2 + 0.02 u_3 + 0.003u_4
 \end{align}
 \end{subequations}
 and the initial conditions
 \begin{equation}
 u(0) = (8,2,1,4)^T.
 \end{equation}
-When solved with the Cash-Karp (CK5) method and $\dt = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem. 
-In Figure\,\ref{fig:exampleI} the obtained results are plotted with dashed lines. 
+When solved with the Cash-Karp (CK5) method and $\dt = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem.
+In Figure\,\ref{fig:exampleI} the obtained results are plotted with dashed lines.
 At $t=1.905$ the value of $u_1$ gets negative. This leads to a diverging solution.
 
-Now the weights are adapted. The adapted weights are of 4th order. The results are also plotted in Figure\,\ref{fig:exampleI}, with solid lines. 
+Now the weights are adapted. The adapted weights are of 4th order. The results are also plotted in Figure\,\ref{fig:exampleI}, with solid lines.
 The positivity constraint is now fulfilled. A qualitatively correct solution is obtained.
 
 \begin{figure}[ht]
@@ -365,7 +365,7 @@ The positivity constraint is now fulfilled. A qualitatively correct solution is 
     \label{fig:exampleI}
 \end{figure}
 
-The used weights are also plotted in Figure\,\ref{fig:exampleI}. 
+The used weights are also plotted in Figure\,\ref{fig:exampleI}.
 The used weights are equal to the original weights for $t<1.905$. At $t=1.905$ the weights are first adapted to ensure the positivity of the solution. For $t>2.63$ the original set of weights lead to a positive solution. Because of this, the used weights equal the original weights again.
 
 
@@ -482,7 +482,7 @@ $$
   Q_\pt \bt = r_\pt
 $$
 for some $\pt \le p$.   Since we have $s$ degrees of freedom $\bt_j$,  we need
-at a minimum to choose $\pt$ so that $\mathrm{rank}(Q_\pt) < s$. 
+at a minimum to choose $\pt$ so that $\mathrm{rank}(Q_\pt) < s$.
 Because the quadrature conditions are linearly independent, we have $\mathrm{rank}(Q_p)\ge p$,
 so we must take $\pt \le s$.  In general we may need to take $\pt$ even smaller
 in order to achieve positivity.
@@ -529,8 +529,8 @@ additionally impose either or both of the following strategies:
 We discuss the first strategy here; the second is deferred to section\,\ref{sec:error}.
 Ideally every element of the set of potential weight vectors would correspond to
 a method of the same order as the original method.   Due to linearity of the
-order conditions, any linear combination of such weights would also yield a 
-method of the same order.  On the other hand, 
+order conditions, any linear combination of such weights would also yield a
+method of the same order.  On the other hand,
 it is natural to include a weight vector corresponding to the forward Euler method
 (for explicit methods) or backward Euler method (for implicit methods), since
 these two methods guarantee positivity (unconditionally for backward Euler
@@ -578,25 +578,25 @@ Both approaches are illustrated in Figure\,\ref{fig:b_space}.
 \end{figure}
 
 
- 
+
 \section{Properties of adaptive RKM} \label{sec:integration}
 
 In the previous sections an algorithm for choosing positivity preserving weights $\tilde{b}$ has been presented.
-In the next section properties of the adaptive RKM are discussed. 
+In the next section properties of the adaptive RKM are discussed.
 
 \subsection{Choice of baseline method}
 An important property of the baseline method is the existence of embedded methods and the degrees of freedom for the weights $b$.
 As noted in Section~\ref{sec:OrderCond} the number of stages has to be higher than the order.
 Therefore, explicit RKMs are interesting, because an explicit RKM of order $p$ requires at least $p$ stages.
 Fully implicit RKMs can achieve higher orders.
-To fulfill $p<s$ the order has to be reduced drastically. Therefore, these methods are not good candidates for the adaptation. 
+To fulfill $p<s$ the order has to be reduced drastically. Therefore, these methods are not good candidates for the adaptation.
 As stated in \cite{norsett_attainable_1977} the highest achievable order of a diagonally implicit RKM is $s+1$. This condition is far closer to the condition required for the adaptation.
-Another important property is the number of degrees of freedom for the choice of the new weights.  
-These can be calculated using $s-\mathrm{rank}(Q)$. %$\mathrm{dim}(\mathrm{ker}(Q))$. 
+Another important property is the number of degrees of freedom for the choice of the new weights.
+These can be calculated using $s-\mathrm{rank}(Q)$. %$\mathrm{dim}(\mathrm{ker}(Q))$.
 The number of degrees of freedom for different explicit methods are shown in Table\,\ref{table:DOF_exp}.
- 
+
 \begin{table}[h!]
-\centering    %Generated below============ 
+\centering    %Generated below============
 % \begin{tabular}{|l c|c c c c c c |}
 %  \hline
 % Order & &1&2&3&4&5&6 \\
@@ -620,9 +620,9 @@ The number of degrees of freedom for different explicit methods are shown in Tab
   \caption{Degrees of freedom for the choice of the weights for some explicit methods.} %Generated above============
   \label{table:DOF_exp}
 \end{table}
- 
+
 \begin{table}[h!]
-\centering   %Generated below============ 
+\centering   %Generated below============
 %   \begin{tabular}{|l c|c c c c c c |}
 %   \hline
 %   Order & &1&2&3&4&5&6 \\
@@ -656,7 +656,7 @@ The number of degrees of freedom for different explicit methods are shown in Tab
 \end{table}
 
 
-For all methods with the number of stages equal to the order of the method, there are no degrees of freedom without reducing the order.  
+For all methods with the number of stages equal to the order of the method, there are no degrees of freedom without reducing the order.
 If the classical RK4 method is used the order has to be reduced more because the RK4 method does not have embedded methods of order~3.
 In contrast to this, some methods with $s > p$ have degrees of freedom even without reducing the order.
 An example of this is SSPRK(10,4), that has 4 degrees of freedom for $\pt = p$.
@@ -667,25 +667,25 @@ In Table\,\ref{table:DOF_imp}, the same properties of some implicit
 methods are reported.
 We can see that the fully implicit methods Lobatto~IIIC4 and Radau~IIA3 require a drastic reduction of the order as expected.
 The diagonally implicit SDIRK(5,4) method only requires an order reduction of one to get one degree of freedom for the weights.
-The TR-BDF2 method even allows adaptations without reducing the order.  
+The TR-BDF2 method even allows adaptations without reducing the order.
 The implicit Euler extrapolation methods also exhibit degrees of freedom without a reduction of the order.
 
-Another important property is the stability region. 
+Another important property is the stability region.
 The adaption of the weights does not solve issues with stability when used with a too big $\dt$. Therefore, the RK method has to be stable for large $\dt$.
 
-%(Note: up to this point I do not understand why some methods perform better than other. We only see it occur depending on the Problem-RKM combination) 
+%(Note: up to this point I do not understand why some methods perform better than other. We only see it occur depending on the Problem-RKM combination)
 
 A third property is the existence of a positive solution. This corresponds to the question whether there is an embedded first order method that ensures positivity. This is particularly interesting for implicit methods, because $\dt$ can be unrestricted by stability requirements.
 If we have an embedded first order method, we can ensure that there is always a positive solution, which might be of first order.
-This is the case for the Im-Euler extrapolation methods, because they contain a chain of BE steps. 
-For explicit methods the FE method is always embedded, but a reduction of the step size might be required. 
+This is the case for the Im-Euler extrapolation methods, because they contain a chain of BE steps.
+For explicit methods the FE method is always embedded, but a reduction of the step size might be required.
 
 \subsection{Error detection and approximation}\label{sec:error}
-For this approach it is difficult to give some mathematically rigorous statement regarding the convergence of the method, because the RKM is only adapted if the step sizes are large. 
+For this approach it is difficult to give some mathematically rigorous statement regarding the convergence of the method, because the RKM is only adapted if the step sizes are large.
 For sufficiently small step sizes the solution of the unadapted RKM is positive. Therefore the original weights are used.
 We have to describe the behavior outside the asymptotic regime.
-%The main way to ensure that the RKM with adapted b converges to the correct solution is to ensure that the weights approaches $b_{orig}$ for $\dt \to 0$. For this the weights it is already known that the numeric solution converges to the exact solution.  
-%This is made sure by the property of the Objective function that 
+%The main way to ensure that the RKM with adapted b converges to the correct solution is to ensure that the weights approaches $b_{orig}$ for $\dt \to 0$. For this the weights it is already known that the numeric solution converges to the exact solution.
+%This is made sure by the property of the Objective function that
 %\begin{equation}
 %\mathrm{argmin}(f_{optim}(b)) = b_{orig}
 %\end{equation}
@@ -696,14 +696,14 @@ err = \|u(t^{n+1})-\tilde u^{n+1}\| &= \|u(t^{n+1}) - (u^{n+1}+\dt F(\tilde{b}-b
  &\leq \underbrace{\|u(t^{n+1})-u^{n+1}\|}_{\approx err_T}+\underbrace{\|\dt F(\tilde{b}-b)\|}_{= perturb} \label{eq:Err}
 \end{align}
 
-The total error is split up in the truncation error $err_T$ and the perturbation $perturb$ using the triangle inequality. 
-The truncation error can be estimated using the standard error estimators $err_T = | u^{n}_{b} - u^{n}_{\hat{b}} |$. 
+The total error is split up in the truncation error $err_T$ and the perturbation $perturb$ using the triangle inequality.
+The truncation error can be estimated using the standard error estimators $err_T = | u^{n}_{b} - u^{n}_{\hat{b}} |$.
 After adapting the weights, the perturbation is calculated. If the perturbation is larger than the tolerance the weights are rejected.
 Both values are added to get an approximation of the total error $err = err_T + perturb$.
 % The truncation error and the adaption error never have the same direction.
 % Therefore, the triangle inequality becomes a strict inequality and the real error is always smaller than the estimate. (Note: as long as the Truncation error estimator is right)
 %\subsubsection{Steppsize Control}
-%An important part of an RKM method is the ability to approximate the error of the solution to use it to control the step size. 
+%An important part of an RKM method is the ability to approximate the error of the solution to use it to control the step size.
 %The truncation error $|u(t^n)-u^n_{b_{orig}}|$ is usually approximated with an standard error estimator $err_T = | u^{n}_{b_{orig}} - u^{n}_{\hat{b}} |$.
  %The parameter $w_a \leq 1$ is used to account for the fact that the real error is smaller than $err = err_T +err_{adapt}$. The factor also improves the stability of the step size control because $err_{adapt}$ is not as smooth as $err_T$, especially if negative values only occur for a small number of steps.
 %If the LP was infeasible and no weights were found the $err_{approx}$ is set to a custom value. This value should be chosen sufficiently large to ensure that the next step take is smaller, but still not too large to keep the step size control stable.
@@ -744,7 +744,7 @@ of these two methods are shown.
          \label{fig:stab_ex3}
      \end{subfigure}
         \caption{Change of stability region for the free adaptation and
-                 the convex adaptation of the weights. 
+                 the convex adaptation of the weights.
                  Regions with $|R(z)| \leq 1$ are hatched for the original methods.}
         \label{fig:stab}
 \end{figure}
@@ -796,7 +796,7 @@ are A-stable, the resulting method is also A-stable.
 
 \subsubsection{Stability of free adaptation}
 If the weights is adapted freely there is no such proof.
-A useful property of the resulting stability function is that it is similar to the stability function of the baseline method. 
+A useful property of the resulting stability function is that it is similar to the stability function of the baseline method.
 
 \begin{lemma}
   The stability function $R_{\bt}$ of an adapted RK method
@@ -845,7 +845,7 @@ proposed algorithm in the following.
 For the further discussion, we are concerned with a system of
 $m$ coupled ODEs, i.e.\ $u \in \R^m$.
 Systems of ODEs with a high number of dimensions can appear when solving a PDE with the method of lines.
-To ensure that the solution is positive \eqref{eq:ut} has to be fulfilled. 
+To ensure that the solution is positive \eqref{eq:ut} has to be fulfilled.
 This causes $m$ scalar positivity constraints.
 Imposing all of these constraints in the LP solver usually results
 in unnecessarily many constraints. In many cases, positivity is
@@ -855,14 +855,14 @@ formulated as
 \begin{equation}
 u_i^n + \dt \sum_{j=0}^s F_{i,j}  b_j  \geq 0 \quad \forall i \in h \subseteq \{1,\cdots,m \}.
 \end{equation}
-A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$. 
+A reasonable approach is to set $h_0 = \{ i \in \{1,\cdots,m \} |  u_i^{n+1}  < 0 \}$.
 After the new weights and $u^{n+1}$ are computed using $h_0$, the algorithm has to check if the positivity of the other values $\{u_i | i \notin h_0 \subseteq \{1,\cdots,m \}\}$ is still satisfied.
 If the condition is not met a new set $h_{a+1} = \{ i \in \{1,\cdots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP is solved again. This process is repeated until a solution is found that leads to $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\cdots,m \}$.
 This worst case did not occur when running the test problems.
 %(Note: A approach on this would be to make a educated guess which indices could get a problem with positivity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
 
-When enforcing a maximum value, the number of constraints can be reduced using the same technique. When enforcing both maximum and minimum values two separate sets of active constraints are used. 
-In this case it is important to update these sets simultaneously.  
+When enforcing a maximum value, the number of constraints can be reduced using the same technique. When enforcing both maximum and minimum values two separate sets of active constraints are used.
+In this case it is important to update these sets simultaneously.
 
 \subsection{Implementation}
 
@@ -877,7 +877,7 @@ Afterwards, $u^{n+1}$ is computed using the original weights $b$.
 If the positivity is not violated, this solution is used to update the solution.
 If $u^{n+1}$ contains negative values, the weights are adapted using the following algorithm.
 
-Start with $\tilde{p}$ equal to the highest order $p_{start}$ such that there are degrees of freedom for the weights $\bt$. 
+Start with $\tilde{p}$ equal to the highest order $p_{start}$ such that there are degrees of freedom for the weights $\bt$.
 Apply an LP solver to the optimization
 problem.
 If the LP is infeasible, reduce the order $\tilde p$ by one.
@@ -899,26 +899,26 @@ If all acceptable orders are tried and no weights were found, the step hast to b
 \State Choose $\Delta t$
 \State Calculate $F$ using \eqref{eq:stagevalues}
 \State $u^{n+1}=u^n + \Delta t Fb$
-\If {$u^{n+1} \geq 0$} 
+\If {$u^{n+1} \geq 0$}
 	\State $success = True$
 \Else
 	\State{$\tilde p = p_{start}$}
-	\While{$\tilde p \geq p_{min}$} 
+	\While{$\tilde p \geq p_{min}$}
 		\State Solve LP
 		\If {LP Feasible \textbf{and} result correct}
 			\State $perturb = \| \Delta t F(\tilde{b}-b)\|$
 			\If {$perturb < tol$}
 				\State $u^{n+1}=u^n+\Delta t F \tilde b$
-				\State $success = True$ 
+				\State $success = True$
 				\State \textbf{break}
-			\EndIf 
+			\EndIf
 		\EndIf
 		\If {$\tilde p = p_{end}$}
-			\State $sucess=False$			
+			\State $sucess=False$
 		\EndIf
 		\State $\tilde p = \tilde p -1$
 	\EndWhile
-\EndIf 
+\EndIf
 \If {$sucess$}
 	\State $u^n=u^{n+1},t^n=t^{n+1}+\Delta t,n=n+1$
 \EndIf
@@ -946,11 +946,11 @@ For problems where the exact solution is positive for certain $u_0$ but do not s
 \subsection{Nonstiff problem with fixed stepsize}\label{sec:Ex_expl}
 First the adaptive RKM are tested on non stiff problems with a fixed step size. For this a explicit methods are used.
 When used with explicit methods the cost of solving the LP is significant because the computation of the stage derivatives only requires $s$ evaluations of the RHS.
-For most of the linear test problems tried, the explicit methods yield to positive results.  
-When increasing the step size, issues with stability occur before getting negative values.  
+For most of the linear test problems tried, the explicit methods yield to positive results.
+When increasing the step size, issues with stability occur before getting negative values.
 An example for this is the ODE in Section~\ref{sec:example_lin}.
-Some nonlinear RHS may require very small time steps to preserve positivity.  
-For these, adapting the weights could be a possible way to solve them. 
+Some nonlinear RHS may require very small time steps to preserve positivity.
+For these, adapting the weights could be a possible way to solve them.
 An example is the reaction equation solved in Section~\ref{sec:example_reac}.
 Since the positivity of the stage values is not ensured, the right hand side has to be defined for negative values. If this is not the case, the right hand side has to be adapted accordingly.
 
@@ -1001,7 +1001,7 @@ In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.6$ 
 
 Next, different time steps are used.
 For $\dt \leq 0.0082$ the unaltered method leads to positive solutions. For a larger $\dt$ the original method leads to negative values and the weights are altered. For $\dt >0.016$ the baseline method is no longer stable.
-For the ODE, the reference solution can be computed using the matrix exponential. 
+For the ODE, the reference solution can be computed using the matrix exponential.
 In Figure\,\ref{fig:conv_expl} the convergence for $t=0.5$ is plotted for the altered and unaltered method.
 
 \begin{figure}[ht]
@@ -1011,13 +1011,13 @@ In Figure\,\ref{fig:conv_expl} the convergence for $t=0.5$ is plotted for the al
 \label{fig:conv_expl}
 \end{figure}
 
-The unaltered method has the order $p=5$. 
-The values marked with a cross denote the numerical experiments that required an adaption of the weights. 
+The unaltered method has the order $p=5$.
+The values marked with a cross denote the numerical experiments that required an adaption of the weights.
 Even though the order is reduced, most errors are still close to the error of the unaltered method.
 
 \subsection{Stiff problem with fixed step size}
 Next the adaptive RKM is tested on stiff problems. Here implicit methods are used.
-Implicit methods are an advantageous choice for a couple of reasons. 
+Implicit methods are an advantageous choice for a couple of reasons.
 Firstly, the cost of solving the LP is relatively small compared to the cost of solving the stage equations.
 Secondly, the time step is not limited by the stability of the method.
 Therefore, it is possible to use larger time steps that are more likely to lead to negative values.
@@ -1038,21 +1038,21 @@ As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion 
 
 The ODE is solved using the Im-Euler~3 extrapolation method.
 For large $\dt$ the method computes negative values for $u^1$.
-These can be corrected by adapting the weights.  
+These can be corrected by adapting the weights.
 The solutions are computed using the free adaptation and convex adaptation for $\dt = \num{1e-3}$.
 The results for the free adaptation are plotted in Figure\,\ref{fig:sol_Diff_a} and the corresponding change of the weights
 is shown in Figure\,\ref{fig:weights_Diff_a}.
-The original solution for the first step is negative. Therefore, the weights have to be changed. 
-If we take a look at the solution after the first time step at $t=0.001$ we can see that at $x=0$ the solution is smaller than the solution at the surrounding points.  
-This is not physical.  
-The next time steps lead to physical solutions again. 
-To prevent this glitch from happening we choose the weights based on a convex adaptation. 
+The original solution for the first step is negative. Therefore, the weights have to be changed.
+If we take a look at the solution after the first time step at $t=0.001$ we can see that at $x=0$ the solution is smaller than the solution at the surrounding points.
+This is not physical.
+The next time steps lead to physical solutions again.
+To prevent this glitch from happening we choose the weights based on a convex adaptation.
 A first order embedded method is added. The solution is shown in Figure\,\ref{fig:sol_Diff_c} and the weights are visualized in Figure\,\ref{fig:weights_Diff_c}.
-The weights for the first step are altered again. 
-The weights obtained by the convex adaptation are different from the weights obtained 
-by taking the free adaptation. 
-The solution for $t=0.001$ computed with the convex adaptation is physical. 
-For both approaches, the remaining steps can be computed with the standard weights. 
+The weights for the first step are altered again.
+The weights obtained by the convex adaptation are different from the weights obtained
+by taking the free adaptation.
+The solution for $t=0.001$ computed with the convex adaptation is physical.
+For both approaches, the remaining steps can be computed with the standard weights.
 \begin{figure}
 \centering
 \begin{subfigure}[b]{0.45\textwidth}
@@ -1086,13 +1086,13 @@ For both approaches, the remaining steps can be computed with the standard weigh
 
 
 In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered Im-Euler~3 extrapolation method (ex3, potentially resulting in negative values), the adaptive method with free adaptation (ex3a) and the adapted method using convex adaptations (ex3c).
-Also, the BE method is plotted. It is only of 1st order but preserves positivity for all $\dt$. 
-For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity. 
+Also, the BE method is plotted. It is only of 1st order but preserves positivity for all $\dt$.
+For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity.
 The ex3a shows similar convergence properties as the original method.
-This can be expected, because the adapted method is still of 3rd order. 
+This can be expected, because the adapted method is still of 3rd order.
 The ex3c has larger errors than the ex3a but leads to physical solutions for all time-steps.
 This is no surprise because the adapted RKM used for the first step is only of first order.
-But the adaptive method still outperforms the BE, even when accounting for the higher cost per step. 
+But the adaptive method still outperforms the BE, even when accounting for the higher cost per step.
 
 \begin{figure}[ht]
 \centering
@@ -1105,19 +1105,19 @@ But the adaptive method still outperforms the BE, even when accounting for the h
 
 \subsection{Stiff problem with adaptive step size}
 
-Next we test the adaptive RKM on a more complex problem. 
+Next we test the adaptive RKM on a more complex problem.
 For this, we consider the advection-diffusion-production-destruction systems from \cite{kopecz_comparison_2019}. The system is defined by
 \begin{subequations}
 \label{eq:ADR}
 \begin{align}
-\frac{\partial u_1}{\partial t} &=-a \frac{\partial u_1}{\partial x} + d\frac{\partial^2 u_1}{\partial x ^2} + 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\ 
-\frac{\partial u_2}{\partial t} &=-a \frac{\partial u_2}{\partial x} + d\frac{\partial^2 u_2}{\partial x ^2} + \frac{u_1u_2}{0.01+u_1} -0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\ 
-\frac{\partial u_3}{\partial t} &=-a \frac{\partial u_3}{\partial x} + d\frac{\partial^2 u_3}{\partial x ^2} + 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\ 
-\frac{\partial u_4}{\partial t} &=-a \frac{\partial u_4}{\partial x} + d\frac{\partial^2 u_4}{\partial x ^2} + 0.05 u_2 + 0.02 u_3 - 0.003u_4 
+\frac{\partial u_1}{\partial t} &=-a \frac{\partial u_1}{\partial x} + d\frac{\partial^2 u_1}{\partial x ^2} + 0.01u_2 + 0.01 u_3 +0.003u_4 - \frac{u_1 u_2}{0.01+u_1} \\
+\frac{\partial u_2}{\partial t} &=-a \frac{\partial u_2}{\partial x} + d\frac{\partial^2 u_2}{\partial x ^2} + \frac{u_1u_2}{0.01+u_1} -0.01 u_2-0.5(1-\exp(-1.21 u_2^2)) u_3 -0.05 u_2 \\
+\frac{\partial u_3}{\partial t} &=-a \frac{\partial u_3}{\partial x} + d\frac{\partial^2 u_3}{\partial x ^2} + 0.5(1-\exp(-1.21u_2^2)) u_3 - 0.01 u_3 -0.02 u_3 \\
+\frac{\partial u_4}{\partial t} &=-a \frac{\partial u_4}{\partial x} + d\frac{\partial^2 u_4}{\partial x ^2} + 0.05 u_2 + 0.02 u_3 - 0.003u_4
 \end{align}
 \end{subequations}
 with parameters $a=\num{1e-2} $ and $ d=\num{1e-6}$.
-The PDE is simulated on the domain $x = [0,1]$ with $N=100$ points. Periodic boundary conditions are used. 
+The PDE is simulated on the domain $x = [0,1]$ with $N=100$ points. Periodic boundary conditions are used.
 The advection part is semidiscretized using a first order upwind scheme and the diffusion part is semidiscretized using a 3-point-scheme. This leads to a positivity preserving system of ODEs.
 The ODE is also mass conservative.
 The computation is done using the Im-Euler~3 extrapolation
@@ -1125,26 +1125,24 @@ method with free adaptation.
 As step size control a PI-control from\,\cite{hairer_solving_1996} is used. The error was estimated using \eqref{eq:Err}. The tolerance was set to $Tol = 0.01$.
 The final time is $t_{end} = 50$.
 
-The simulation required 264 steps. Of these, 72 required an adaptation of the weights. 
+The simulation required 264 steps. Of these, 72 required an adaptation of the weights.
 All adapted weights are still of 3rd order.
-The solutions for $t=9,t=18,t=27$ and $t=50$ are plotted in Figure\,\ref{fig:Sol_ADP}. 
-In Figure\,\ref{fig:sol_ADP18} it can be seen that the reaction occurs in a small interfaces. 
+The solutions for $t=9,t=18,t=27$ and $t=50$ are plotted in Figure\,\ref{fig:Sol_ADP}.
+In Figure\,\ref{fig:sol_ADP18} it can be seen that the reaction occurs in a small interfaces.
 Outside of this regions quantities are close to zero. Therefore, it is very likely that negative values occur in the numerical approximation.
-In Figure\,\ref{fig:sol_ADP27} it can be seen that at $T=27$ the two reaction interfaces merged. Afterwards the reaction stops and the behavior is mainly controlled by the advection and diffusion part.  
+In Figure\,\ref{fig:sol_ADP27} it can be seen that at $T=27$ the two reaction interfaces merged. Afterwards the reaction stops and the behavior is mainly controlled by the advection and diffusion part.
 
-In Figure\,\ref{fig:Stats_ADP} different values are plotted.  
-In the first subplot the step size is plotted. For $t<25$ the time steps are small. After $t = 30$ the step size increases, because the solution only evolves slowly afterwards. 
+In Figure\,\ref{fig:Stats_ADP} different values are plotted.
+In the first subplot the step size is plotted. For $t<25$ the time steps are small. After $t = 30$ the step size increases, because the solution only evolves slowly afterwards.
 In the second subplot the minimum of $u_1,u_2,u_3,u_4$ is plotted for all time steps that initially lead to negative values. This value is computed before and after adapting the weights.
-We can see that relatively large negative values occurred at some time steps. 
-After the adaption of the weights, all values are close to $0$. Therefore, the adaption of weights successfully preserved positivity. 
-In the third subplot the approximated truncation error $err_T$ and the adaption error $err_{adapt}$ are plotted. 
-We can see that the adaption error is of a similar magnitude as the truncation error. Therefore, the total error of the method is not increased drastically.  
-In the next subplots objective function is plotted.  
-We can see that the changes to the weights are only very small. The adapted RKM is still very close to the original RKM. 
-In the last subplot the deviation of the sum over $u_1,u_2,u_3,u_4$ from the initial sum is plotted. 
+We can see that relatively large negative values occurred at some time steps.
+After the adaption of the weights, all values are close to $0$. Therefore, the adaption of weights successfully preserved positivity.
+In the third subplot the approximated truncation error $err_T$ and the adaption error $err_{adapt}$ are plotted.
+We can see that the adaption error is of a similar magnitude as the truncation error. Therefore, the total error of the method is not increased drastically.
+In the next subplots objective function is plotted.
+We can see that the changes to the weights are only very small. The adapted RKM is still very close to the original RKM.
+In the last subplot the deviation of the sum over $u_1,u_2,u_3,u_4$ from the initial sum is plotted.
 The mass is conserved within roundoff error.
-
-
 
 \begin{figure}
     \centering
@@ -1158,7 +1156,7 @@ The mass is conserved within roundoff error.
         \caption{$t=18$.}
         \label{fig:sol_ADP18}
     \end{subfigure}
-    
+
     \begin{subfigure}[b]{0.49\textwidth}
         \includegraphics[width=\textwidth]{plots/ADP_sol_27.pdf}
         \caption{$t=27$.}
@@ -1180,19 +1178,127 @@ The mass is conserved within roundoff error.
 \end{figure}
 
 
-\section{Conclusion} \label{sec:conclusion}
-It is possible to adapt the weights to enforce positivity for RKMs that are not positivity preserving. 
-One main limitation is that the resulting order has to be lower than the number of stages.
-An error approximation for this method was given.  
-The region of absolute stability is altered by changing the weights. This effect can be predicted or controlled. 
-Used with explicit methods the positivity for some test problems could be recovered.  
-Because the time step size is limited by the stability it is only useful for a small interval of time steps. 
-The adaptive method is mainly interesting for diagonally implicit methods.
-The times step size is not limited by stability. 
-Also, the cost of solving the LP is not a crucial factor.  
-If the negative values occurring are not too large, which can be expected for most computations, adapting the weights is a potential way to ensure positivity. 
+\subsection{Stiff problem with adaptive step size II}
 
-%also if exactnes is not the limiting factor but positivity 
+Here, we consider the stratospheric reaction problem of
+\cite{sandu2001positive}, which models the reactions of the substances
+in the concentration vector $u = [O^{1D}, O, O_3, O_2, NO, NO_2]$.
+This ODE has two linear invariants
+\begin{align}
+  m_O^T u &= \text{const}, & m_O &= [1,1,3,2,1,2]^T, \\
+  m_N^T u &= \text{const}, & m_N &= [0,0,0,0,1,1]^T,
+\end{align}
+which describe the conservation of the total mass of oxygen and nitrogen,
+respectively.
+
+The reaction system
+\begin{equation}
+\label{eq:stratospheric}
+\begin{aligned}
+  \frac{\mathrm d}{\mathrm d t} O^{1D} &= r_5 - r_6 - r_7, \\
+  \frac{\mathrm d}{\mathrm d t} O      &= 2 r_1 - r_2 + r_3 - r_4 + r_6 - r_9 + r_{10} - r_{11}, \\
+  \frac{\mathrm d}{\mathrm d t} O_3    &= r_2 - r_3 - r_4 - r_5 - r_7 - r_8, \\
+  \frac{\mathrm d}{\mathrm d t} O_2    &= -r_1 - r_2 + r_3 + 2 r_4 + r_5 + 2r_7 + r_8 + r_9, \\
+  \frac{\mathrm d}{\mathrm d t} NO     &= -r_8 + r_9 + r_{10} - r_{11}, \\
+  \frac{\mathrm d}{\mathrm d t} NO_2   &= r_8 - r_9 - r_{10} + r_{11},
+\end{aligned}
+\end{equation}
+with time $t$ in seconds is given by the reaction rates
+\begin{equation}
+\begin{aligned}
+  r_{1}  &= k_1\, O_2,          &  k_{1}  &= \num{2.643e-10} \sigma^3, &
+  r_{2}  &= k_2\, O\, O_2,      &  k_{2}  &= \num{8.018e-17}, \\
+  r_{3}  &= k_3\, O_3,          &  k_{3}  &= \num{6.120e-4} \sigma, &
+  r_{4}  &= k_4\, O_3\, O,      &  k_{4}  &= \num{1.567e-15}, \\
+  r_{5}  &= k_5\, O_3,          &  k_{5}  &= \num{1.070e-3} \sigma^2, &
+  r_{6}  &= k_6\, M\, O^{1D},   &  k_{6}  &= \num{7.110e-11}, \\
+  r_{7}  &= k_7\, O^{1D}\, O_3, &  k_{7}  &= \num{1.200e-10}, &
+  r_{8}  &= k_8\, O_3\, NO,     &  k_{8}  &= \num{6.062e-15}, \\
+  r_{9}  &= k_9\, NO_2\, O,     &  k_{9}  &= \num{1.069e-11}, &
+  r_{10} &= k_{10}\, NO_2,      &  k_{10} &= \num{1.289e-2} \sigma, \\
+% \stepcounter{equation}\tag{\theequation}
+  r_{11} &= k_{11}\, NO\, O,    &  k_{11} &= \num{1.0e-8},
+\end{aligned}
+\end{equation}
+where $M  = \num{8.120e16}$ and
+\begin{align}
+    T &= (t/3600) \bmod 24,
+    \quad T_r = 4.5,
+    \quad T_s = 19.5 \\
+    \sigma(T) &=
+    \begin{cases}
+    0.5+0.5 \cos\Bigl(\pi \Bigl|\frac{(2T-T_r-T_s)}{(T_s-T_r)}\Bigr| \frac{(2T-T_r-T_s)}{(T_s-T_r)} \Bigr)       & \quad \text{if } T_r \leq T \leq T_s,\\
+    0  & \quad \text{otherwise}.
+    \end{cases}
+\end{align}
+
+The initial conditions are
+\begin{equation}
+  u(t_0) = [
+    \num{9.906e+1},
+    \num{6.624e08},
+    \num{5.326e11},
+    \num{1.697e16},
+    \num{4.000e6},
+    \num{1.093e9}
+  ]^T.
+\end{equation}
+The system was normalized internally such that $\forall n\colon u_n(t_0) = 1$
+for the computation to achieve a suitable error estimation.
+The system is solved in the time from $t_{0} = \SI{12}{h}$ to $t = \SI{84}{h}$
+using the Im-Euler~3 extrapolation method with free adaptation and step size
+control.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{plots/Stratospheric_time.pdf}
+\caption{Numerical approximation of stratospheric reaction system
+         \eqref{eq:stratospheric}.}
+\label{fig:Stratospheric_time}
+\end{figure}
+
+The results are shown in Figure~\ref{fig:Stratospheric_time}.
+The adapted solution is close to the reference solution obtained
+with the unadapted Im-Euler~3 extrapolation method and a higher accuracy.
+For this solution, 249 steps were computed; two of these were rejected due to
+a violation of the error bound.
+More details are shown in Figure~\ref{fig:Stats_Strat}. The rejected steps are drawn with thick crosses.
+The step size $\dt$ undergoes multiple sudden changes due to the explicit dependence
+on time of the problem.
+The minimum values before and after the adaptation are also shown for all steps where the initial values were negative.
+This was only the case for some time intervals. 25 steps exhibited negative values.
+Almost all of them were very close to zero and the adaptation did only show a small improvement.
+The smallest value of the solution is $\min(u) = \num{-1.59e-11}$.
+The used weights are also very close to the original weights, except of the steps that were rejected anyway due to a violation of the tolerance.
+The change of the two linear invariants are shwon in the last two subplots. Both are preserved within roundoff error.
+Due to the internal normalization the round off error is amplified to the order of $10$ for $m_O^Tu$.
+
+\todo{TODO: Plot relative change $(m_O^T u - m_O^T u(t_0)) / m_O^T u(t_0)$
+instead of the absolute change of the linear invariants?}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.85\textwidth]{plots/Stratospheric_stepsize,b.pdf}
+\caption{Different statistics of computation of the stratospheric reaction system
+         \eqref{eq:stratospheric}.}
+\label{fig:Stats_Strat}
+\end{figure}
+
+
+\section{Conclusion} \label{sec:conclusion}
+
+It is possible to adapt the weights to enforce positivity for RKMs that are not positivity preserving.
+One main limitation is that the resulting order has to be lower than the number of stages.
+An error approximation for this method was given.
+The region of absolute stability is altered by changing the weights. This effect can be predicted or controlled.
+Used with explicit methods the positivity for some test problems could be recovered.
+Because the time step size is limited by the stability it is only useful for a small interval of time steps.
+The adaptive method is mainly interesting for diagonally implicit methods.
+The times step size is not limited by stability.
+Also, the cost of solving the LP is not a crucial factor.
+If the negative values occurring are not too large, which can be expected for most computations, adapting the weights is a potential way to ensure positivity.
+
+%also if exactnes is not the limiting factor but positivity
 
 
 \printbibliography
