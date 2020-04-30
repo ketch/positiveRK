@@ -799,20 +799,24 @@ def RK_integrate(solver = [], problem = [],stepsize_control = None, dumpK=False,
             #else:
             #    sc = stepsize_control.a_tol+u*stepsize_control.r_tol
             #error = np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat))/sc)/len(u)
-            error = dt*np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat)))
+            error = dt_old*np.linalg.norm((K@(solver.rkm.b-solver.rkm.bhat)))
             status['error'].append(error)
             if verbose: print('Error:',error)
             if error > stepsize_control.tol_reqect:
                 tol_met = False
                 if verbose: print('tol not met')
                 status['message'] += 'tol not met'
-                status['sc'].append('r')
+                if dt_old <= stepsize_control.dt_min+1e-15:
+                    if verbose: print('dt_min reached, using it anyway')
+                    status['sc'].append('m')
+                else:
+                    status['sc'].append('r')
             else:
                 tol_met = True
                 status['sc'].append('m')
 
 
-        if success and tol_met:
+        if success and (tol_met or dt_old <= stepsize_control.dt_min+1e-15):
             if verbose: print('advancing t')
             t += dt
             u = u_n
