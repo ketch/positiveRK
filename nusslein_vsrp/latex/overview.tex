@@ -840,24 +840,28 @@ proposed algorithm in the following.
 
 
 \subsection{Simplification of positivity constraints}
-
-For the further discussion, we are concerned with a system of
-$m$ coupled ODEs, i.e.\ $u \in \R^m$.
-Systems of ODEs with a high number of dimensions can appear when solving a PDE with the method of lines.
-To ensure that the solution is positive \eqref{eq:ut} has to be fulfilled.
-This causes $m$ scalar positivity constraints.
-Imposing all of these constraints in the LP solver usually results
-in unnecessarily many constraints. In many cases, positivity is
-violated only for a subset $h \subseteq \{1, \dots, m\}$ of all
-components. This reduced set of positivity constraints can be
-formulated as
+The number of positivity constraints implied by \eqref{eq:ut}
+is equal to $m$, the number of ODEs being solved.  This number
+may be very large, for instance if the system is a semi-discretization
+of a PDE.  This makes solution of the LP very costly.
+But in most cases, positivity is violated only for a very small subset $h \subseteq \{1, \dots, m\}$ of
+the solution components.  We can solve a much less expensive LP
+by replacing \eqref{eq:ut} with
 \begin{equation}
 u_i^n + \dt \sum_{j=0}^s F_{i,j}  b_j  \geq 0 \quad \forall i \in h \subseteq \{1,\dots,m \}.
 \end{equation}
-A reasonable approach is to set $h_0 = \{ i \in \{1,\dots,m \} |  u_i^{n+1}  < 0 \}$.
-After the new weights and $u^{n+1}$ are computed using $h_0$, the algorithm has to check if the positivity of the other values $\{u_i | i \notin h_0 \subseteq \{1,\dots,m \}\}$ is still satisfied.
-If the condition is not met a new set $h_{a+1} = \{ i \in \{1,\dots,m \}|  u_i^{n+1}  < 0 \} \cup h_{a}$ using the new $u^{n+1}$ is generated and the LP is solved again. This process is repeated until a solution is found that leads to $u^{n+1} \geq 0$. The choice of $h_{a+1}$ based on $h_{a}$ ensures that the algorithm cannot get stuck in a loop. In the worst case $h_a$ is growing very slowly until $h_a = \{1,\dots,m \}$.
-This worst case did not occur when running the test problems.
+Of course, it must be checked that the solution of the resulting LP still
+satisfies the full set of constraints \eqref{eq:ut}.  In practice, we
+have found the following approach to be effective.
+First, set
+$$h_0 = \{ i \in \{1,\dots,m \} \ | \  u_i^{n+1}  < 0 \}.$$
+Solve the LP and let $\ut^{n+1}$ denote the new solution.
+If $\ut^{n+1}$ satisfies \eqref{eq:ut}, accept this as the new
+solution; otherwise, repeatedly take
+$$h_{a+1} = \{ i \in \{1,\dots,m \}|  \ut_i^{n+1}  < 0 \} \cup h_{a}$$
+until $\ut^{n+1}$ is found to satisfy \eqref{eq:ut}.
+In the examples we have studied, this approach was found to always converge in
+at most X iterations.
 %(Note: A approach on this would be to make a educated guess which indices could get a problem with positivity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
 
 When enforcing a maximum value, the number of constraints can be reduced using the same technique. When enforcing both maximum and minimum values two separate sets of active constraints are used.
