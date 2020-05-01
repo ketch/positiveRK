@@ -7,6 +7,7 @@ import scipy.optimize as opt
 from OrderCondition import *
 import cvxpy as cp
 from scipy.optimize import linprog
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 
 
@@ -65,9 +66,9 @@ def solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,reduce = False,verbose_LP = False,mi
     if reduce: #We do not need it otherwise
         u_ = u +dt*K@b_orig
 
-
+    cnt_iter_h = 0
     while True: #We check at the end for break conditions
-
+        cnt_iter_h += 1
         #Reduce
         if reduce:
             i_min[i_n] = i_min[i_n] | (u_[i_n] < minval[i_n])
@@ -163,7 +164,7 @@ def solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,reduce = False,verbose_LP = False,mi
                 b = ap_op.value - an_op.value + b_orig
             except:
                 if verbose_LP: print('Solver crashed')
-                return (5,l,None)
+                return (5,l,None,0)
 
             if prob.status == cp.OPTIMAL:
                 status = 0
@@ -182,10 +183,82 @@ def solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,reduce = False,verbose_LP = False,mi
             #if there are no new negative values appearing
             break
 
-    return (status,l,b)
+    return (status,l,b,cnt_iter_h)
+
+def Eqsys_line(B):
+    N = np.array([[-1.,1.]])
+    a = np.array([[np.min(B)],[-np.max(B)]])
+    if a[0]+a[1] == 0:
+        print('only single Point, not able to compute convex hull')
+        raise ValueError
+    return N,a
+
+def Eqsys_chull(B):
+    """
+    Function to compute the equarionsystem defining a c_hull of the points b_1,...,b_l
+
+    Parameters:
+    B = [b_1,...,b_l] Points that span the chull
+
+    Returns:
+    Two sets of constriants
+        N_hull^T x     + a_hull    <= 0
+        N_subspace^T x + a_subspace = 0
+
+    N_hull = [n_1,...,n_k] Matrix with normal vectors of the inequality constraints
+    a_hull = [a_r,...,a_k] Vector containig the offsets of the inequality constraints
+    N_subspace = [n_k+1,...,n_k+(r-s)] Matrix with normal vectors of the equality constraints
+    a_subspace = [n_k+1,...,n_k+(r-s)] Vector containig the offsets of the equality constraints
+    """
+    b_0 = B[:,0]
+    s = len(b_0)
+    b_0.shape=(s,1)
+    B_shifted = B-b_0
+
+    N_dim = np.linalg.matrix_rank(B_shifted)
+    if N_dim == s: #No need to transform using SVD, we can simply use qhull
+        if N_dim == 1:
+            N_hull,a_hull_sh = Eqsys_line(B_shifted)
+        else:
+            hull = ConvexHull(B_shifted.T)
+            E = hull.equations
+            N_hull=E[:,:-1].T
+            a_hull_sh=E[:,-1]
+            a_hull_sh.shape=[len(a_sh),1]
+
+        N_subspace = np.array([[]])
+        a_subspace_sh = np.array([[]])
 
 
-def solve_LP_convex(solver,B,w,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 0,maxval=np.infty, **options):
+    if N_dim <= s: #Transform using SVD
+        print('Transform, n_dim =',N_dim)
+        U,S,V = np.linalg.svd(B_shifted)
+        B_transformed = U[:,0:N_dim].T@B_shifted
+        if N_dim == 1:
+            N_transformed,a_hull_sh = Eqsys_line(B_transformed)
+        else:
+            hull = ConvexHull(B_transformed.T)
+            E = hull.equations
+            N_transformed=E[:,:-1].T
+            a_hull_sh=E[:,-1]
+            a_hull_sh.shape=[len(a_hull_sh),1]
+
+
+        N_hull=U[:,0:N_dim]@N_transformed
+
+        N_subspace =U[:,N_dim:]
+        a_subspace_sh = np.zeros((s-N_dim,1))
+
+    a_hull = a_hull_sh-N_hull.T@b_0
+    a_subspace = a_subspace_sh-N_subspace.T@b_0
+
+    a_hull.shape = (len(a_hull),)
+    a_subspace.shape = (len(a_subspace),)
+
+    return (N_hull,a_hull,N_subspace,a_subspace)
+
+
+def solve_LP_convex(solver,B,b_orig,rkm,u,K,dt,reduce = False,verbose_LP = False,minval = 0,maxval=np.infty, **options):
     """
     This method solves the LP Problem
 
@@ -239,9 +312,9 @@ def solve_LP_convex(solver,B,w,rkm,u,K,dt,reduce = False,verbose_LP = False,minv
     if reduce: #We do not need it otherwise
         u_ = u +dt*K@rkm.b
 
-
+    cnt_iter_h = 0
     while True: #We check at the end for break conditions
-
+        cnt_iter_h += 1
         #Reduce
         if reduce:
             i_min[i_n] = i_min[i_n] | (u_[i_n] < minval[i_n])
@@ -271,35 +344,45 @@ def solve_LP_convex(solver,B,w,rkm,u,K,dt,reduce = False,verbose_LP = False,minv
             raise NotImplementedError
 
         else:
-            a_op = cp.Variable(len(w))
-            e = np.ones(len(w))
+            #We wanrt to optimize for ||b-bt||_1=||
 
+            ap_op =cp.Variable(s)
+            an_op =cp.Variable(s)
+            e = np.ones(s) #vector for goal Function, just generates the 1-Norm of b
+
+            (N_hull,a_hull,N_subspace,a_subspace) = Eqsys_chull(B)
+
+            if len(N_subspace) ==0:
+                print('Do the B satisfy sum b = 1?, The b have to be at least of 1st order')
+                raise NotImplementedError
 
             #Using different implementations to aviod empyt matricies
             if K_max.shape[0]>0 and K_min.shape[0]>0:
-                prob = cp.Problem(cp.Minimize(w@a_op),
-                    [e@a_op==1,
-                    u_min+dt*K_min@B@a_op>=minval_min,
-                    u_max+dt*K_max@B@a_op<=maxval_max,a_op>=0,a_op<=1])
+                prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
+                    [N_subspace.T@(ap_op-an_op+b_orig)+a_subspace==0,
+                    N_hull.T@(ap_op-an_op+b_orig)+a_hull<=0,
+                    u_min+dt*K_min@(ap_op-an_op+b_orig)>=minval_min,
+                    u_max+dt*K_max@(ap_op-an_op+b_orig)<=maxval_max,ap_op>=0,an_op>=0])
             elif K_min.shape[0]>0:
-                prob = cp.Problem(cp.Minimize(w@a_op),
-                    [e@a_op==1,
-                    u_min+dt*K_min@B@a_op>=minval_min,a_op>=0,a_op<=1])
+                prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
+                    [N_subspace.T@(ap_op-an_op+b_orig)+a_subspace==0,
+                    N_hull.T@(ap_op-an_op+b_orig)+a_hull<=0,
+                    u_min+dt*K_min@(ap_op-an_op+b_orig)>=minval_min,ap_op>=0,an_op>=0])
             elif K_max.shape[0]>0:
-                prob = cp.Problem(cp.Minimize(w@a_op),
-                    [e@a_op==1,
-                    u_max+dt*K_max@B@a_op<=maxval_max,a_op>=0,a_op<=1])
+                prob = cp.Problem(cp.Minimize(e@ap_op+e@an_op),
+                    [N_subspace.T@(ap_op-an_op+b_orig)+a_subspace==0,
+                    N_hull.T@(ap_op-an_op+b_orig)+a_hull<=0,
+                    u_max+dt*K_max@(ap_op-an_op+b_orig)<=maxval_max,ap_op>=0,an_op>=0])
             else:
                 raise ValueError
                 #should alredy be detected as trivial Problem
 
             try:
                 prob.solve(solver=solver,**options)
-                b = B@a_op.value
+                b = ap_op.value - an_op.value + b_orig
             except:
                 if verbose_LP: print('Solver crashed')
-                return (5,l,None)
-
+                return (5,l,None,0)
             if prob.status == cp.OPTIMAL:
                 status = 0
             elif prob.status == cp.OPTIMAL_INACCURATE:
@@ -317,7 +400,7 @@ def solve_LP_convex(solver,B,w,rkm,u,K,dt,reduce = False,verbose_LP = False,minv
             #if there are no new negative values appearing
             break
 
-    return (status,l,b)
+    return (status,l,b,cnt_iter_h)
 
 
 
@@ -434,7 +517,7 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
 
     """
     message = ''
-    status = {}
+    status = {'cnt_iter_h_max':0}
     change = None
 
     for i,the in enumerate(theta): #loop through all the sub-timesteps
@@ -448,7 +531,8 @@ def adapt_b(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,solveropt
             else:
                 b_orig = rkm.b_dense(the)
 
-            (status_LP,l,b) = solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,maxval = maxval,minval = minval,**solveropts)
+            (status_LP,l,b,cnt_iter_h) = solve_LP(solver,O,rhs,rkm,b_orig,u,K,dt,maxval = maxval,minval = minval,**solveropts)
+            status['cnt_iter_h_max'] = max(cnt_iter_h,status['cnt_iter_h_max'])
 
             if status_LP in [2,3,5]:
                 #Error Handling for didn not work
@@ -500,7 +584,7 @@ def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,so
 
     """
     message = ''
-    status = {}
+    status = {'cnt_iter_h_max':0}
     change = None
     print('changed')
 
@@ -511,16 +595,16 @@ def adapt_b_convex(rkm,K,dt,u,minval,maxval,tol_neg,tol_change,p,theta,solver,so
             #Construct Problem
             #Matrix with the used methods
             B = [[rkm.b]]
-            w = [0]
             for order in range(rkm.p,p_new-1,-1):
                 B.append(rkm.b_hat[order])
-                w.extend([1/order]*len(rkm.b_hat[order]))
+
 
             B = np.concatenate(B).T
             if verbose >= 2: display(B)
-            w = np.array(w)
+            b_orig = rkm.b
 
-            (status_LP,l,b) = solve_LP_convex(solver,B,w,rkm,u,K,dt,maxval = maxval,minval = minval,**solveropts)
+            (status_LP,l,b,cnt_iter_h) = solve_LP_convex(solver,B,b_orig,rkm,u,K,dt,maxval = maxval,minval = minval,**solveropts)
+            status['cnt_iter_h_max'] = max(cnt_iter_h,status['cnt_iter_h_max'])
 
             if status_LP in [2,3,5]:
                 #Error Handling for didn not work

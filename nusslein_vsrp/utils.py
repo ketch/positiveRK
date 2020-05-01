@@ -286,6 +286,13 @@ def plot_times(methods,dt,effective = False,title = ''):
     print(labels)
 
 
+def get_max_iter_h(status):
+    max_iter = 0
+    for lp_stat in status['LP_stat']:
+        if lp_stat:
+            max_iter = max(max_iter,lp_stat['cnt_iter_h_max'])
+    return max_iter
+
 def show_status(status):
     #print success
     print('Succesfull:'); print(status['success'])

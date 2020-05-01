@@ -860,7 +860,7 @@ solution; otherwise, repeatedly take
 $$h_{a+1} = \{ i \in \{1,\dots,m \}|  \ut_i^{n+1}  < 0 \} \cup h_{a}$$
 until $\ut^{n+1}$ is found to satisfy \eqref{eq:ut}.
 In the examples we have studied, this approach was found to always converge in
-at most X iterations.
+at most 2 iterations.
 %(Note: A approach on this would be to make a educated guess which indices could get a problem with positivity. A possible estimate would be $\frac{u_i^{n+1}}{max(K_{(i,0)}, \cdots ,K_{(i,0)})} $ )
 
 When enforcing a maximum value, the number of constraints can be reduced using the same technique. When enforcing both maximum and minimum values two separate sets of active constraints are used.
