@@ -621,7 +621,8 @@ In this case it is important to update these sets simultaneously.
 
 \subsection{Summary of the algorithm}
 
-Our proposed method is summarized in Algorithm\,\ref{alg:Adaption}.
+Our proposed method to solve a positive initial value problem \eqref{ode}
+is summarized in Algorithm\,\ref{alg:Adaption}.
 
 %To calculate the next solution $u^{n+1}$ the following is algorithm is executed. This is repeated until the final time $t_{end}$ is reached.
 %
@@ -649,33 +650,35 @@ Our proposed method is summarized in Algorithm\,\ref{alg:Adaption}.
 
 \begin{algorithm}[ht]
 \begin{algorithmic}[1]
+\State Initialize $n \leftarrow 0$, $u^n \leftarrow u_0$, $t \leftarrow 0$
 \While{$t<t_{end}$}
-\State Choose $\Delta t$
-\State Calculate $F = (f_1, \dots, f_s)$ \eqref{eq:stagevalues}
-\State Set $u^{n+1}=u^n + \Delta t Fb$ \eqref{eq:Combination}
+\State Choose $\Delta t$ (fixed or via an adaptive stepsize control)
+\State Calculate $F = (f_1, \dots, f_s)$, cf.\ \eqref{eq:stagevalues}
+\State $u^{n+1} \leftarrow u^n + \Delta t Fb$, cf.\ \eqref{eq:Combination}
 \If {$u^{n+1} \geq 0$}
-	\State $success = True$
+	\State $success \leftarrow True$
 \Else
-	\State{$\tilde p = p_{start}$}
-	\While{$\tilde p \geq p_{min}$}
+	\State{$\pt \leftarrow p_{start}$}
+	\While{$\pt \geq p_{min}$}
 		\State Solve LP \eqref{eq:free-adaptation}
-		\If {LP Feasible \textbf{and} result correct}
-			\State $\delta = \| \Delta t F(\bt-b)\|$
+		\If {LP is feasible \textbf{and} result is correct} \todo{TODO: define these}
+			\State $\delta \leftarrow \| \Delta t F(\bt-b)\|$
 			\If {$\delta < tol$}
-				\State $u^{n+1}=u^n+\Delta t F \tilde b$
-				\State $success = True$
+				\State $u^{n+1} \leftarrow u^n+\Delta t F \tilde b$
+				\State $success \leftarrow True$
 				\State \textbf{break}
 			\EndIf
 		\EndIf
-		\If {$\tilde p = p_{min}$}
-			\State $sucess=False$
+		\If {$\pt = p_{min}$}
+			\State $sucess \leftarrow False$
 		\EndIf
-		\State $\tilde p = \tilde p -1$
+		\State $\pt \leftarrow \pt - 1$
 	\EndWhile
 \EndIf
 \If {$sucess$}
-% 	\State $u^n=u^{n+1},t^n=t^{n+1}+\Delta t,n=n+1$
-	\State Set $n=n+1$ and continue
+	\State $t \leftarrow t + \dt$, $n \leftarrow n+1$ and continue
+\Else
+  \State \todo{TODO}
 \EndIf
 \EndWhile
 \end{algorithmic}
