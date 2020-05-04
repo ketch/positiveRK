@@ -243,7 +243,7 @@ simple orthogonal projection, which has also been proposed to deal
 with positivity constraints \cite{shampine1986conservation},
 our approach preserves all linear invariants of the given ODE. These
 invariants can be very important. e.g.\ the total mass for a transport
-problem or in reaction systems. Preserve of linear
+problem or in reaction systems. Preservation of linear
 invariants has been shown to be an important advantage of RRK methods
 over orthogonal projection methods
 \cite{ranocha2020relaxationHamiltonian}. Of course, it is also
@@ -255,7 +255,7 @@ The paper unfolds as follows. In Section~\ref{sec:main_idea} the main idea is
 explained. Section~\ref{sec:LP} contains the formulation of the linear program
 for selection of the weights at each step.
 Section~\ref{sec:integration} describes how the new approach can be used with
-different RKMs, how it can be combined adaptive error control, and how the
+different RKMs, how it can be combined with adaptive error control, and how the
 region of absolute stability can be approximated.
 In Section~\ref{sec:Numeric_Results} numerical results are given for multiple test problems.
 A conclusion is given in Section~\ref{sec:conclusion}.
@@ -467,7 +467,7 @@ The positivity constraint is now fulfilled. A qualitatively correct solution is 
     \label{fig:exampleI}
 \end{figure}
 
-The difference $\|\bt-b\|$ is also plotted in Figure\,\ref{fig:exampleI}.
+The difference $\|\bt-b\|_1$ is also plotted in Figure\,\ref{fig:exampleI}.
 No modification of the weights is required for $t<1.905$. At $t=1.905$ the
 weights are first adapted to ensure the positivity of the solution. For
 $t>2.63$ the original set of weights again lead to a positive solution,
@@ -777,7 +777,8 @@ The implicit Euler extrapolation methods also exhibit degrees of freedom without
 
 It is also desirable that the baseline method have a large stability region.
 
-Note that for any diagonally implicit method, by allowing the order to be reduced to one
+Note that for many diagonally implicit methods, the first stage is a scaled backward Euler step.
+For such methods, by allowing the order to be reduced to one
 we can guarantee the existence of a solution to the LP, since the backward Euler method
 is unconditionally positive.  For explicit methods, reducing the order to one is guaranteed
 to yield a solution of the LP only if the step size is small enough.
