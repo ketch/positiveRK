@@ -172,10 +172,11 @@ We say an initial value problem
     u'(t) & = f(t,u) \\
     u(0) & = u_0
 \end{align}
-where $u: [0,T] \to \R^m$ is positive if
+where $u\colon [0,T] \to \R^m$ is positive if
 \begin{align} \label{continuous-positivity}
     u(0)\ge 0 \implies u(t) \ge 0 \text{ for all } t \in [0,T].
 \end{align}
+Here and in the following, inequalities like $u \geq 0$ are meant componentwise.
 A sufficient condition for positivity of \eqref{ode} is
 \begin{equation} \label{eq:condition_ODE_pos}
 u_i=0 \implies f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0 \quad \forall {u \geq 0,}\; \ \  \forall {t\in[0,T]}.
@@ -208,7 +209,7 @@ of a linear algebraic system; see e.g.\ \cite{kopecz_comparison_2019} and refere
 Finally, we mention diagonally split Runge--Kutta (DSRK) methods, which can be unconditionally
 positive and have order higher than one. Like MPRK schemes, DSRK methods avoid
 the restriction mentioned above because
-they are not general linear methods \cite{horvath_positivity_1998}.  However, in practice 
+they are not general linear methods \cite{horvath_positivity_1998}.  However, in practice
 unconditionally positive DSRK methods are less accurate than backward Euler for
 large step sizes \cite{macdonald2007}.
 
@@ -232,7 +233,7 @@ adapt the properties of the time integrator for a method of lines solution of a
 PDE.  Another class of methods that adapt the weights at the end of an RK step
 are the relaxation Runge--Kutta (RRK) methods.  In these, the weights are
 scaled by a scalar relaxation parameter in order to guarantee conservation or
-monotonicity of a desired functional; e.g. to conserve or dissipate energy or
+monotonicity of a desired functional; e.g.\ to conserve or dissipate energy or
 entropy
 \cite{ketcheson_relaxation_2019,ranocha_relaxation_2019,ranocha2020general}.
 
@@ -242,7 +243,7 @@ positivity constraint at the end of each step. In contrast to
 simple orthogonal projection, which has also been proposed to deal
 with positivity constraints \cite{shampine1986conservation},
 our approach preserves all linear invariants of the given ODE. These
-invariants can be very important. e.g.\ the total mass for a transport
+invariants can be very important, e.g.\ the total mass for a transport
 problem or in reaction systems. Preservation of linear
 invariants has been shown to be an important advantage of RRK methods
 over orthogonal projection methods
@@ -287,7 +288,7 @@ Let $f_j = f(t^n + \dt c_j,y_j)$; then we can write \eqref{eq:rkstep} as
 u^{n+1} = u^n + \dt F b,
 \end{equation}
 where the $j$th column of $F$ is $f_j$.
-We wish to impose the discrete analog of \eqref{continuous-positivity}; i.e.
+We wish to impose the discrete analog of \eqref{continuous-positivity}; i.e.\
 \begin{align} \label{positivity}
     u^n\ge 0 \implies u^{n+1} \ge 0,
 \end{align}
@@ -453,7 +454,7 @@ with initial conditions
 \begin{equation}
 u(0) = (8,2,1,4)^T.
 \end{equation}
-When solved with the Cash-Karp (CK5) \cite{cash1990variable} method and $\dt = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem.
+When solved with the Cash--Karp RK5 method \cite{cash1990variable} and $\dt = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem.
 In Figure\,\ref{fig:exampleI} the obtained results are plotted with dashed lines.
 At $t=1.905$ the value of $u_1$ gets negative. This leads to a diverging solution.
 
@@ -463,7 +464,7 @@ The positivity constraint is now fulfilled. A qualitatively correct solution is 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.75\textwidth]{plots/exampleI.pdf}
-    \caption{Numerical approximation of the reaction problem \eqref{eq:Reaction} computed with CK5 and $\dt = 0.005$. The dashed lines are the approximations obtained without the adaption of the weights. The lower plot shows the adaptation of the weights. }
+    \caption{Numerical approximation of the reaction problem \eqref{eq:Reaction} computed with Cash--Karp RK5 and $\dt = 0.005$. The dashed lines are the approximations obtained without the adaption of the weights. The lower plot shows the adaptation of the weights. }
     \label{fig:exampleI}
 \end{figure}
 
@@ -484,7 +485,7 @@ a feasible solution exists.
 
 \subsection{Order conditions}\label{sec:OrderCond}
 
-The order conditions for an $s$-stage, order $p$ RKM are a set of equations depending on $A$, $b$ and
+The order conditions for an $s$-stage, order $p$ RKM are a set of equations depending on $A$, $b$, and
 $c$.  As mentioned already, if $A$ and $c$ are given, the order conditions are
 linear in $b$ and can be written as $Q_p b = r_p$, where
 $Q_p\in{\mathbb R}^{v\times s}, r_p\in{\mathbb R}^v$ represent the set of all conditions up to
@@ -534,7 +535,7 @@ In order to avoid issues that might be caused by poor weights, we can
 additionally impose either or both of the following strategies:
 
 \begin{enumerate}
-    \item Select in advance a set of desirable weight vectors $b^1, b^2, \dots, b^m$
+    \item Select in advance a set of desirable weight vectors $b^1, b^2, \dots, b^K$
         corresponding to known good methods,
         and restrict the choice of $\bt$ to convex combinations of this set.
     \item Require that the perturbation $\|\tilde u - u\|$ is small and reject the step if it is not.
@@ -550,16 +551,16 @@ it is natural to include a weight vector corresponding to the forward Euler meth
 these two methods guarantee positivity (unconditionally for backward Euler
 and conditionally for forward Euler).
 We can formulate an LP using the first strategy (restriction to a convex set)
-as follows.  Let $B$ denote the matrix with columns $b^1, b^2, \dots, b^m$ and let
-$g\in{\mathbb R}^m$.  The LP is then as follows:
+as follows.  Let $B$ denote the matrix with columns $b^1, b^2, \dots, b^K$ and let
+$g\in \R^K$.  The LP is then as follows:
 
 \LPblock{
 (Convex adaptation) Given $F$, $B$, and $b$, find $g$ that minimizes $\|\bt - b\|_1$ subject to
 \begin{subequations}
 \begin{align}
 \bt & = Bg, \\
-0 & \le g_i \le 1, \\
-\sum_i g_i &= 1, \\
+0 & \le g_k \le 1, \\
+\sum_{k=1}^K g_k &= 1, \\
 u^{n+1}&=u^n+\dt F \bt \geq 0.
 \end{align}
 \end{subequations}
@@ -684,7 +685,7 @@ Our proposed method is summarized in Algorithm\,\ref{alg:Adaption}.
 
 
 
-\section{Properties of adaptive RKMs} 
+\section{Properties of adaptive RKMs}
 
 In the previous sections an algorithm for choosing positivity preserving weights $\bt$ has been presented.
 In the next section properties of the adaptive RKMs are discussed.
@@ -698,7 +699,9 @@ For a given method and reduced order $\pt$, the number of degrees of freedom for
 is given by $s-\mathrm{rank}(Q_{\pt})$. %$\mathrm{dim}(\mathrm{ker}(Q))$.
 The resulting number of degrees of freedom is shown in Table\,\ref{table:DOF_exp}
 for some explicit methods and in Table\,\ref{table:DOF_imp} for several implicit
-methods.
+methods. The backward Euler extrapolation methods use the harmonic sequence
+as described in \cite[Section~II.9]{hairer_solving_1993} and
+\cite[Section~IV.9]{hairer_solving_1996}.
 
 \begin{table}[h!]
 \centering    %Generated below============
@@ -707,7 +710,7 @@ methods.
 % Order & &1&2&3&4&5&6 \\
 %  \hline Classical RK4& s=4&3&2&0&0& - & -  \\
 %  SSPRK(10,4)& s=10&9&8&6&4& - & -  \\
-%  Cash-Karp RK5(4)6& s=6&5&4&2&1&0& -  \\
+%  Cash--Karp RK5(4)6& s=6&5&4&2&1&0& -  \\
 %  Dormand-Prince RK5(4)7& s=7&6&5&3&1&0& -  \\
 %  \hline
 %  \end{tabular}
@@ -737,7 +740,7 @@ methods.
 %   SDIRK(5,4)& s=5&4&3&1&0& - & -  \\
 %   TR-BDF2& s=3&2&1& - & - & - & -  \\
 %   Im-Euler 2& s=3&2&1& - & - & - & -  \\
-%   Im-Euler~3& s=6&5&4&2& - & - & -  \\
+%   Im-Euler 3& s=6&5&4&2& - & - & -  \\
 %   Im-Euler 4& s=10&9&8&6&3& - & -  \\
 %   \hline
 %   \end{tabular}
@@ -746,14 +749,14 @@ methods.
     Method & $s$ & \multicolumn{6}{c}{Order $\tilde p$} \\
     & & 1 & 2 & 3 & 4 & 5 & 6 \\
     \midrule
-    Implicit Euler& 1&0& --- & --- & --- & --- & ---  \\
+    Backward Euler& 1&0& --- & --- & --- & --- & ---  \\
     Lobatto~IIIC4 \cite{chipman1971stable} & 4&3&2&1&0&0&0 \\
     Radau~IIA3 \cite{ehle1969pade} & 3&2&1&0&0&0& ---  \\
     SDIRK(5,4) \cite[eq. (6.18)]{hairer_solving_1996}& 5&4&3&1&0& --- & ---  \\
     TR-BDF2 \cite{bank1985transient} & 3&2&1& --- & --- & --- & ---  \\
-    Extrapolation Im-Euler 2& 3&2&1& --- & --- & --- & ---  \\
-    Extrapolation Im-Euler~3& 6&5&4&2& --- & --- & ---  \\
-    Extrapolation Im-Euler 4& 10&9&8&6&3& --- & ---  \\
+    Extrapolation BE~2 \cite[Sec.~II.9]{hairer_solving_1993} & 3&2&1& --- & --- & --- & ---  \\
+    Extrapolation BE~3 \cite[Sec.~II.9]{hairer_solving_1993} & 6&5&4&2& --- & --- & ---  \\
+    Extrapolation BE~4 \cite[Sec.~II.9]{hairer_solving_1993} & 10&9&8&6&3& --- & ---  \\
     \bottomrule
   \end{tabular*}
   \caption{Degrees of freedom for the choice of the weights for some implicit methods.} %Generated above============
@@ -773,7 +776,7 @@ Regarding implicit methods,
 we can see that the fully implicit methods Lobatto~IIIC4 and Radau~IIA3 require a drastic reduction of the order, as expected.
 The diagonally implicit SDIRK(5,4) method only requires an order reduction of one to get one degree of freedom for the weights.
 The TR-BDF2 method even allows adaptations without reducing the order.
-The implicit Euler extrapolation methods also exhibit degrees of freedom without a reduction of the order.
+The backward Euler extrapolation methods also exhibit degrees of freedom without a reduction of the order.
 
 It is also desirable that the baseline method have a large stability region.
 
@@ -794,7 +797,7 @@ the behavior of the modified method outside the asymptotic convergence regime.
 To approximate the error of a new step we propose the following approximation of the local error:
 \begin{align}
 err = \|u(t^{n+1})-\tilde u^{n+1}\| &= \|u(t^{n+1}) - (u^{n+1}+\dt F(\bt-b))\| \\
- &\leq \underbrace{\|u(t^{n+1})-u^{n+1}\|}_{\approx err_T}+\underbrace{\|\dt F(\bt-b)\|}_{= \delta} \label{eq:Err}
+ &\leq \underbrace{\|u(t^{n+1})-u^{n+1}\|}_{\approx err_T}+\underbrace{\|\dt F(\bt-b)\|}_{= \delta}. \label{eq:Err}
 \end{align}
 
 The total error is split up in the truncation error $err_T$ and the perturbation $\delta$ using the triangle inequality.
@@ -815,8 +818,9 @@ As an example, the stability regions of adapted RKMs are visualized in
 Figure\,\ref{fig:stab}.
 In Figure\,\ref{fig:stab_dp5} the Dormand--Prince RK5 method is freely adapted.
 The weights are taken from the example in Section~\ref{sec:Ex_expl}.
-In Figure\,\ref{fig:stab_ex3} the stability regions of the Im-Euler~3
-extrapolation method and the embedded chain of three BE steps are
+In Figure\,\ref{fig:stab_ex3} the stability regions of the BE~3
+extrapolation method and the embedded chain of three BE steps with
+time step $\dt/3$ are
 plotted. Additionally the stability regions of convex combinations
 of these two methods are shown.
 
@@ -833,7 +837,7 @@ of these two methods are shown.
      \begin{subfigure}[b]{0.45\textwidth}
          \centering
          \includegraphics[width=\textwidth]{plots/stab_ex3.pdf}
-         \caption{Im-Euler~3 extrapolation method and embedded chain
+         \caption{BE~3 extrapolation method and embedded chain
                   of three BE steps with convex combinations of both
                   weights.}
          \label{fig:stab_ex3}
@@ -1040,7 +1044,7 @@ with homogeneous Dirichlet boundary conditions on the domain $x = [-0.5,0.5]$ wi
 \end{equation}
 As initial condition $u^0 = (0,\cdots,0,1,0,\cdots,0)^T$ is used. The diffusion coefficient is $D=1$.
 
-The ODE is solved using the Im-Euler~3 extrapolation method.
+The ODE is solved using the BE~3 extrapolation method.
 For large $\dt$ the method computes negative values for $u^1$.
 These can be corrected by adapting the weights.
 The solutions are computed using the free adaptation and convex adaptation for $\dt = \num{1e-3}$.
@@ -1085,11 +1089,11 @@ For both approaches, the remaining steps can be computed with the standard weigh
 \label{fig:weights_Diff_c}
 \end{subfigure}
 \caption{Numerical results for the diffusion problem \eqref{eq:diffusion} and the
-         adapted Im-Euler~3 extrapolation method.}
+         adapted BE~3 extrapolation method.}
 \end{figure}
 
 
-In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered Im-Euler~3 extrapolation method (ex3, potentially resulting in negative values), the adaptive method with free adaptation (ex3a) and the adapted method using convex adaptations (ex3c).
+In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered BE~3 extrapolation method (ex3, potentially resulting in negative values), the adaptive method with free adaptation (ex3a) and the adapted method using convex adaptations (ex3c).
 Also, the BE method is plotted. It is only of 1st order but preserves positivity for all $\dt$.
 For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity.
 The ex3a shows similar convergence properties as the original method.
@@ -1101,7 +1105,7 @@ But the adaptive method still outperforms the BE, even when accounting for the h
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.8\textwidth]{plots/conv_heat.pdf}
-\caption{Convergence result of baseline and adapted Im-Euler~3
+\caption{Convergence result of baseline and adapted BE~3
          extrapolation methods for the diffusion problem \eqref{eq:diffusion}.}
 \label{fig:conv_impl}
 \end{figure}
@@ -1123,7 +1127,7 @@ For this, we consider the advection-diffusion-production-destruction system  \ci
 with parameters $a=\num{1e-2} $ and $ d=\num{1e-6}$.
 The PDE is simulated on the domain $x = [0,1]$ with $N=100$ points and periodic boundary conditions.
 The advection part is semidiscretized using a first order upwind scheme and the diffusion part is semidiscretized using a central 3-point-scheme. This leads to a positivity preserving system of ODEs which conserves the total mass $\sum u$.
-The computation is done using the Im-Euler~3 extrapolation
+The computation is done using the BE~3 extrapolation
 method with free adaptation.
 As step size control a PI-control from\,\cite{hairer_solving_1996} is used. The error was estimated using \eqref{eq:Err}. The tolerance was set to $Tol = 0.01$.
 The final time is $t_{end} = 50$.
@@ -1248,7 +1252,7 @@ The initial conditions are
 The system was normalized internally such that $\forall n\colon u_n(t_0) = 1$
 for the computation to achieve a suitable error estimation.
 The system is solved in the time from $t_{0} = \SI{12}{h}$ to $t_{end} = \SI{84}{h}$
-using the Im-Euler~3 extrapolation method with free adaptation and step size
+using the BE~3 extrapolation method with free adaptation and step size
 control.
 
 \begin{figure}
@@ -1261,7 +1265,7 @@ control.
 
 The results are shown in Figure~\ref{fig:Stratospheric_time}.
 The adapted solution is close to the reference solution obtained
-with the unadapted Im-Euler~3 extrapolation method and a higher accuracy.
+with the unadapted BE~3 extrapolation method and a higher accuracy.
 For this solution, 249 steps were computed; two of these were rejected due to
 a violation of the error bound.
 More details are shown in Figure~\ref{fig:Stats_Strat}. The rejected steps are drawn with thick crosses.
