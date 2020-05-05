@@ -653,7 +653,7 @@ is summarized in Algorithm\,\ref{alg:Adaption}.
 \State Initialize $n \leftarrow 0$, $u^n \leftarrow u_0$, $t \leftarrow 0$
 \While{$t<t_{end}$}
 \State Choose $\Delta t$ (fixed or via an adaptive stepsize control)
-\State Calculate $F = (f_1, \dots, f_s)$, cf.\ \eqref{eq:stagevalues} \label{line:calc_stge}
+\State Calculate $F = (f_1, \dots, f_s)$ according to \eqref{eq:stagevalues} \label{line:calc_stge}
 \State $u^{n+1} \leftarrow u^n + \Delta t Fb$, cf.\ \eqref{eq:Combination}
 \If {$u^{n+1} \geq 0$}
 	\State  \textbf{GOTO} line\,\ref{line:update}
@@ -661,24 +661,24 @@ is summarized in Algorithm\,\ref{alg:Adaption}.
 	\State{$\pt \leftarrow p_{start}$}
 	\While{$\pt \geq p_{min}$}
 		\State Solve LP \eqref{eq:free-adaptation}
-		\If {LP is feasible} 
+		\If {LP is feasible}
 			\State $\delta \leftarrow \| \Delta t F(\bt-b)\|$
 			\If {$\delta < tol_\delta$}
 				\State $u^{n+1} \leftarrow u^n+\Delta t F \tilde b$
-				\State  \textbf{GOTO} line\,\ref{line:update} 
+				\State  \textbf{GOTO} line\,\ref{line:update}
 			\EndIf
 		\EndIf
 		\State $\pt \leftarrow \pt - 1$
 	\EndWhile
 	\State Reduce $\dt$
-	\State \textbf{GOTO} line\,\ref{line:calc_stge} 
+	\State \textbf{GOTO} line\,\ref{line:calc_stge}
 \EndIf
-\State Calculate $error$ cf. \ref{eq:Err} \label{line:update} 
+\State Estimate $error$ according to \eqref{eq:Err} \label{line:update}
 \If {$error \leq tol_{error}$}
-	\State $t \leftarrow t + \dt$, $n \leftarrow n+1$ 
+	\State $t \leftarrow t + \dt$, $n \leftarrow n+1$
 \Else
 	\State Reduce $\dt$
-	\State \textbf{GOTO} line\,\ref{line:calc_stge} 
+	\State \textbf{GOTO} line\,\ref{line:calc_stge}
 \EndIf
 \EndWhile
 \end{algorithmic}
@@ -1177,7 +1177,7 @@ The mass is conserved within roundoff error.
         \caption{$t=50$.}
         \label{fig:sol_ADP50}
     \end{subfigure}
-    \caption{Solution of advection-diffusion-reaction problem \eqref{eq:ADR} at different times.}\label{fig:Sol_ADP}
+    \caption{Numerical solution of the advection-diffusion-reaction problem \eqref{eq:ADR} at different times.}\label{fig:Sol_ADP}
 \end{figure}
 
 \begin{figure}
