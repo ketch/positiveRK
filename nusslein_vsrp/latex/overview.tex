@@ -653,7 +653,7 @@ is summarized in Algorithm\,\ref{alg:Adaption}.
 \State Initialize $n \leftarrow 0$, $u^n \leftarrow u_0$, $t \leftarrow 0$
 \While{$t<t_{end}$}
 \State Choose $\Delta t$ (fixed or via an adaptive stepsize control)
-\State Calculate $F = (f_1, \dots, f_s)$, cf.\ \eqref{eq:stagevalues} \label{line:calc_stge}
+\State Calculate $F = (f_1, \dots, f_s)$ according to \eqref{eq:stagevalues} \label{line:calc_stge}
 \State $u^{n+1} \leftarrow u^n + \Delta t Fb$, cf.\ \eqref{eq:Combination}
 \If {$u^{n+1} \geq 0$}
 	\State  \textbf{GOTO} line\,\ref{line:update}
@@ -673,7 +673,7 @@ is summarized in Algorithm\,\ref{alg:Adaption}.
 	\State Reduce $\dt$
 	\State \textbf{GOTO} line\,\ref{line:calc_stge}
 \EndIf
-\State Estimate $error$, cf. \eqref{eq:Err} \label{line:update}
+\State Estimate $error$ according to \eqref{eq:Err} \label{line:update}
 \If {$error \leq tol_{error}$}
 	\State $t \leftarrow t + \dt$, $n \leftarrow n+1$
 \Else
