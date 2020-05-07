@@ -1096,18 +1096,18 @@ For both approaches, the remaining steps can be computed with the standard weigh
 \end{figure}
 
 
-In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered BE~3 extrapolation method (ex3, potentially resulting in negative values), the adaptive method with free adaptation (ex3a) and the adapted method using convex adaptations (ex3c).
-Also, the BE method is plotted. It is only of 1st order but preserves positivity for all $\dt$.
+In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered BE~3 extrapolation method (potentially resulting in negative values), the adaptive method with free adaptation, and the adapted method using convex adaptation.
+Additionally, results for the BE method are plotted. It is only of 1st order but preserves positivity for all $\dt$.
 For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity.
-The ex3a shows similar convergence properties as the original method.
+The free adaptation results in similar convergence properties as the original method.
 This can be expected, because the adapted method is still of 3rd order.
-The ex3c has larger errors than the ex3a but leads to physical solutions for all time-steps.
+The convex adaptation yields larger errors than the free adaptation but leads to physical solutions for all time-steps.
 This is no surprise because the adapted RKM used for the first step is only of first order.
 But the adaptive method still outperforms the BE, even when accounting for the higher cost per step.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.8\textwidth]{plots/conv_heat.pdf}
+\includegraphics[width=\textwidth]{plots/conv_heat.pdf}
 \caption{Convergence result of baseline and adapted BE~3
          extrapolation methods for the diffusion problem \eqref{eq:diffusion}.}
 \label{fig:conv_impl}
