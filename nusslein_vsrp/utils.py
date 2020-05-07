@@ -298,8 +298,8 @@ def show_status(status):
     print('Succesfull:'); print(status['success'])
     #number of adaptations
     print('number of adaptations:');print(status['b'].count('c'))
-    #Number of step reqects
-    print('Number of step reqects:');print(status['b'].count('r'))
+    #Number of step rejects
+    print('Number of step rejects:');print(status['b'].count('r'))
 
     fig, axs = plt.subplots(5,1)
 
@@ -308,11 +308,11 @@ def show_status(status):
     axs[0].eventplot(np.nonzero(np.array(status['b'])=='c'), colors='blue', lineoffsets=0.5,
                     linelengths=0.5)
 
-    #plot the step reqects
+    #plot the step rejects
     axs[0].eventplot(np.nonzero(np.array(status['b'])=='r'), colors='red', lineoffsets=-0.5,
                     linelengths=0.5)
 
-    #plot step reqect caused by tol
+    #plot step reject caused by tol
     axs[0].eventplot(np.nonzero(np.array(status['sc'])=='r'), colors='red', lineoffsets=-1.5,
                     linelengths=0.5)
 
