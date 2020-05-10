@@ -179,7 +179,7 @@ where $u\colon [0,T] \to \R^m$ is positive if
 Here and in the following, inequalities like $u \geq 0$ are meant componentwise.
 A sufficient condition for positivity of \eqref{ode} is
 \begin{equation} \label{eq:condition_ODE_pos}
-u_i=0 \implies f_i(t,u_1,\cdots,u_i,\cdots,u_n) \geq 0 \quad \forall {u \geq 0,}\; \ \  \forall {t\in[0,T]}.
+u_i=0 \implies f_i(t,[u_1,\cdots,u_i,\cdots,u_n]^T) \geq 0 \quad \forall {u \geq 0,}\; \ \  \forall {t\in[0,T]}.
 \end{equation}
 For such ODEs, the backward Euler method is guaranteed to preserve positivity
 under any step size, while the forward Euler will preserve positivity for small enough $\dt$ \cite{hundsdorfer_numerical_2003}.
@@ -654,7 +654,7 @@ is summarized in Algorithm\,\ref{alg:Adaption}.
 \While{$t<t_{end}$}
 \State Choose $\Delta t$ (fixed or via an adaptive stepsize control)
 \State Calculate $F = (f_1, \dots, f_s)$ according to \eqref{eq:stagevalues} \label{line:calc_stge}
-\State $u^{n+1} \leftarrow u^n + \Delta t Fb$, cf.\ \eqref{eq:Combination}
+\State $u^{n+1} \leftarrow u^n + \Delta t Fb$, according to \eqref{eq:Combination}
 \If {$u^{n+1} \geq 0$}
 	\State  \textbf{GOTO} line\,\ref{line:update}
 \Else
@@ -803,7 +803,7 @@ err = \|u(t^{n+1})-\tilde u^{n+1}\| &= \|u(t^{n+1}) - (u^{n+1}+\dt F(\bt-b))\| \
  &\leq \underbrace{\|u(t^{n+1})-u^{n+1}\|}_{\approx err_T}+\underbrace{\|\dt F(\bt-b)\|}_{= \delta}. \label{eq:Err}
 \end{align}
 
-The total error is split up in the truncation error $err_T$ and the perturbation $\delta$ using the triangle inequality.
+The total error is split up in the truncation error and the perturbation $\delta$ using the triangle inequality.
 The truncation error can be estimated using the standard error estimators $err_T = \| u^{n}_{b} - u^{n}_{\hat{b}} \|$.
 After adapting the weights, the perturbation is calculated. If the perturbation is larger than the tolerance, the weights are rejected.
 The two values are added to get an approximation of the total error $err = err_T + \delta$.
@@ -1032,7 +1032,7 @@ Firstly, the cost of solving the LP is relatively small compared to the cost of 
 Secondly, the time step is not limited by the stability of the method.
 Therefore, it is possible to use larger time steps that are more likely to lead to negative values.
 
-A very interesting class of methods are the implicit extrapolation methods. These are diagonally implicit and $p < s$. This means that they allow for changes of the weights without a reduction of the order.
+A very interesting class of methods are the implicit extrapolation methods. These allow changes of the weights without a reduction of the order, as discussed in Section\,\ref{sec:integration}.
 Moreover, all stage values are computed using the BE method. Hence, all intermediate stages are positive.
 Furthermore, an embedded BE step is included. This ensures that a positive solution always exists, even if it is of first order.
 
@@ -1096,18 +1096,18 @@ For both approaches, the remaining steps can be computed with the standard weigh
 \end{figure}
 
 
-In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered BE~3 extrapolation method (ex3, potentially resulting in negative values), the adaptive method with free adaptation (ex3a) and the adapted method using convex adaptations (ex3c).
-Also, the BE method is plotted. It is only of 1st order but preserves positivity for all $\dt$.
+In Figure\,\ref{fig:conv_impl}, the convergence is shown for the unaltered BE~3 extrapolation method (potentially resulting in negative values), the adaptive method with free adaptation, and the adapted method using convex adaptation.
+Additionally, results for the BE method are plotted. It is only of 1st order but preserves positivity for all $\dt$.
 For $\dt < \num{3e-5} $ the standard weights yield to a positive result. For larger $\dt$ the weights have to be adapted to ensure positivity.
-The ex3a shows similar convergence properties as the original method.
+The free adaptation results in similar convergence properties as the original method.
 This can be expected, because the adapted method is still of 3rd order.
-The ex3c has larger errors than the ex3a but leads to physical solutions for all time-steps.
+The convex adaptation yields larger errors than the free adaptation but leads to physical solutions for all time-steps.
 This is no surprise because the adapted RKM used for the first step is only of first order.
 But the adaptive method still outperforms the BE, even when accounting for the higher cost per step.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.8\textwidth]{plots/conv_heat.pdf}
+\includegraphics[width=\textwidth]{plots/conv_heat.pdf}
 \caption{Convergence result of baseline and adapted BE~3
          extrapolation methods for the diffusion problem \eqref{eq:diffusion}.}
 \label{fig:conv_impl}
@@ -1182,7 +1182,7 @@ The mass is conserved within roundoff error.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.85\textwidth]{plots/ADP_stepsize,b.pdf}
+\includegraphics[width=0.85\textwidth]{plots/ADP_stepsize_b.pdf}
 \caption{Statistics of computation of the advection-diffusion-reaction problem \eqref{eq:ADR}.}
 \label{fig:Stats_ADP}
 \end{figure}
@@ -1283,7 +1283,7 @@ The change of the two linear invariants are shwon in the last two subplots. Both
 
 \begin{figure}
 \centering
-\includegraphics[width=0.85\textwidth]{plots/Stratospheric_stepsize,b.pdf}
+\includegraphics[width=0.85\textwidth]{plots/Stratospheric_stepsize_b.pdf}
 \caption{Statistics of computation of the stratospheric reaction system
          \eqref{eq:stratospheric}.}
 \label{fig:Stats_Strat}
