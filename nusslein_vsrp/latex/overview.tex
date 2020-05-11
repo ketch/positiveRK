@@ -116,12 +116,28 @@
 \end{center}
 }
 
+\newcommand{\orcid}[1]{ORCID:~\href{https://orcid.org/#1}{#1}}
+\usepackage{authblk}
+\renewcommand\Affilfont{\fontsize{8}{10.8}\selectfont}
+
+\newenvironment{keywords}{\par\textbf{Key words.}}{\par}
+\newenvironment{AMS}{\par\textbf{AMS subject classification.}}{\par}
+
 
 \title{Positivity-Preserving Adaptive Runge--Kutta Methods}
-\author{Stephan Nüßlein \and Hendrik Ranocha \and David I. Ketcheson}
-
+\author[1]{Stephan Nüßlein\thanks{\orcid{0000-0002-2455-4222}}}
+\author[1]{Hendrik Ranocha\thanks{\orcid{0000-0002-3456-2277}}}
+\author[1]{David I. Ketcheson\thanks{\orcid{0000-0002-1212-126X}}}
+\affil[1]{%
+King Abdullah University of Science and Technology (KAUST),
+Extreme Computing Research Center (ECRC),
+Computer Electrical and Mathematical Science and Engineering Division (CEMSE),
+Thuwal, 23955-6900, Saudi Arabia}
+% \date{May 11, 2020} %TODO
 
 \makeatletter
+\hypersetup{pdfauthor={Stephan Nüßlein, Hendrik Ranocha, David I. Ketcheson}}
+\hypersetup{pdftitle={\@title}}
 \makeatother
 
 \begin{document}
@@ -150,6 +166,18 @@ the effectiveness of the approach, including application to both stiff and
 non-stiff problems.
 \end{abstract}
 
+\begin{keywords}
+  positivity preserving,
+  bound preserving,
+  Runge--Kutta methods,
+  linear programming
+\end{keywords}
+
+\begin{AMS}
+  65L06,  % NA, ODEs: Multistep, Runge-Kutta and extrapolation methods
+  65L20,  % NA, ODEs: Stability and convergence of numerical methods
+  65M12   % NA, PDEs, IVPs, IBVPs: Stability and convergence of numerical methods
+\end{AMS}
 
 
 \section{Introduction}
