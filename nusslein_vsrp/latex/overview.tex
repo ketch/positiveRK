@@ -288,8 +288,6 @@ region of absolute stability can be approximated.
 In Section~\ref{sec:Numeric_Results} numerical results are given for multiple test problems.
 A conclusion is given in Section~\ref{sec:conclusion}.
 
-%(TODO: We know that we cannot work around the limitation from \cite{hundsdorfer_numerical_2003}, Where would be a good place to put this?)
-
 
 \section{Bound-preserving adaptive Runge--Kutta methods}\label{sec:main_idea}
 
@@ -891,9 +889,6 @@ R_b(z) = 1 + zb^T(I - zA)^{-1}e,
 where $e = (1, \dots, 1)^T \in \R^s$.
 The stability function is an affine function of the weights.
 
-%TODO: It is not straightforward if there are no pole zero cancellations in the stability function. For explicit methods, the stability function is a polynomial o degree $\leq s$ (Hundsdorfer). Pole zero cancellations cannot happen for these. For implicit functions that are A-stable the poles have to be in the right halve plane. Here is starts to get interesting. Because the A-Stability of one method with a certain $A$ is not a sufficient condition that there are no Poles for all RKM with this A-Matrix. But it is possible (or easy) to prove that if $a_{ii} > 0 \forall i = 1,\cdots , s$ then there are only poles in the right halve plane where they do not matter for the further considerations.)
-
-
 \subsubsection{Stability of convex adaptation}
 
 If the new weights are chosen by convex adaptation of given weights,
@@ -968,7 +963,7 @@ in $|z|$.
 
 The implementation of the algorithms described above and code to
 reproduce the numerical examples reported here can be found in
-\cite{repository}. \todo{TODO: New repository with DOI} %TODO
+\cite{nusslein2020positivityRepro}.
 The methods are implemented in Python using NumPy/SciPy
 \cite{virtanen2020scipy}, NodePy \cite{nodepy08}, and
 Matplotlib \cite{hunter2007matplotlib} for the visualizations.
@@ -1329,8 +1324,6 @@ The adaptive method is mainly interesting for diagonally implicit methods.
 The times step size is not limited by stability.
 Also, the cost of solving the LP is not a crucial factor.
 If the negative values occurring are not too large, which can be expected for most computations, adapting the weights is a potential way to ensure positivity.
-
-%also if exactnes is not the limiting factor but positivity
 
 
 \printbibliography
