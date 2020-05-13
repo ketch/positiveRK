@@ -1,0 +1,3 @@
+rm submission_arXiv/positive_RK__arXiv.tar
+cp submission_arXiv/overview.bbl ./
+tar cvf submission_arXiv/positive_RK__arXiv.tar overview.tex overview.bbl Image_b_convex.tex Image_b_direct.tex plots/exampleI.pdf plots/stab_dp5.pdf plots/stab_ex3.pdf plots/Advection_Decay.pdf plots/b_Advection_Decay.pdf plots/conv_adde.pdf plots/Diff_Direct.pdf plots/Diff_Convex.pdf plots/b_Diff_Direct.pdf plots/b_Diff_Convex.pdf plots/ADP_sol_00.pdf plots/ADP_sol_18.pdf plots/ADP_sol_27.pdf plots/ADP_sol_50.pdf plots/ADP_stepsize_b.pdf plots/Stratospheric_time.pdf plots/Stratospheric_stepsize_b.pdf plots/conv_heat.pdf
