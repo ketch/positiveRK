@@ -68,6 +68,28 @@
   \pdfsuppresswarningpagegroup=1\relax
 \fi
 
+% line numbering
+% see http://phaseportrait.blogspot.de/2007/08/lineno-and-amsmath-compatibility.html
+\usepackage{lineno}
+\newcommand*\patchAmsMathEnvironmentForLineno[1]{%
+  \expandafter\let\csname old#1\expandafter\endcsname\csname #1\endcsname
+  \expandafter\let\csname oldend#1\expandafter\endcsname\csname end#1\endcsname
+  \renewenvironment{#1}%
+     {\linenomath\csname old#1\endcsname}%
+     {\csname oldend#1\endcsname\endlinenomath}}%
+\newcommand*\patchBothAmsMathEnvironmentsForLineno[1]{%
+  \patchAmsMathEnvironmentForLineno{#1}%
+  \patchAmsMathEnvironmentForLineno{#1*}}%
+\AtBeginDocument{%
+\patchBothAmsMathEnvironmentsForLineno{equation}%
+\patchBothAmsMathEnvironmentsForLineno{align}%
+\patchBothAmsMathEnvironmentsForLineno{flalign}%
+\patchBothAmsMathEnvironmentsForLineno{alignat}%
+\patchBothAmsMathEnvironmentsForLineno{gather}%
+\patchBothAmsMathEnvironmentsForLineno{multline}%
+}
+\linenumbers %TODO: remove for arXiv version
+
 % definitions
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\R}{\mathbb{R}}
@@ -85,6 +107,10 @@
 \newcommand{\pt}{{\tilde{p}}}
 \newcommand{\perturb}{perturb}
 \newcommand{\todo}[1]{{\Large{\color{red}{#1}}}}
+
+\newcommand{\revA}[1]{{\color{red}#1}}
+\newcommand{\revB}[1]{{\color{blue}#1}}
+\newcommand{\revC}[1]{{\color{cyan}#1}}
 
 %pseudocode
 \usepackage[boxed]{algorithm}
@@ -937,6 +963,7 @@ method.
 \begin{proof}
   Compute
   \begin{equation}
+  \label{eq:proof-of-lemma-free-adaptation}
   \begin{aligned}
     | R_{\bt}(z) |
     &\le
@@ -944,7 +971,7 @@ method.
     + | R_{\bt}(z) - R_{b}(z) |
     =
     | R_{b}(z) |
-    + | z (\bt - b) (\I - z A)^{-1} e|
+    + | z (\bt - b)\revA{^T} (\I - z A)^{-1} e|
     \\
     &\le
     | R_{b}(z) |
@@ -976,7 +1003,8 @@ For problems where the exact solution is positive for certain $u_0$ but do not s
 
 \subsection{Non-stiff problem with fixed stepsize}\label{sec:Ex_expl}
 First, adaptive RKMs based on explicit methods are tested on non-stiff problems with a fixed step size.
-When used with explicit methods the cost of solving the LP is significant because the computation of the stage derivatives only requires $s$ evaluations of the RHS.
+When used with explicit methods the cost of solving the LP is significant because the computation of the stage derivatives only requires $s$ evaluations of the
+\linelabel{line:RHS}\revA{right-hand side (RHS)}.
 For most of the linear test problems tried, the explicit methods yield to positive results.
 When increasing the step size, issues with stability occur before getting negative values.
 An example for this is the ODE in Section~\ref{sec:example_lin}.
@@ -1006,11 +1034,12 @@ The numerical approximation uses the method of lines and a first order
 upwind finite difference semidiscretization with $N = 100$ points.
 This leads to the positivity preserving ODE
 \begin{equation}
-\frac{\mathrm d}{\mathrm d t} u_i = \frac{a}{\Delta x} \left( u_{i-1} - u_i \right) - K u_{i-1}.
+\label{eq:advection-decay-semidiscrete}
+\frac{\mathrm d}{\mathrm d t} u_i = \frac{a}{\Delta x} \left( u_{i-1} - u_i \right) - K \revA{u_{i}}.
 \end{equation}
 The parameters are set to $a=1$ and $K=1$.
 We use the Dormand--Prince RK5 method and adapt the weights using the free adaptation.
-In Figure\,\ref{fig:sol_AdDe} the results for $\Delta t = 0.015$ are plotted for different time steps. We can see that the solution approaches an exponential function with $t \rightarrow \infty$.
+In Figure\,\ref{fig:sol_AdDe} the results for $\Delta t = 0.015$ are plotted for different \linelabel{line:time-vs-dt}\revA{of time $t$}. We can see that the solution approaches an exponential function with $t \rightarrow \infty$.
 In Figure\,\ref{fig:weights_AdDe} the used weights are plotted. For $t\leq 0.375$ the weights are altered. For $t > 0.375$ the original weights lead to a positive solution.
 \begin{figure}
 \centering
