@@ -505,7 +505,17 @@ with initial conditions
 \begin{equation}
 u(0) = (8,2,1,4)^T.
 \end{equation}
-When solved with the Cash--Karp RK5 method \cite{cash1990variable} and $\dt = 0.005$ the approximated solution contains negative values. This causes qualitatively wrong solutions to the problem.
+\linelabel{line:prod-dest}\revA{Note that we wrote \eqref{eq:Reaction} as in
+\cite{kopecz_comparison_2019}, sometimes using multiple terms containing the same
+variables but with different constants, e.g.\ $-0.01 u_2 -0.05 u_2$ in the
+time derivative of $u_2$. This notation is useful to see the structure of
+a production-destruction system which is exploited for positivity-preserving
+(modified) Patankar--Runge--Kutta methods as in \cite{kopecz_comparison_2019}.
+We will use the same notation also later in this article.}
+
+Using the Cash--Karp RK5 method \cite{cash1990variable} and $\dt = 0.005$ to
+solve \eqref{eq:Reaction}, the approximated solution contains negative values.
+This causes qualitatively wrong solutions to the problem.
 In Figure\,\ref{fig:exampleI} the obtained results are plotted with dashed lines.
 At $t=1.905$ the value of $u_1$ gets negative. This leads to a diverging solution.
 
@@ -583,16 +593,19 @@ will be close to the original method weights.  In some examples
 we have observed that large modifications of the weights can lead
 to inaccurate solutions even though the order conditions are satisfied.
 In order to avoid issues that might be caused by poor weights, we can
-additionally impose either or both of the following strategies:
+\linelabel{line:strategies}\revA{additionally use either or both of the following ideas:
 
-\begin{enumerate}
-    \item Select in advance a set of desirable weight vectors $b^1, b^2, \dots, b^K$
-        corresponding to known good methods,
-        and restrict the choice of $\bt$ to convex combinations of this set.
-    \item Require that the perturbation $\|\tilde u - u\|$ is small and reject the step if it is not.
-\end{enumerate}
+\begin{itemize}
+    \item Convex adaptation:
+      Select in advance a set of desirable weight vectors $b^1, b^2, \dots, b^K$
+      corresponding to known good methods,
+      and restrict the choice of $\bt$ to convex combinations of this set.
+    \item Stepsize control:
+      Require that the perturbation $\|\tilde u - u\|$ is small and reject
+      the step if it is not.
+\end{itemize}
 
-We discuss the first strategy here; the second is deferred to section\,\ref{sec:error}.
+We discuss the first idea here; the second is deferred to section\,\ref{sec:error}.
 Ideally every element of the set of potential weight vectors would correspond to
 a method of the same order as the original method.   Due to linearity of the
 order conditions, any linear combination of such weights would also yield a
@@ -601,9 +614,9 @@ it is natural to include a weight vector corresponding to the forward Euler meth
 (for explicit methods) or backward Euler method (for implicit methods), since
 these two methods guarantee positivity (unconditionally for backward Euler
 and conditionally for forward Euler).
-We can formulate an LP using the first strategy (restriction to a convex set)
-as follows.  Let $B$ denote the matrix with columns $b^1, b^2, \dots, b^K$ and let
-$g\in \R^K$.  The LP is then as follows:
+We can formulate an LP using the approach of convex adaptation as follows.
+Let $B$ denote the matrix with columns $b^1, b^2, \dots, b^K$ and let
+$g\in \R^K$.  The LP is then as follows:}
 
 \LPblock{
 (Convex adaptation) Given $F$, $B$, and $b$, find $g$ that minimizes $\|\bt - b\|_1$ subject to
@@ -1011,7 +1024,16 @@ An example for this is the ODE in Section~\ref{sec:example_lin}.
 Some nonlinear RHS may require very small time steps to preserve positivity.
 For these, adapting the weights could be a possible way to solve them.
 An example is the reaction equation solved in Section~\ref{sec:example_reac}.
-Since the positivity of the stage values is not ensured, the right hand side has to be defined for negative values. If this is not the case, the right hand side has to be adapted accordingly.
+\linelabel{line:RHS-negative-values}\revA{%
+Since the positivity of the stage values is not ensured, the RHS has to be defined
+for negative values. If this is not the case, it to be adapted accordingly.
+For example, an RHS involving a square root can throw an error (forcing the
+numerical algorithm to terminate) or return ``not a number'' (\texttt{NaN})
+when called with negative values, depending on the implementation.
+In both cases, further (useful) computations are not possible. A possible fix
+allowing our mechanism to continue the integration can be to restrict the arguments
+to the square root to non-negative values by clipping them accordingly, e.g.\
+to replace \texttt{sqrt(u)} by \texttt{sqrt(max(u, 0))} or something similar.}
 
 A test problem similar to \cite{shampine_non-negative_2005} is the PDE
 \begin{equation}
