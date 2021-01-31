@@ -1,0 +1,238 @@
+\documentclass[11pt]{letter}
+\usepackage[USenglish]{babel}
+\usepackage[utf8]{luainputenc}
+\usepackage[a4paper]{geometry}
+\usepackage[plainpages=false,pdfpagelabels,hidelinks,unicode]{hyperref}
+\hypersetup{pdftitle={Response to Reviewers}}
+\usepackage{enumitem}
+
+\usepackage{xr} % for references to another document
+\externaldocument{overview}
+
+\usepackage{color}
+\newcommand{\todo}[1]{{\Large \textcolor{red}{#1}}}
+
+\newcommand{\revA}[1]{{\color{red}#1}}
+\newcommand{\revB}[1]{{\color{blue}#1}}
+\newcommand{\revC}[1]{{\color{cyan}#1}}
+
+\usepackage{amssymb}
+\usepackage{commath}
+
+\usepackage{xspace}
+\newcommand{\cf}[0]{{cf.\@}\xspace}
+\newcommand{\eg}[0]{{e.g.\@}\xspace}
+\newcommand{\ie}[0]{{i.e.\@}\xspace}
+\newcommand{\etc}[0]{{etc.\@}\xspace}
+
+% fonts
+\usepackage{ifluatex}
+\ifluatex
+  \usepackage[no-math]{fontspec}
+\else
+  \usepackage[T1]{fontenc}
+\fi
+\usepackage{newpxtext,newpxmath}
+
+
+% \date{June 16, 2020} %TODO: date
+
+
+\begin{document}
+\begin{letter}{}
+
+\textbf{Response to Reviewer}
+
+\opening{Dear Editor, Dear Reviewer,}
+
+we are very grateful for the thorough review and helpful comments on our manuscript
+``Positivity-Preserving Adaptive Runge--Kutta Methods''.
+We revised the manuscript in accordance with the reviewer's suggestions.
+Please find below a point-by-point description of these changes and reply to
+the reviewer's comments.
+
+
+
+\textbf{\large Reviewer \#1 \revA{(manuscript changes highlighted in red)}}
+% TODO: Reviewer 1
+
+\emph{%
+This manuscript studies the efficiency of a new kind of Positivity-Preserving
+Runge-Kutta Methods. The main idea in the new approach consists in adaptively
+choosing the weights b of the RKM in a way that ensures positivity, or other
+bound constraints, for problems satisfying the sufficient condition (1.4).
+One of the main benefits of this new approach is that all linear invariants of
+the problem are preserved. Other projection methods also preserve invariants,
+but only if you explicitly know these invariants. If any component of the
+numerical solution is negative, a linear program (LP) must be solved at
+each step in order to choose the new weights, and this could be an extra time
+consuming process. Nevertheless, the idea of minimizing the deviation of the
+weights is simple and in some cases may be much more efficient, particularly
+for large systems. The numerical experiments are well presented and quite
+thorough including different stiff and non-stiff problems, with fixed and
+adaptive step size implementations.
+\\
+Positivity-Preserving methods have been studied quite a lot in recent decades
+and the authors have summarized really well the state of art in the introduction
+by referring to Projection methods, SSPRK methods, MPRK methods and DSRK positive
+methods. In the new schemes proposed the weights of some baseline RKM are adapted
+in order to ensure positivity or other bounds. These new methods are valid both
+for stiff and non-stiff problems satisfying the sufficient condition for
+positivity (1.4). In addition, the authors clarify that for some positive
+problems not satisfying (1.4) numerical tests did not show promising results.
+I personally value the algorithm given in Section 3. Theorem 4.1 about the
+stability region of the new adaptive Runge-Kutta method with convex adaptation
+is quite interesting, particularly for A-stable methods. Lemma 4.2 with the
+bound for the stability function of the adapted method is interesting too. The
+paper is clear and well written, thus I would recommend this work to be published
+provided that the authors address properly the points listed below.
+}
+
+\begin{enumerate}[label=\arabic*.]
+  \setcounter{enumi}{1}
+  \item Bound-preserving adaptive Runge–Kutta methods
+  \begin{enumerate}[label=\alph*)]
+    \item \emph{%
+    In equation (2.14b), it is weird to read $-0.01 u_2$ and $- 0.05 u_2$
+    in the same line. Is it an error? The same thing happens in equations (2.14c)
+    with $u_3$, in (5.5b) with $u_2$, and in (5.5c) with $u_3$.
+    }
+
+    We added an explanation why we use this seemingly weird notation of the
+    equations [lines~{line:prod-dest}ff.].
+
+
+    \item \emph{%
+    In Figure 1, in the difference $\| \tilde b - b \|$, a tilde is missing.
+    }
+
+    \revA{TODO} %TODO
+  \end{enumerate}
+
+
+  \item Selection of the modified weights
+  \begin{enumerate}[label=\alph*)]
+    \item \emph{%
+    In section 3.2, two different approaches to adapt the weights are considered:
+    Free adaptation and Convex adaptation. At the same time, it is explained that
+    ``...we can additionally impose either or both of the following strategies \dots''.
+    I think that the first strategy is nothing but the second approach (Convex
+    adaptation). I suggest making this part clearer in order to avoid confusion
+    between approaches and strategies.
+    }
+
+    We modified this part to be more clear [lines~\ref{line:strategies}ff.].
+  \end{enumerate}
+
+
+  \item Properties of adaptive RKMs
+  \begin{enumerate}[label=\alph*)]
+    \item \emph{%
+    Figure 3a, with free adaptation of the weights $\tilde b$, does not give enough
+    information about the stability regions of the adapted methods. In my opinion,
+    it would be clearer if each stability curve was labeled with the value of
+    the difference $\| \tilde b - b \|$, accordingly with the values in Figure 4b.
+    In this way we could see the progress of the stability regions during the
+    numerical integration process.
+    }
+
+    \revA{TODO} %TODO
+
+
+    \item \emph{%
+    In the first line of formula (4.6) the vector $(\tilde b - b)$ should be
+     $(\tilde b - b)^T$.
+    }
+
+    We fixed equation \eqref{eq:proof-of-lemma-free-adaptation}.
+  \end{enumerate}
+
+
+  \item Numerical experiments
+  \begin{enumerate}[label=\alph*)]
+    \item \emph{%
+    In the third line of Section 5.1, RHS appears for the first time without
+    explaining its meaning.
+    }
+
+    We changed this sentence and introduced the abbreviation RHS
+    [line~\ref{line:RHS}].
+
+
+    \item \emph{%
+    In section 5.1, just before the formula (5.1), it is said ``Since the
+    positivity of the stage values is not ensured, the right hand side has to be
+    defined for negative values. If this is not the case, the right hand side
+    has to to be adapted accordingly''. This is a bit confusing, particularly
+    the text ``...has to be defined for negative values...''. I suggest that
+    you make this part clearer.
+    }
+
+    We tried to clarify this part by giving an example and adding further
+    explanations [lines~\ref{line:RHS-negative-values}ff.].
+
+
+    \item \emph{%
+    In formula (5.2), the last $u_{i-1}$, shouldn’t it be $u_i$?
+    }
+
+    We fixed equation \eqref{eq:advection-decay-semidiscrete}.
+
+
+    \item \emph{%
+    After formula (5.2) ``...In Figure 4a the results for $\Delta t = 0.015$
+    are plotted for different time steps...'' should be ``...In Figure 4a the
+    results for $\Delta t = 0.015$ are plotted for different values of time $t$...''
+    }
+
+    We fixed this sentence [line~\ref{line:time-vs-dt}].
+
+
+    \item \emph{%
+    Figure 5, about the non-stiff problem with fixed stepsize, is quite interesting
+    and gives information about the convergence of the adapted mehtod. For
+    $\Delta t = 0.0082$ the unaltered method leads to positive solutions. For
+    $\Delta t = 0.015$ the original method leads to negative values in the
+    interval $[0, 0.375]$ and the weights are altered by solving an LP problem.
+    Is this extra time consuming a significant cost or could it be an economical
+    alternative to using excessively small step sizes? A further explanation
+    about this issue should be added.
+    }
+
+    \revA{TODO} %TODO
+
+
+    \item \emph{%
+    In Figures 6c and 6d, in the difference $\| \tilde b - b \|$ and also in the
+    legend, a tilde is missing.
+    }
+
+    \revA{TODO} %TODO
+
+
+    \item \emph{%
+    In the third subplot of Figure 9, in the difference $\| \tilde b - b \|$,
+    a tilde is missing.
+    }
+
+    \revA{TODO} %TODO
+
+
+    \item \emph{%
+    In the fourth subplot of Figure 11, in the difference $\| \tilde b - b \|$,
+    a tilde is missing.
+    }
+
+    \revA{TODO} %TODO
+  \end{enumerate}
+\end{enumerate}
+
+
+
+
+
+
+
+
+\end{letter}
+\end{document}
