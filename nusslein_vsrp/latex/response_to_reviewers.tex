@@ -1,6 +1,6 @@
 \documentclass[11pt]{letter}
 \usepackage[USenglish]{babel}
-\usepackage[utf8]{luainputenc}
+\usepackage[utf8]{inputenc}
 \usepackage[a4paper]{geometry}
 \usepackage[plainpages=false,pdfpagelabels,hidelinks,unicode]{hyperref}
 \hypersetup{pdftitle={Response to Reviewers}}
@@ -106,7 +106,7 @@ provided that the authors address properly the points listed below.
     In Figure 1, in the difference $\| \tilde b - b \|$, a tilde is missing.
     }
 
-    \revA{TODO} %TODO
+    We added the tilde to the plot.
   \end{enumerate}
 
 
@@ -136,7 +136,11 @@ provided that the authors address properly the points listed below.
     numerical integration process.
     }
 
-    \revA{TODO} %TODO
+    \revA{Review the following:} %TODO
+    We found an additional issue: The step size used for this plot was not $\Delta t = 0.015$ as for Figure 4a. We corrected the step size. Therefore the shape of the plotted stability regions changed. 
+	To indicate the value of $\| \tilde b - b \|$ for the different stability regions the boundaries were colored using a colormap.  
+	We removed the filling pattern to improve clarity.
+    
 
 
     \item \emph{%
@@ -207,7 +211,7 @@ provided that the authors address properly the points listed below.
     legend, a tilde is missing.
     }
 
-    \revA{TODO} %TODO
+    We added the tilde to the plot.
 
 
     \item \emph{%
@@ -215,7 +219,7 @@ provided that the authors address properly the points listed below.
     a tilde is missing.
     }
 
-    \revA{TODO} %TODO
+    We added the tilde to the plot.
 
 
     \item \emph{%
@@ -223,7 +227,7 @@ provided that the authors address properly the points listed below.
     a tilde is missing.
     }
 
-    \revA{TODO} %TODO
+    We added the tilde to the plot.
   \end{enumerate}
 \end{enumerate}
 
