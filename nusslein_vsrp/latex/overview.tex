@@ -1097,10 +1097,17 @@ In Figure\,\ref{fig:conv_expl} the convergence for $t=0.5$ is plotted for the al
 The unaltered method has the order $p=5$.
 The values marked with a cross denote the numerical experiments that required an adaption of the weights.
 Even though the order is reduced, most errors are still close to the error of the unaltered method.
+
 \linelabel{line:cost}\revA{
-In this example the cost of computing the stage values is small. Additionally a small reduction of $\dt$ is enough to obtain positive results.  
-If we compare the computation time we can see that using a smaller $\dt$ is faster than the adaption. 
-Therefore solving the LP is no economical alternative to reducing the step size.}
+It is natural to ask whether the adaptation of the weights through the algorithm proposed
+here is more efficient than simply using a smaller step size.  For this problem that can
+be discretized explicitly with a right-hand-side that is relatively cheap to evaluate,
+using a smaller step size is
+generally more efficient, at least with the current un-optimized implementation of the LP
+solution.  For problems where implicit time integration is necessary, or with a more computationally
+expensive derivative evaluation, the LP approach may be more efficient, especially if
+the implementation were optimized.  This kind of optimization is the subject of future work.
+}
 
 \subsection{Stiff problem with fixed step size}
 Next, adaptive RKMs based on implicit methods are tested on stiff problems.
