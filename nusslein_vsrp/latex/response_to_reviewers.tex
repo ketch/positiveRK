@@ -45,10 +45,10 @@
 
 \opening{Dear Editor, Dear Reviewer,}
 
-we are very grateful for the thorough review and helpful comments on our manuscript
+We are very grateful for the thorough review and helpful comments on our manuscript
 ``Positivity-Preserving Adaptive Runge--Kutta Methods''.
 We revised the manuscript in accordance with the reviewer's suggestions.
-Please find below a point-by-point description of these changes and reply to
+Please find below a point-by-point description of these changes and our reply to
 the reviewer's comments.
 
 
@@ -98,7 +98,7 @@ provided that the authors address properly the points listed below.
     with $u_3$, in (5.5b) with $u_2$, and in (5.5c) with $u_3$.
     }
 
-    We added an explanation why we use this seemingly weird notation of the
+    We added an explanation of we use this unusual form of the
     equations [lines~\ref{line:prod-dest}ff.].
 
 
@@ -136,10 +136,14 @@ provided that the authors address properly the points listed below.
     numerical integration process.
     }
 
-    \revA{TODO: Review the following:} %TODO
-    We found an additional issue: The step size used for this plot was not $\Delta t = 0.015$ as for Figure 4a. We corrected the step size. Therefore the shape of the plotted stability regions changed. 
-	To indicate the value of $\| \tilde b - b \|$ for the different stability regions the boundaries were colored using a colormap.  
-	We removed the filling pattern to improve clarity.
+    To indicate the value of $\| \tilde b - b \|$ for the different stability
+    regions, we now color the boundaries using a colormap and provide a colorbar.
+	We also removed the filling pattern to improve clarity.
+
+    Additionally, we discovered that the step size used for this plot was not
+    the correct value ($\Delta t = 0.015$) corresponding to Figure 4a. We
+    corrected the step size. Because of this,
+    the shape of the plotted stability regions changed in the revision.
     
 
 

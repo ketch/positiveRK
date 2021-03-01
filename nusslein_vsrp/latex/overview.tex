@@ -1025,15 +1025,11 @@ Some nonlinear RHS may require very small time steps to preserve positivity.
 For these, adapting the weights could be a possible way to solve them.
 An example is the reaction equation solved in Section~\ref{sec:example_reac}.
 \linelabel{line:RHS-negative-values}\revA{%
-Since the positivity of the stage values is not ensured, the RHS has to be defined
-for negative values. If this is not the case, it to be adapted accordingly.
-For example, an RHS involving a square root can throw an error (forcing the
-numerical algorithm to terminate) or return ``not a number'' (\texttt{NaN})
-when called with negative values, depending on the implementation.
-In both cases, further (useful) computations are not possible. A possible fix
-allowing our mechanism to continue the integration can be to restrict the arguments
-to the square root to non-negative values by clipping them accordingly, e.g.\
-to replace \texttt{sqrt(u)} by \texttt{sqrt(max(u, 0))} or something similar.}
+Since the stage values are not guaranteed to be positive, the RHS must be
+defined also
+for negative values. If there is not a natural definition for negative values,
+one can instead extend the function in a smooth way or simply replace negative
+stage values by zero,  e.g.\ replace \texttt{sqrt(u)} by \texttt{sqrt(max(u, 0))}.}
 
 A test problem similar to \cite{shampine_non-negative_2005} is the PDE
 \begin{equation}
