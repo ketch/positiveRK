@@ -1100,9 +1100,11 @@ here is more efficient than simply using a smaller step size.  For this problem 
 be discretized explicitly with a right-hand-side that is relatively cheap to evaluate,
 using a smaller step size is
 generally more efficient, at least with the current un-optimized implementation of the LP
-solution.  For problems where implicit time integration is necessary, or with a more computationally
-expensive derivative evaluation, the LP approach may be more efficient, especially if
-the implementation were optimized.  This kind of optimization is the subject of future work.
+solution.  For the problem considered in the next section, where an implicit
+integrator is used, it is more efficient to maintain positivity with our proposed
+approach instead of reducing the step size.
+Adaptation of the weights could be made even more efficient with
+an optimized implementation of the LP setup and solve; this is the subject of future work.
 }
 
 \subsection{Stiff problem with fixed step size}
